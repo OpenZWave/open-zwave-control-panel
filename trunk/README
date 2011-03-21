@@ -1,0 +1,66 @@
+OpenZWave Control Panel v0.1a 3/12/2011
+
+Welcome to a very alpha release of the OpenZWave Control Panel.
+
+OVERVIEW
+
+This README for the OpenZWave Control Panel will attempt to provide the
+necessary information to compile, use and develop.
+
+The OpenZWave Control Panel (ozwcp for short) is an application built on
+the OpenZWave library http://code.google.com/p/open-zwave/ that permits
+users to query, manage and monitor Z-Wave nodes and networks. It provides a
+web based user interface using AJAX principles.
+
+The code is very new, as is the library, so bugs will be present. This tool
+will allow the basic use of Z-Wave devices as well as help push forward the
+development of the OpenZWave library.
+
+INSTALLATION
+
+To install ozwcp, visit http://code.google.com/p/openzwave-control-panel/
+and click on the "source" tab. You will need an svn client to check out a
+copy of the sources.
+
+You will need a copy of the latest version of the OpenZWave library at
+http://code.google.com/p/open-zwave/. Use the "source" tab on that project
+to get a copy.
+
+ozwcp uses GNU's libmicrohttpd library available at
+http://www.gnu.org/software/libmicrohttpd/. I have set up this library
+using the --enable-messages configure option for debugging but this is
+optional.
+
+All three of these installations should share live in the same directory
+(share a common parent). The ozwcp Makefile assumes this.
+
+See Makefile for comments about Mac OS X support.
+
+Currently Windows is not supported. It should be possible to port this
+to the Window's cygwin environment if anyone is interested in pursing that
+option.
+
+OPERATION
+
+ozwcp currently runs from the command line and takes two flags:
+
+-d for debugging
+-p <portnum> port number the web server will listen on
+
+Once started, connect to the hostname:postnum that ozwcp is running on
+using a web broswer and you will get to the user interface.
+
+Firefox has been extensively tested. Safari works. Intnernet Explorer
+doesn't work yet. This is also on the to do list.
+
+ozwcp currently must be run from within its distribution directory. It
+serves files that must be present for it to work properly. You may need to
+run it as root depending on the port number you use.
+
+CAVEATS
+
+This is an alpha release at best. It has only ever worked in a single
+envionment. Please report bugs to the OpenZWave google groups mailing list:
+http://groups.google.com/group/openzwave.
+
+See the file TODO for a list of things on the to do list.
