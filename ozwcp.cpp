@@ -65,6 +65,7 @@ pthread_mutex_t glock = PTHREAD_MUTEX_INITIALIZER;
 bool done = false;
 bool needsave = false;
 uint32 homeId = 0;
+uint8 nodeId = 0;
 char *cmode = "";
 int32 debug = false;
 
@@ -507,9 +508,11 @@ void OnNotification (Notification const* _notification, void* _context)
     //pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_DriverReady:
-    Log::Write("Notification: Driver Ready, homeId %08x", _notification->GetHomeId());
+    Log::Write("Notification: Driver Ready, homeId %08x, nodeId %d", _notification->GetHomeId(),
+	       _notification->GetNodeId());
     pthread_mutex_lock(&glock);
     homeId = _notification->GetHomeId();
+    nodeId = _notification->GetNodeId();
     if (Manager::Get()->IsStaticUpdateController(homeId))
       cmode = "SUC";
     else if (Manager::Get()->IsPrimaryController(homeId))

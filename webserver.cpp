@@ -83,6 +83,7 @@ extern pthread_mutex_t glock;
 extern bool done;
 extern bool needsave;
 extern uint32 homeId;
+extern uint8 nodeId;
 extern char *cmode;
 extern int debug;
 
@@ -290,6 +291,11 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
   else
     str[0] = '\0';
   pollElement->SetAttribute("homeid", str);
+  if (nodeId != 0L)
+    snprintf(str, sizeof(str), "%d", nodeId);
+  else
+    str[0] = '\0';
+  pollElement->SetAttribute("nodeid", str);
   pollElement->SetAttribute("nodecount", MyNode::getNodeCount());
   pollElement->SetAttribute("cmode", cmode);
   pollElement->SetAttribute("save", needsave);

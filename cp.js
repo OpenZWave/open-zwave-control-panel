@@ -13,6 +13,7 @@ var nodepollpoll=new Array();
 var astate = false;
 var needsave=0;
 var nodecount;
+var nodeid;
 if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
   pollhttp=new XMLHttpRequest();
 } else {
@@ -64,6 +65,9 @@ function PollReply()
     if (elem[0].getAttribute('nodecount') != nodecount) {
       nodecount = elem[0].getAttribute('nodecount');
       document.getElementById('nodecount').value = nodecount;
+    }
+    if (elem[0].getAttribute('nodeid') != nodeid) {
+      nodeid = elem[0].getAttribute('nodeid');
     }
     if (elem[0].getAttribute('cmode') != document.getElementById('cmode').value)
       document.getElementById('cmode').value = elem[0].getAttribute('cmode');
@@ -125,7 +129,8 @@ function PollReply()
 	    }
 	  }
 	}
-	stuff=stuff+'<tr id="node'+i+'" onmouseover="this.className=\'highlight\';" onmouseout="if (this.id == curnode) this.className=\'click\'; else this.className=\'normal\';" onclick="return SaveNode(this.id);" ondblClick="SaveNode(this.id); return DisplayNode();"><td>'+elem[i].getAttribute('id')+'</td><td>'+elem[i].getAttribute('btype')+'</td><td>'+elem[i].getAttribute('gtype')+'</td><td>'+elem[i].getAttribute('manufacturer')+' '+elem[i].getAttribute('product')+'</td><td>'+elem[i].getAttribute('name')+'</td><td>'+elem[i].getAttribute('location')+'</td><td>'+val+'</td.<td>'+ts+'</td></tr>';
+	var id = elem[i].getAttribute('id');
+	stuff=stuff+'<tr id="node'+i+'" onmouseover="this.className=\'highlight\';" onmouseout="if (this.id == curnode) this.className=\'click\'; else this.className=\'normal\';" onclick="return SaveNode(this.id);" ondblClick="SaveNode(this.id); return DisplayNode();"><td>'+id+(id == nodeid ? '*' : '')+'</td><td>'+elem[i].getAttribute('btype')+'</td><td>'+elem[i].getAttribute('gtype')+'</td><td>'+elem[i].getAttribute('manufacturer')+' '+elem[i].getAttribute('product')+'</td><td>'+elem[i].getAttribute('name')+'</td><td>'+elem[i].getAttribute('location')+'</td><td>'+val+'</td.<td>'+ts+'</td></tr>';
 	CreateDivs(elem, 'user', divcur, i);
 	CreateDivs(elem, 'config', divcon, i);
 	CreateDivs(elem, 'system', divinfo, i);
