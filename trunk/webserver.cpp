@@ -65,7 +65,7 @@ using namespace OpenZWave;
 #define FNF "<html><head><title>File not found</title></head><body>File not found: %s</body></html>"
 #define UNKNOWN "<html><head><title>Nothingness</title></head><body>There is nothing here. Sorry.</body></html>\n"
 #define DEFAULT "<script type=\"text/javascript\"> document.location.href='/';</script>"
-#define DEVJS "var dev = '%s'; var usb = %d;\n"
+#define DEVJS "var dev = '%s'; var usb = %s;\n"
 
 typedef struct _conninfo {
   conntype_t conn_type;
@@ -532,9 +532,9 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	fprintf(stderr, "Out of memory dev.js\n");
 	exit(1);
       }
-      snprintf(s, len, DEVJS, devname ? devname : "", usb);
+      snprintf(s, len, DEVJS, devname ? devname : "", usb ? "true" : "false");
       ret = web_send_data(conn, s, MHD_HTTP_OK, true, false, "text/javascript"); // free but no copy
-    } else if (strcmp(url, "/poll.xml") == 0 && devname != NULL) {
+    } else if (strcmp(url, "/poll.xml") == 0 && (devname != NULL || usb)) {
       ret = SendPollResponse(conn);
     } else
       ret = web_send_data(conn, UNKNOWN, MHD_HTTP_NOT_FOUND, false, false, NULL); // no free, no copy
@@ -544,7 +544,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
     if (strcmp(url, "/devpost.html") == 0) {
       const char *fun = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "fn");
       const char *dev = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "dev");
-      const char *usbp = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "usbb");
+      const char *usbp = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "usb");
       if (*up_data_size != 0) {
 	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
 	*up_data_size = 0;
@@ -554,7 +554,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	    free(devname);
 	    devname = NULL;
 	  }
-	  if (usbp != NULL && *usbp == '1') {
+	  if (usbp != NULL && strcmp(usbp, "true") == 0) {
 	    Manager::Get()->AddDriver( "HID Controller", Driver::ControllerInterface_Hid );
 	    usb = true;
 	  } else {
@@ -572,9 +572,11 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	    Manager::Get()->RemoveDriver(devname);
 	    free(devname);
 	    devname = NULL;
+	    usb = false;
 	  }
 	  homeId = 0;
 	} else if (strcmp(fun, "reset") == 0) { /* reset */
+	  // not handled for USB
 	  Manager::Get()->ResetController(homeId);
 	  Manager::Get()->RemoveDriver(devname);
 	  sleep(5);
