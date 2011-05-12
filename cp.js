@@ -170,7 +170,7 @@ function Poll()
 function BED()
 {
   var forms = document.forms;
-  var off = (dev.length == 0) && (usb == 0);
+  var off = (dev.length == 0) && !usb;
 
   for (var i = 0; i < forms.length; i++) {
     if (forms[i].name == '')
@@ -192,7 +192,6 @@ function BED()
   document.AdmPost.adminops.disabled = off;
   document.NodePost.nodeops.selectedIndex = 0;
   document.NodePost.nodeops.disabled = off;
-  document.DevPost.usbb.disabled = true; // until usb is fixed
   if (off) {
     document.getElementById('configcur').innerHTML = '';
     document.getElementById('configcon').innerHTML = '';
@@ -270,8 +269,8 @@ function DoDevUSB()
 }
 function DoDevPost(fun)
 {
-  if (document.DevPost.devname.value.length > 0 || document.DevPost.usbb.value) {
-    document.DevPost.action='/devpost.html?dev='+document.DevPost.devname.value+'&fn='+fun+'&usb='+document.DevPost.usbb.value;
+  if (document.DevPost.devname.value.length > 0 || document.DevPost.usbb.checked) {
+    document.DevPost.action='/devpost.html?dev='+document.DevPost.devname.value+'&fn='+fun+'&usb='+document.DevPost.usbb.checked;
     document.DevPost.submit();
     return true;
   } else
@@ -597,6 +596,8 @@ function CreateDivs(elem,genre,divto,node)
         lastclass=cls;
         divto[node]=divto[node]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
       } else if (tag == 'int') {
+	  divto[node]=divto[node]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
+      } else if (tag == 'short') {
 	  divto[node]=divto[node]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
       } else if (tag == 'list') {
 	  divto[node]=divto[node]+CreateList(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].getAttribute('current'),where[0].childNodes[i].getAttribute('units'),id,where[0].childNodes[i].getElementsByTagName('item'),ro);
