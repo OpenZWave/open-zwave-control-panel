@@ -111,7 +111,7 @@ static int web_send_data (struct MHD_Connection *connection, const char *data,
  * web_read_file
  * Read files and send them out
  */
-int web_read_file (void *cls, uint64_t pos, char *buf, int max)
+ssize_t web_read_file (void *cls, uint64_t pos, char *buf, size_t max)
 {
   FILE *file = (FILE *)cls;
 
@@ -555,7 +555,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	    devname = NULL;
 	  }
 	  if (usbp != NULL && strcmp(usbp, "true") == 0) {
-	    Manager::Get()->AddDriver( "HID Controller", Driver::ControllerInterface_Hid );
+	    Manager::Get()->AddDriver("HID Controller", Driver::ControllerInterface_Hid );
 	    usb = true;
 	  } else {
 	    devname = (char *)malloc(strlen(dev) + 1);
@@ -568,29 +568,33 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	    Manager::Get()->AddDriver(devname);
 	  }
 	} else if (strcmp(fun, "close") == 0) { /* terminate */
+	  if (devname != NULL || usb)
+	    Manager::Get()->RemoveDriver(devname ? devname : "HID Controller");
 	  if (devname != NULL) {
-	    Manager::Get()->RemoveDriver(devname);
 	    free(devname);
 	    devname = NULL;
-	    usb = false;
 	  }
+	  usb = false;
 	  homeId = 0;
 	} else if (strcmp(fun, "reset") == 0) { /* reset */
-	  // not handled for USB
 	  Manager::Get()->ResetController(homeId);
-	  Manager::Get()->RemoveDriver(devname);
+	  Manager::Get()->RemoveDriver(devname ? devname : "HID Controller");
 	  sleep(5);
-	  Manager::Get()->AddDriver(devname);
+	  if (devname != NULL)
+	    Manager::Get()->AddDriver(devname);
+	  else
+	    Manager::Get()->AddDriver("HID Controller", Driver::ControllerInterface_Hid );
 	} else if (strcmp(fun, "sreset") == 0) { /* soft reset */
 	  Manager::Get()->SoftReset(homeId);
 	} else if (strcmp(fun, "exit") == 0) { /* exit */
 	  pthread_mutex_lock(&glock);
+	  Manager::Get()->RemoveDriver(devname ? devname : "HID Controller");
 	  if (devname != NULL) {
-	    Manager::Get()->RemoveDriver(devname);
 	    free(devname);
 	    devname = NULL;
 	  }
 	  homeId = 0;
+	  usb = false;
 	  done = true;						 // let main exit
 	  pthread_mutex_unlock(&glock);
 	}
