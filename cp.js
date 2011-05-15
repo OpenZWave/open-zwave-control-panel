@@ -120,7 +120,10 @@ function PollReply()
 	    for (j = 0; j < where[0].childNodes.length; j++) {
 	      if (where[0].childNodes[j].nodeType != 1)
 		continue;
-	      val = where[0].childNodes[j].firstChild.nodeValue;
+	      if (where[0].childNodes[j].firstChild != null)
+	        val = where[0].childNodes[j].firstChild.nodeValue;
+	      else
+		val = "N/A";
 	      if (val == 'False')
 		val = 'off';
 	      else if (val == 'True')
@@ -130,13 +133,13 @@ function PollReply()
 	  }
 	}
 	var id = elem[i].getAttribute('id');
-	stuff=stuff+'<tr id="node'+i+'" onmouseover="this.className=\'highlight\';" onmouseout="if (this.id == curnode) this.className=\'click\'; else this.className=\'normal\';" onclick="return SaveNode(this.id);" ondblClick="SaveNode(this.id); return DisplayNode();"><td>'+id+(id == nodeid ? '*' : '')+'</td><td>'+elem[i].getAttribute('btype')+'</td><td>'+elem[i].getAttribute('gtype')+'</td><td>'+elem[i].getAttribute('manufacturer')+' '+elem[i].getAttribute('product')+'</td><td>'+elem[i].getAttribute('name')+'</td><td>'+elem[i].getAttribute('location')+'</td><td>'+val+'</td.<td>'+ts+'</td></tr>';
-	CreateDivs(elem, 'user', divcur, i);
-	CreateDivs(elem, 'config', divcon, i);
-	CreateDivs(elem, 'system', divinfo, i);
-	CreateName(elem[i].getAttribute('name'),i);
-	CreateLocation(elem[i].getAttribute('location'),i);
-	CreateGroup(elem,i);
+	stuff=stuff+'<tr id="node'+i+'" onmouseover="this.className=\'highlight\';" onmouseout="if (this.id == curnode) this.className=\'click\'; else this.className=\'normal\';" onclick="return SaveNode(this.id);" ondblClick="SaveNode(this.id); return DisplayNode();"><td>'+id+(id == nodeid ? '*' : '')+'</td><td>'+elem[i].getAttribute('btype')+'</td><td>'+elem[i].getAttribute('gtype')+'</td><td>'+elem[i].getAttribute('manufacturer')+' '+elem[i].getAttribute('product')+'</td><td>'+elem[i].getAttribute('name')+'</td><td>'+elem[i].getAttribute('location')+'</td><td>'+val+'</td><td>'+ts+'</td></tr>';
+	CreateDivs(elem, 'user', divcur, i, id);
+	CreateDivs(elem, 'config', divcon, i, id);
+	CreateDivs(elem, 'system', divinfo, i, id);
+	CreateName(elem[i].getAttribute('name'), i);
+	CreateLocation(elem[i].getAttribute('location'), i);
+	CreateGroup(elem, i);
 	CreatePoll(elem, i);
       }
       document.getElementById('tbody').innerHTML=stuff;
@@ -573,11 +576,11 @@ function CreateLabel(label,value,units,id)
 {
     return '<tr><td style="float: right;"><label><span class="legend">'+label+':&nbsp;</span></label></td><td><input type="text" class="legend" disabled="true" size="'+boxsize(value)+'" id="'+id+'" value="'+value+'"><span class="legend">'+units+'</span></td></tr>';
 }
-function CreateDivs(elem,genre,divto,node)
+function CreateDivs(elem,genre,divto,ind, node)
 {
-  var where=elem[node].getElementsByTagName(genre);
+  var where=elem[ind].getElementsByTagName(genre);
 
-  divto[node]='<table border="0" cellpadding="1" cellspacing="0"><tbody>';
+  divto[ind]='<table border="0" cellpadding="1" cellspacing="0"><tbody>';
   if (where.length > 0) {
     var i;
     var lastclass='';
@@ -587,39 +590,39 @@ function CreateDivs(elem,genre,divto,node)
       var ro=where[0].childNodes[i].getAttribute('readonly')=='true';
       var cls=where[0].childNodes[i].getAttribute('class');
       var tag=where[0].childNodes[i].tagName;
-      var id=(node+1)+'-'+cls+'-'+genre+'-'+tag+'-'+where[0].childNodes[i].getAttribute('instance')+'-'+where[0].childNodes[i].getAttribute('index');
+      var id=node+'-'+cls+'-'+genre+'-'+tag+'-'+where[0].childNodes[i].getAttribute('instance')+'-'+where[0].childNodes[i].getAttribute('index');
       if (tag == 'bool') {
-	  divto[node]=divto[node]+CreateOnOff(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
+	  divto[ind]=divto[ind]+CreateOnOff(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
       } else if (tag == 'byte') {
         if (lastclass == 'BASIC' && cls == 'SWITCH MULTILEVEL')
-          divto[node]='';
+          divto[ind]='';
         lastclass=cls;
-        divto[node]=divto[node]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
+        divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
       } else if (tag == 'int') {
-	  divto[node]=divto[node]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
+	  divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
       } else if (tag == 'short') {
-	  divto[node]=divto[node]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
+	  divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
       } else if (tag == 'list') {
-	  divto[node]=divto[node]+CreateList(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].getAttribute('current'),where[0].childNodes[i].getAttribute('units'),id,where[0].childNodes[i].getElementsByTagName('item'),ro);
+	  divto[ind]=divto[ind]+CreateList(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].getAttribute('current'),where[0].childNodes[i].getAttribute('units'),id,where[0].childNodes[i].getElementsByTagName('item'),ro);
       } else if (tag == 'string') {
-	  divto[node]=divto[node]+CreateLabel(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id);
+	  divto[ind]=divto[ind]+CreateLabel(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id);
       } else {
       }
     }
   }
-  divto[node]=divto[node]+'</tbody></table>';
+  divto[ind]=divto[ind]+'</tbody></table>';
 }
-function CreateName(val,node)
+function CreateName(val,ind)
 {
-  nodename[node]='<tr><td style="float: right;"><label><span class="legend">Name:&nbsp;</span></label></td><td><input type="text" class="legend" size="'+boxsize(val)+'" id="name" value="'+val+'"><button type="submit" style="margin-left: 5px;" onclick="return DoNodePost(document.NodePost.name.value);">Submit</button></td></tr>';
+  nodename[ind]='<tr><td style="float: right;"><label><span class="legend">Name:&nbsp;</span></label></td><td><input type="text" class="legend" size="'+boxsize(val)+'" id="name" value="'+val+'"><button type="submit" style="margin-left: 5px;" onclick="return DoNodePost(document.NodePost.name.value);">Submit</button></td></tr>';
 }
-function CreateLocation(val,node)
+function CreateLocation(val,ind)
 {
-  nodeloc[node]='<tr><td style="float: right;"><label><span class="legend">Location:&nbsp;</span></label></td><td><input type="text" class="legend" size="'+boxsize(val)+'" id="location" value="'+val+'"><button type="submit" style="margin-left: 5px;" onclick="return DoNodePost(document.NodePost.location.value);">Submit</button></td></tr>';
+  nodeloc[ind]='<tr><td style="float: right;"><label><span class="legend">Location:&nbsp;</span></label></td><td><input type="text" class="legend" size="'+boxsize(val)+'" id="location" value="'+val+'"><button type="submit" style="margin-left: 5px;" onclick="return DoNodePost(document.NodePost.location.value);">Submit</button></td></tr>';
 }
-function CreateGroup(elem,node)
+function CreateGroup(elem,ind)
 {
-  var where=elem[node].getElementsByTagName('groups');
+  var where=elem[ind].getElementsByTagName('groups');
   var cnt=where[0].getAttribute('cnt');
   var grp;
   var i, j, k;
@@ -628,72 +631,72 @@ function CreateGroup(elem,node)
   var str;
 
   if (cnt == 0) {
-    nodegrp[node]='';
-    nodegrpgrp[node] = new Array();
-    nodegrpgrp[node][1]='';
+    nodegrp[ind]='';
+    nodegrpgrp[ind] = new Array();
+    nodegrpgrp[ind][1]='';
     return;
   }
-  nodegrp[node]='<tr><td style="float: right;"><label><span class="legend">Groups:&nbsp;</span></label></td><td><select id="group" style="margin-left: 5px;" onchange="return DoGroup();">';
-  nodegrpgrp[node] = new Array(cnt);
+  nodegrp[ind]='<tr><td style="float: right;"><label><span class="legend">Groups:&nbsp;</span></label></td><td><select id="group" style="margin-left: 5px;" onchange="return DoGroup();">';
+  nodegrpgrp[ind] = new Array(cnt);
   grp = 1;
   for (i = 0; i < where[0].childNodes.length; i++) {
     if (where[0].childNodes[i].nodeType != 1)
       continue;
     id = where[0].childNodes[i].getAttribute('ind');
-    nodegrp[node]=nodegrp[node]+'<option value="'+id+'">'+where[0].childNodes[i].getAttribute('label')+' ('+id+')</option>';
+    nodegrp[ind]=nodegrp[ind]+'<option value="'+id+'">'+where[0].childNodes[i].getAttribute('label')+' ('+id+')</option>';
     mx = where[0].childNodes[i].getAttribute('max');
     if (where[0].childNodes[i].firstChild != null) {
       str = where[0].childNodes[i].firstChild.nodeValue;
       str = str.split(",");
     } else
       str = new Array();
-    nodegrpgrp[node][grp] = '<td><div id="nodegrp" name="nodegrp" style="float: right;"><select id="groups" multiple size="4" style="vertical-align: top; margin-left: 5px;">';
+    nodegrpgrp[ind][grp] = '<td><div id="nodegrp" name="nodegrp" style="float: right;"><select id="groups" multiple size="4" style="vertical-align: top; margin-left: 5px;">';
     k = 0;
     for (j = 1; j <= nodecount; j++) {
       while (k < str.length && str[k] < j)
 	k++;
       if (str[k] == j)
-	nodegrpgrp[node][grp]=nodegrpgrp[node][grp]+'<option selected="true">'+j+'</option>';
+	nodegrpgrp[ind][grp]=nodegrpgrp[ind][grp]+'<option selected="true">'+j+'</option>';
       else
-	nodegrpgrp[node][grp]=nodegrpgrp[node][grp]+'<option>'+j+'</option>';
+	nodegrpgrp[ind][grp]=nodegrpgrp[ind][grp]+'<option>'+j+'</option>';
     }
-    nodegrpgrp[node][grp]=nodegrpgrp[node][grp]+'</select></td><td><button type="submit" style="margin-left: 5px;" onclick="return DoGrpPost();">Submit</button></div></td></tr>';
+    nodegrpgrp[ind][grp]=nodegrpgrp[ind][grp]+'</select></td><td><button type="submit" style="margin-left: 5px;" onclick="return DoGrpPost();">Submit</button></div></td></tr>';
     grp++;
   }
-  nodegrp[node]=nodegrp[node]+'</select></td>';
+  nodegrp[ind]=nodegrp[ind]+'</select></td>';
 }
-function CreatePoll(elem,node)
+function CreatePoll(elem,ind)
 {
-  if (elem[node].getElementsByTagName('user').length > 0 || elem[node].getElementsByTagName('system').length > 0)
-    nodepoll[node]='<tr><td style="float: right;"><label><span class="legend">Polling&nbsp;</span></label></td><td><select id="polled" style="margin-left: 5px;" onchange="return DoPoll();"><option value="0">User</option><option value="1">System</option></select></td>';
+  if (elem[ind].getElementsByTagName('user').length > 0 || elem[ind].getElementsByTagName('system').length > 0)
+    nodepoll[ind]='<tr><td style="float: right;"><label><span class="legend">Polling&nbsp;</span></label></td><td><select id="polled" style="margin-left: 5px;" onchange="return DoPoll();"><option value="0">User</option><option value="1">System</option></select></td>';
   else
-    nodepoll[node]='';
-  nodepollpoll[node] = new Array(2);
-  CreatePollPoll(elem,'user',node);
-  CreatePollPoll(elem,'system',node);
+    nodepoll[ind]='';
+  nodepollpoll[ind] = new Array(2);
+  CreatePollPoll(elem,'user', ind);
+  CreatePollPoll(elem,'system', ind);
 }
-function CreatePollPoll(elem,genre,node)
+function CreatePollPoll(elem,genre,ind)
 {
-  var ind;
-  var where=elem[node].getElementsByTagName(genre);
+  var ind1;
+  var where=elem[ind].getElementsByTagName(genre);
   if (genre == 'user')
-    ind = 0;
+    ind1 = 0;
   else
-    ind = 1;
-  nodepollpoll[node][ind]='<td><div id="nodepoll" name="nodepoll" style="float: right;"><select id="polls" multiple size="4" style="vertical-align: top; margin-left: 5px;">';
+    ind1 = 1;
+  nodepollpoll[ind][ind1]='<td><div id="nodepoll" name="nodepoll" style="float: right;"><select id="polls" multiple size="4" style="vertical-align: top; margin-left: 5px;">';
   if (where.length > 0) {
     var i;
     for (i = 0; i < where[0].childNodes.length; i++) {
       if (where[0].childNodes[i].nodeType != 1)
 	continue;
       var p=where[0].childNodes[i].getAttribute('polled') == 'true';
-      var id=(node+1)+'-'+where[0].childNodes[i].getAttribute('class')+'-'+genre+'-'+where[0].childNodes[i].tagName+'-'+where[0].childNodes[i].getAttribute('instance')+'-'+where[0].childNodes[i].getAttribute('index');
-      nodepollpoll[node][ind]=nodepollpoll[node][ind]+'<option id="'+id+'"';
+      var id=(ind+1)+'-'+where[0].childNodes[i].getAttribute('class')+'-'+genre+'-'+where[0].childNodes[i].tagName+'-'+where[0].childNodes[i].getAttribute('instance')+'-'+where[0].childNodes[i].getAttribute('index');
+      nodepollpoll[ind][ind1]=nodepollpoll[ind][ind1]+'<option id="'+id+'"';
       if (p)
-	  nodepollpoll[node][ind]=nodepollpoll[node][ind]+' selected="true"';
-      nodepollpoll[node][ind]=nodepollpoll[node][ind]+'>'+where[0].childNodes[i].getAttribute('label')+'</option>';
+	  nodepollpoll[ind][ind1]=nodepollpoll[ind][ind1]+' selected="true"';
+      nodepollpoll[ind][ind1]=nodepollpoll[ind][ind1]+'>'+where[0].childNodes[i].getAttribute('label')+'</option>';
     }
-    nodepollpoll[node][ind]=nodepollpoll[node][ind]+'</select></td><button type="submit" style="margin-left: 5px;" onclick="return DoPollPost();">Submit</button></div></td></tr>';
+    nodepollpoll[ind][ind1]=nodepollpoll[ind][ind1]+'</select></td><button type="submit" style="margin-left: 5px;" onclick="return DoPollPost();">Submit</button></div></td></tr>';
   } else
-    nodepollpoll[node][ind]='';
+    nodepollpoll[ind][ind1]='';
 }
