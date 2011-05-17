@@ -65,7 +65,7 @@ using namespace OpenZWave;
 #define FNF "<html><head><title>File not found</title></head><body>File not found: %s</body></html>"
 #define UNKNOWN "<html><head><title>Nothingness</title></head><body>There is nothing here. Sorry.</body></html>\n"
 #define DEFAULT "<script type=\"text/javascript\"> document.location.href='/';</script>"
-#define DEVJS "var dev = '%s'; var usb = %s;\n"
+#define EMPTY "<html></html>"
 
 typedef struct _conninfo {
   conntype_t conn_type;
@@ -425,7 +425,14 @@ int web_config_post (void *cls, enum MHD_ValueKind kind, const char *key, const 
   conninfo_t *cp = (conninfo_t *)cls;
 
   fprintf(stderr, "post: key=%s data=%s size=%d\n", key, data, size);
-  if (strcmp(cp->conn_url, "/valuepost.html") == 0) {
+  if (strcmp(cp->conn_url, "/devpost.html") == 0) {
+    if (strcmp(key, "fn") == 0)
+      cp->conn_arg1 = (void *)strdup(data);
+    else if (strcmp(key, "dev") == 0)
+      cp->conn_arg2 = (void *)strdup(data);
+    else if (strcmp(key, "usb") == 0)
+      cp->conn_arg3 = (void *)strdup(data);
+  } else if (strcmp(cp->conn_url, "/valuepost.html") == 0) {
     cp->conn_arg1 = (void *)strdup(key);
     cp->conn_arg2 = (void *)strdup(data);
   } else if (strcmp(cp->conn_url, "/admpost.html") == 0) {
@@ -519,55 +526,37 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
       ret = web_send_file(conn, "cp.js", MHD_HTTP_OK);
     else if (strcmp(url, "/favicon.png") == 0)
       ret = web_send_file(conn, "openzwavetinyicon.png", MHD_HTTP_OK);
-    else if (strcmp(url, "/dev.js") == 0) {
-      int len = sizeof(DEVJS) - 1; // %s but one for \0
-      char *s;
-      if (devname != NULL) {
-	len += strlen(devname);
-	logbytes = 0;
-	setNodesChanged(true);
-      }
-      s = (char *)malloc(len);
-      if (s == NULL) {
-	fprintf(stderr, "Out of memory dev.js\n");
-	exit(1);
-      }
-      snprintf(s, len, DEVJS, devname ? devname : "", usb ? "true" : "false");
-      ret = web_send_data(conn, s, MHD_HTTP_OK, true, false, "text/javascript"); // free but no copy
-    } else if (strcmp(url, "/poll.xml") == 0 && (devname != NULL || usb)) {
+    else if (strcmp(url, "/poll.xml") == 0 && (devname != NULL || usb))
       ret = SendPollResponse(conn);
-    } else
+    else
       ret = web_send_data(conn, UNKNOWN, MHD_HTTP_NOT_FOUND, false, false, NULL); // no free, no copy
     return ret;
   } else if (strcmp(method, MHD_HTTP_METHOD_POST) == 0) {
     cp = (conninfo_t *)*ptr;
     if (strcmp(url, "/devpost.html") == 0) {
-      const char *fun = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "fn");
-      const char *dev = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "dev");
-      const char *usbp = MHD_lookup_connection_value(conn, MHD_GET_ARGUMENT_KIND, "usb");
       if (*up_data_size != 0) {
 	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
 	*up_data_size = 0;
 
-	if (strcmp(fun, "open") == 0) { /* start connection */
+	if (strcmp((char *)cp->conn_arg1, "open") == 0) { /* start connection */
 	  if (devname != NULL) {
 	    free(devname);
 	    devname = NULL;
 	  }
-	  if (usbp != NULL && strcmp(usbp, "true") == 0) {
+	  if ((char *)cp->conn_arg3 != NULL && strcmp((char *)cp->conn_arg3, "true") == 0) {
 	    Manager::Get()->AddDriver("HID Controller", Driver::ControllerInterface_Hid );
 	    usb = true;
 	  } else {
-	    devname = (char *)malloc(strlen(dev) + 1);
+	    devname = (char *)malloc(strlen((char *)cp->conn_arg2) + 1);
 	    if (devname == NULL) {
 	      fprintf(stderr, "Out of memory open devname\n");
 	      exit(1);
 	    }
 	    usb = false;
-	    strcpy(devname, dev);
+	    strcpy(devname, (char *)cp->conn_arg2);
 	    Manager::Get()->AddDriver(devname);
 	  }
-	} else if (strcmp(fun, "close") == 0) { /* terminate */
+	} else if (strcmp((char *)cp->conn_arg1, "close") == 0) { /* terminate */
 	  if (devname != NULL || usb)
 	    Manager::Get()->RemoveDriver(devname ? devname : "HID Controller");
 	  if (devname != NULL) {
@@ -576,17 +565,18 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	  }
 	  usb = false;
 	  homeId = 0;
-	} else if (strcmp(fun, "reset") == 0) { /* reset */
+	} else if (strcmp((char *)cp->conn_arg1, "reset") == 0) { /* reset */
 	  Manager::Get()->ResetController(homeId);
+	  sleep(2);
 	  Manager::Get()->RemoveDriver(devname ? devname : "HID Controller");
 	  sleep(5);
 	  if (devname != NULL)
 	    Manager::Get()->AddDriver(devname);
 	  else
 	    Manager::Get()->AddDriver("HID Controller", Driver::ControllerInterface_Hid );
-	} else if (strcmp(fun, "sreset") == 0) { /* soft reset */
+	} else if (strcmp((char *)cp->conn_arg1, "sreset") == 0) { /* soft reset */
 	  Manager::Get()->SoftReset(homeId);
-	} else if (strcmp(fun, "exit") == 0) { /* exit */
+	} else if (strcmp((char *)cp->conn_arg1, "exit") == 0) { /* exit */
 	  pthread_mutex_lock(&glock);
 	  Manager::Get()->RemoveDriver(devname ? devname : "HID Controller");
 	  if (devname != NULL) {
@@ -613,7 +603,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	}
 	return MHD_YES;
       } else
-	ret = web_send_data(conn, "", MHD_HTTP_OK, false, false, NULL); // no free, no copy
+	ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
     } else if (strcmp(url, "/admpost.html") == 0) {
       if (*up_data_size != 0) {
 	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
@@ -636,13 +626,6 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 							       web_controller_update, this, true));
 	} else if (strcmp((char *)cp->conn_arg1, "cprim") == 0) {
 	  setAdminFunction("Create Primary");
-
-
-
-
-
-
-
 	  setAdminState(
 			Manager::Get()->BeginControllerCommand(homeId,
 							       Driver::ControllerCommand_CreateNewPrimary,
@@ -737,7 +720,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	}
 	return MHD_YES;
       } else
-	ret = web_send_data(conn, "", MHD_HTTP_OK, false, false, NULL); // no free, no copy
+	ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
     } else if (strcmp(url, "/nodepost.html") == 0) {
       if (*up_data_size != 0) {
 	uint8 node;
@@ -756,7 +739,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	}
 	return MHD_YES;
       } else
-	ret = web_send_data(conn, "", MHD_HTTP_OK, false, false, NULL); // no free, no copy
+	ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
     } else if (strcmp(url, "/grouppost.html") == 0) {
       if (*up_data_size != 0) {
 	uint8 node;
@@ -777,7 +760,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	}
 	return MHD_YES;
       } else
-	ret = web_send_data(conn, "", MHD_HTTP_OK, false, false, NULL); // no free, no copy
+	ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
     } else if (strcmp(url, "/pollpost.html") == 0) {
       if (*up_data_size != 0) {
 	uint8 node;
@@ -797,7 +780,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	}
 	return MHD_YES;
       } else
-	ret = web_send_data(conn, "", MHD_HTTP_OK, false, false, NULL); // no free, no copy
+	ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
     } else if (strcmp(url, "/savepost.html") == 0) {
       if (*up_data_size != 0) {
 	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
@@ -811,7 +794,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	}
 	return MHD_YES;
       } else
-	ret = web_send_data(conn, "", MHD_HTTP_OK, false, false, NULL); // no free, no copy
+	ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
     } else
       ret = web_send_data(conn, UNKNOWN, MHD_HTTP_NOT_FOUND, false, false, NULL); // no free, no copy
     return ret;

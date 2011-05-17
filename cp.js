@@ -73,11 +73,10 @@ function PollReply()
       document.getElementById('cmode').value = elem[0].getAttribute('cmode');
     if (elem[0].getAttribute('save') != needsave) {
 	needsave = elem[0].getAttribute('save');
-	span = document.getElementById('saveinfo');
 	if (needsave == '1') {
-	  span.style.display = 'block';
+	  document.getElementById('saveinfo').style.display = 'block';
 	} else {
-	  span.style.display = 'none';
+	  document.getElementById('saveinfo').style.display = 'none';
 	}
     }
     elem = xml.getElementsByTagName('admin');
@@ -173,7 +172,8 @@ function Poll()
 function BED()
 {
   var forms = document.forms;
-  var off = (dev.length == 0) && !usb;
+  var off = (document.DevPost.devname.value.length == 0) && !document.DevPost.usbb.checked;
+  var info;
 
   for (var i = 0; i < forms.length; i++) {
     if (forms[i].name == '')
@@ -193,15 +193,24 @@ function BED()
   document.getElementById('configinfo').checked = false;
   document.AdmPost.adminops.selectedIndex = 0;
   document.AdmPost.adminops.disabled = off;
+  info = document.getElementById('adminfo');
+  info.style.display = 'none';
   document.NodePost.nodeops.selectedIndex = 0;
   document.NodePost.nodeops.disabled = off;
+  info = document.getElementById('nodeinfo');
+  info.style.display = 'none';
+  info = document.getElementById('nodecntl');
+  info.style.display = 'none';
   if (off) {
-    document.getElementById('configcur').innerHTML = '';
-    document.getElementById('configcon').innerHTML = '';
-    document.getElementById('configinfo').innerHTML = '';
-  } else {
-    document.DevPost.devname.value = dev;
-    document.DevPost.usbb.checked = usb;
+    document.getElementById('homeid').value = '';
+    document.getElementById('cmode').value = '';
+    document.getElementById('nodecount').value = '';
+    document.getElementById('saveinfo').style.display = 'none';
+    document.getElementById('tbody').innerHTML= '';
+    document.getElementById('divconfigcur').innerHTML = '';
+    document.getElementById('divconfigcon').innerHTML = '';
+    document.getElementById('divconfiginfo').innerHTML = '';
+    document.getElementById('logdata').innerHTML= '';
   }
   if (!off) {
     Poll();
@@ -210,6 +219,7 @@ function BED()
     clearTimeout(polltmr);
     clearTimeout(pollwait);
   }
+  curnode=null;
 }
 function DoConfig(id)
 {
@@ -273,11 +283,27 @@ function DoDevUSB()
 function DoDevPost(fun)
 {
   if (document.DevPost.devname.value.length > 0 || document.DevPost.usbb.checked) {
-    document.DevPost.action='/devpost.html?dev='+document.DevPost.devname.value+'&fn='+fun+'&usb='+document.DevPost.usbb.checked;
-    document.DevPost.submit();
-    return true;
-  } else
-    return false;
+    var posthttp;
+    var params;
+
+    params = 'dev='+document.DevPost.devname.value+'&fn='+fun+'&usb='+document.DevPost.usbb.checked;
+    if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
+      posthttp=new XMLHttpRequest();
+    } else {
+      posthttp=new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    posthttp.open('POST','devpost.html',false);
+    posthttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    posthttp.setRequestHeader("Content-length", params.length);
+    posthttp.setRequestHeader("Connection", "close");
+    posthttp.send(params);
+    if (fun == 'close') {
+      document.DevPost.devname = '';
+      document.DevPost.usbb.checked = false;
+    }
+    BED();
+  }
+  return false;
 }
 function DoAdmPost(can)
 {
@@ -316,6 +342,12 @@ function DoAdmPost(can)
   posthttp.setRequestHeader("Content-length", params.length);
   posthttp.setRequestHeader("Connection", "close");
   posthttp.send(params);
+  if (fun == 'remc' || fun == 'remd') {
+    document.getElementById('divconfigcur').innerHTML = '';
+    document.getElementById('divconfigcon').innerHTML = '';
+    document.getElementById('divconfiginfo').innerHTML = '';
+    curnode = null;
+  }
   return false;
 }
 function DoAdmHelp()
