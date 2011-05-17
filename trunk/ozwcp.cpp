@@ -431,11 +431,13 @@ void OnNotification (Notification const* _notification, void* _context)
       Log::Write("Notification: Group Home 0x%08x Node %d Group %d",
 		 _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetGroupIdx());
       uint8 *v;
-      uint8 n = Manager::Get()->GetAssociations(homeId, _notification->GetNodeId(), _notification->GetGroupIdx(), &v);
-      pthread_mutex_lock(&nlock);
-      nodes[_notification->GetNodeId()]->addGroup(_notification->GetNodeId(), _notification->GetGroupIdx(), n, v);
-      pthread_mutex_unlock(&nlock);
-      delete [] v;
+      int8 n = Manager::Get()->GetAssociations(homeId, _notification->GetNodeId(), _notification->GetGroupIdx(), &v);
+      if (n > 0) {
+	pthread_mutex_lock(&nlock);
+	nodes[_notification->GetNodeId()]->addGroup(_notification->GetNodeId(), _notification->GetGroupIdx(), n, v);
+	pthread_mutex_unlock(&nlock);
+	delete [] v;
+      }
     }
     break;
   case Notification::Type_NodeNew:
