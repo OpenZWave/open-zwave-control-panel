@@ -634,6 +634,8 @@ function CreateDivs(elem,genre,divto,ind, node)
 	  divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
       } else if (tag == 'short') {
 	  divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
+      } else if (tag == 'decimal') {
+	  divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
       } else if (tag == 'list') {
 	  divto[ind]=divto[ind]+CreateList(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].getAttribute('current'),where[0].childNodes[i].getAttribute('units'),id,where[0].childNodes[i].getElementsByTagName('item'),ro);
       } else if (tag == 'string') {
