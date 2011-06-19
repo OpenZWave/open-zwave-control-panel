@@ -589,7 +589,7 @@ int32 main(int32 argc, char* argv[])
       exit(1);
     }
 
-  Options::Create("../open-zwave/config/", "", "");
+  Options::Create("config/", "", "");
   Options::Get()->Lock();
 
   Manager::Create();
