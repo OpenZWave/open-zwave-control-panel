@@ -54,3 +54,7 @@ webserver.o: webserver.h ozwcp.h ../open-zwave/cpp/src/Options.h ../open-zwave/c
 
 ozwcp:	ozwcp.o webserver.o zwavelib.o
 	$(LD) -o $@ $(LDFLAGS) ozwcp.o webserver.o zwavelib.o $(LIBS)
+
+dist:	ozwcp
+	rm -f ozwcp.tar.gz
+	tar -c --exclude=".svn" -hvzf ozwcp.tar.gz ozwcp config/ cp.html cp.js openzwavetinyicon.png README
