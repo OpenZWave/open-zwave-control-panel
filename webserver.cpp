@@ -257,6 +257,14 @@ void Webserver::web_get_genre (ValueID::ValueGenre vg, int i, TiXmlElement *ep)
 	  textElement = new TiXmlText("");
 	valueElement->LinkEndChild(textElement);
       }
+
+      string str = Manager::Get()->GetValueHelp(id);
+      if (str.length() > 0) {
+	TiXmlElement* helpElement = new TiXmlElement("help");
+	TiXmlText *textElement = new TiXmlText(str.c_str());
+	helpElement->LinkEndChild(textElement);
+	valueElement->LinkEndChild(helpElement);
+      }
       genreElement->LinkEndChild(valueElement);
     }
   }
@@ -435,6 +443,9 @@ int web_config_post (void *cls, enum MHD_ValueKind kind, const char *key, const 
   } else if (strcmp(cp->conn_url, "/valuepost.html") == 0) {
     cp->conn_arg1 = (void *)strdup(key);
     cp->conn_arg2 = (void *)strdup(data);
+  } else if (strcmp(cp->conn_url, "/buttonpost.html") == 0) {
+    cp->conn_arg1 = (void *)strdup(key);
+    cp->conn_arg2 = (void *)strdup(data);
   } else if (strcmp(cp->conn_url, "/admpost.html") == 0) {
     if (strcmp(key, "fun") == 0)
       cp->conn_arg1 = (void *)strdup(data);
@@ -539,22 +550,22 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	*up_data_size = 0;
 
 	if (strcmp((char *)cp->conn_arg1, "open") == 0) { /* start connection */
-	  if (devname != NULL) {
-	    free(devname);
-	    devname = NULL;
-	  }
-	  if ((char *)cp->conn_arg3 != NULL && strcmp((char *)cp->conn_arg3, "true") == 0) {
-	    Manager::Get()->AddDriver("HID Controller", Driver::ControllerInterface_Hid );
-	    usb = true;
+	  if (devname != NULL || usb) {
+	    setNodesChanged(true);
 	  } else {
-	    devname = (char *)malloc(strlen((char *)cp->conn_arg2) + 1);
-	    if (devname == NULL) {
-	      fprintf(stderr, "Out of memory open devname\n");
-	      exit(1);
+	    if ((char *)cp->conn_arg3 != NULL && strcmp((char *)cp->conn_arg3, "true") == 0) {
+	      Manager::Get()->AddDriver("HID Controller", Driver::ControllerInterface_Hid );
+	      usb = true;
+	    } else {
+	      devname = (char *)malloc(strlen((char *)cp->conn_arg2) + 1);
+	      if (devname == NULL) {
+		fprintf(stderr, "Out of memory open devname\n");
+		exit(1);
+	      }
+	      usb = false;
+	      strcpy(devname, (char *)cp->conn_arg2);
+	      Manager::Get()->AddDriver(devname);
 	    }
-	    usb = false;
-	    strcpy(devname, (char *)cp->conn_arg2);
-	    Manager::Get()->AddDriver(devname);
 	  }
 	} else if (strcmp((char *)cp->conn_arg1, "close") == 0) { /* terminate */
 	  if (devname != NULL || usb)
@@ -600,6 +611,24 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	  string arg = (char *)cp->conn_arg2;
 	  if (!Manager::Get()->SetValue(val->getId(), arg))
 	    fprintf(stderr, "SetValue string failed");
+	}
+	return MHD_YES;
+      } else
+	ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
+    } else if (strcmp(url, "/buttonpost.html") == 0) {
+      if (*up_data_size != 0) {
+	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
+	*up_data_size = 0;
+	MyValue *val = MyNode::lookup(string((char *)cp->conn_arg1));
+	if (val != NULL) {
+	  string arg = (char *)cp->conn_arg2;
+	  if ((char *)cp->conn_arg2 != NULL && strcmp((char *)cp->conn_arg2, "true") == 0) {
+	    if (!Manager::Get()->PressButton(val->getId()))
+	      fprintf(stderr, "PressButton failed");
+	  } else {
+	    if (!Manager::Get()->ReleaseButton(val->getId()))
+	      fprintf(stderr, "ReleaseButton failed");
+	  }
 	}
 	return MHD_YES;
       } else

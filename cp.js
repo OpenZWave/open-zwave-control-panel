@@ -14,6 +14,19 @@ var astate = false;
 var needsave=0;
 var nodecount;
 var nodeid;
+var tt_top=3;
+var tt_left=3;
+var tt_maxw=300;
+var tt_speed=10;
+var tt_timer=20;
+var tt_endalpha=95;
+var tt_alpha=0;
+var tt_h=0;
+var tt=document.createElement('div');
+var t=document.createElement('div');
+var c=document.createElement('div');
+var b=document.createElement('div');
+var ie=document.all ? true : false;
 if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
   pollhttp=new XMLHttpRequest();
 } else {
@@ -175,6 +188,17 @@ function BED()
   var off = (document.DevPost.devname.value.length == 0) && !document.DevPost.usbb.checked;
   var info;
 
+  tt.setAttribute('id','tt');
+  t.setAttribute('id','tttop');
+  c.setAttribute('id','ttcont');
+  b.setAttribute('id','ttbot');
+  tt.appendChild(t);
+  tt.appendChild(c);
+  tt.appendChild(b);
+  document.body.appendChild(tt);
+  tt.style.opacity=0;
+  tt.style.filter='alpha(opacity=0)';
+  tt.style.display='none';
   for (var i = 0; i < forms.length; i++) {
     if (forms[i].name == '')
       continue;
@@ -220,6 +244,55 @@ function BED()
     clearTimeout(pollwait);
   }
   curnode=null;
+}
+function ShowToolTip(help,width)
+{
+  tt.style.display='block';
+  c.innerHTML=help;
+  tt.style.width=width?width+'px':'auto';
+  if (!width && ie) {
+    t.style.display='none';
+    b.style.display='none';
+    tt.style.width=tt.offsetWidth;
+    t.style.display='block';
+    b.style.display='block';
+  }
+  if (tt.offsetWidth > tt_maxw) {
+      tt.style.width=tt_maxw+'px';
+  }
+  tt_h = parseInt(tt.offsetHeight) + tt_top;
+  clearInterval(tt.timer);
+  tt.timer=setInterval(function(){FadeToolTip(1);},tt_timer)
+}
+function PosToolTip(e)
+{
+  tt.style.top = ((ie ? event.clientY + document.documentElement.scrollTop : e.pageY)-tt_h)+'px';
+  tt.style.left = ((ie ? event.clientX + document.documentElement.scrollLeft : e.pageX)+tt_left)+'px';
+}
+function FadeToolTip(d)
+{
+  var a = tt_alpha;
+  if ((a != tt_endalpha && d == 1) || (a != 0 && d == -1)) {
+    var i = tt_speed;
+    if (tt_endalpha - a < tt_speed && d == 1) {
+      i = tt_endalpha - a;
+    } else if (tt_alpha < tt_speed && d == -1) {
+      i = a;
+    }
+    tt_alpha = a + (i * d);
+    tt.style.opacity = tt_alpha * .01;
+    tt.style.filter = 'alpha(opacity='+tt_alpha+')';
+  } else {
+    clearInterval(tt.timer);
+    if (d == -1) {
+      tt.style.display='none';
+    }
+  }
+}
+function HideToolTip()
+{
+  clearInterval(tt.timer);
+  tt.timer = setInterval(function(){FadeToolTip(-1);},tt_timer);
 }
 function DoConfig(id)
 {
@@ -268,6 +341,31 @@ function DoValue(id)
       posthttp=new ActiveXObject("Microsoft.XMLHTTP");
     }
     posthttp.open('POST','valuepost.html',false);
+    posthttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    posthttp.setRequestHeader("Content-length", params.length);
+    posthttp.setRequestHeader("Connection", "close");
+    posthttp.send(params);
+  }
+  return false;
+}
+function DoButton(id,pushed)
+{
+  if (curnode != null) {
+    var posthttp;
+    var params;
+    var arg=document.getElementById(id).value;
+
+    if (pushed)
+      arg = 'true';
+    else
+      arg = 'false';
+    params=id+'='+arg;
+    if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
+      posthttp=new XMLHttpRequest();
+    } else {
+      posthttp=new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    posthttp.open('POST','buttonpost.html',false);
     posthttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
     posthttp.setRequestHeader("Content-length", params.length);
     posthttp.setRequestHeader("Connection", "close");
@@ -551,7 +649,12 @@ function DoSavePost()
 
   return false;
 }
-function return2br(dataStr) {
+function quotestring(s)
+{
+  return s.replace(/\'/g, "");
+}
+function return2br(dataStr)
+{
   return dataStr.replace(/(\r\n|[\r\n])/g, "<br />");
 }
 function boxsize(field)
@@ -560,11 +663,16 @@ function boxsize(field)
     return 8;
   return field.length+2;
 }
-function CreateOnOff(label,value,units,id,ro)
+function CreateOnOff(label,value,units,id,ro,help)
 {
-  var data='<tr><td style="float: right;"><label><span class="legend">'+label+':&nbsp;</span></label></td><td><select id="'+id+'" onchange="return DoValue(\''+id+'\');"'
+  var data='<tr><td style="float: right;"';
+  if (help)
+      data=data+' onmouseover="ShowToolTip(\''+quotestring(help)+'\',0);" onmouseout="HideToolTip();"';
+  data=data+'><label><span class="legend">'+label+':&nbsp;</span></label></td><td><select id="'+id+'" onchange="return DoValue(\''+id+'\');"'
   if (ro)
     data=data+' disabled="true"';
+  if (help)
+      data=data+' onmouseover="ShowToolTip(\''+quotestring(help)+'\',0);" onmouseout="HideToolTip();"';
   data=data+'>';
   if (value == 'True')
     data=data+'<option value="off">Off</option><option value="on" selected="true">On</option>';
@@ -573,23 +681,35 @@ function CreateOnOff(label,value,units,id,ro)
   data=data+'</select></td><td><span class="legend">'+units+'</span></td></tr>';
   return data;
 }
-function CreateTextBox(label,value,units,id,ro)
+function CreateTextBox(label,value,units,id,ro,help)
 {
-  var data = '<tr><td style="float: right;"><label><span class="legend">'+label+':&nbsp;</span></label></td><td><input type="text" class="legend" size="'+boxsize(value)+'" id="'+id+'" value="'+value+'"';
+  var data = '<tr><td style="float: right;"';
+  if (help)
+      data=data+' onmouseover="ShowToolTip(\''+quotestring(help)+'\',0);" onmouseout="HideToolTip();"';
+  value=value.replace(/(\n\s*$)/, "");
+  data=data+'><label><span class="legend">'+label+':&nbsp;</span></label></td><td><input type="text" class="legend" size="'+boxsize(value)+'" id="'+id+'" value="'+value+'"';
+  if (help)
+      data=data+' onmouseover="ShowToolTip(\''+quotestring(help)+'\',0);" onmouseout="HideToolTip();"';
   if (ro)
     data=data+' disabled="true">';
   else
     data=data+'>';
   data=data+'<span class="legend">'+units+'</span>';
   if (!ro)
-    data=data+'<button type="submit" onclick="return DoValue(\''+id+'\');">Submit</button></td></tr>';
+    data=data+'<button type="submit" onclick="return DoValue(\''+id+'\');">Submit</button>';
+  data=data+'</td></tr>';
   return data;
 }
-function CreateList(label,value,units,id,options,ro)
+function CreateList(label,value,units,id,options,ro,help)
 {
   var cnt=options.length;
   var i;
-  var data='<tr><td style="float: right;"><label><span class="legend">'+label+':&nbsp;</span></label></td><td><select id="'+id+'" onchange="return DoValue(\''+id+'\');"';
+  var data='<tr><td style="float: right;"';
+  if (help)
+      data=data+' onmouseover="ShowToolTip(\''+quotestring(help)+'\',0);" onmouseout="HideToolTip();"';
+  data=data+'><label><span class="legend">'+label+':&nbsp;</span></label></td><td><select id="'+id+'" onchange="return DoValue(\''+id+'\');"';
+  if (help)
+      data=data+' onmouseover="ShowToolTip(\''+quotestring(help)+'\',0);" onmouseout="HideToolTip();"';
   if (ro)
     data=data+' disabled="true">';
   else
@@ -604,11 +724,22 @@ function CreateList(label,value,units,id,options,ro)
   data=data+'</select><span class="legend">'+units+'</span></td></tr>';
   return data;
 }
-function CreateLabel(label,value,units,id)
+function CreateLabel(label,value,units,id,help)
 {
     return '<tr><td style="float: right;"><label><span class="legend">'+label+':&nbsp;</span></label></td><td><input type="text" class="legend" disabled="true" size="'+boxsize(value)+'" id="'+id+'" value="'+value+'"><span class="legend">'+units+'</span></td></tr>';
 }
-function CreateDivs(elem,genre,divto,ind, node)
+function CreateButton(label,value,units,id,ro,help)
+{
+  var data='<tr><td style="float: right;"';
+  if (help)
+      data=data+' onmouseover="ShowToolTip(\''+quotestring(help)+'\',0);" onmouseout="HideToolTip();"';
+  data=data+'><label><span class="legend">'+label+':&nbsp;</span></label></td><td><button type="submit" id="'+id+'" onclick="return false;" onmousedown="return DoButton(\''+id+'\',true);" onmouseup="return DoButton(\''+id+'\',false);"'
+  if (ro)
+    data=data+' disabled="true"';
+  data=data+'>Submit</button></td><td><span class="legend">'+units+'</span></td></tr>';
+  return data;
+}
+function CreateDivs(elem,genre,divto,ind,node)
 {
   var where=elem[ind].getElementsByTagName(genre);
 
@@ -623,24 +754,30 @@ function CreateDivs(elem,genre,divto,ind, node)
       var cls=where[0].childNodes[i].getAttribute('class');
       var tag=where[0].childNodes[i].tagName;
       var id=node+'-'+cls+'-'+genre+'-'+tag+'-'+where[0].childNodes[i].getAttribute('instance')+'-'+where[0].childNodes[i].getAttribute('index');
+      var help=where[0].childNodes[i].getElementsByTagName('help');
+      if (help.length > 0)
+	help=help[0].firstChild.nodeValue;
+      else
+	help='';
       if (tag == 'bool') {
-	  divto[ind]=divto[ind]+CreateOnOff(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
+	  divto[ind]=divto[ind]+CreateOnOff(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro,help);
       } else if (tag == 'byte') {
         if (lastclass == 'BASIC' && cls == 'SWITCH MULTILEVEL')
           divto[ind]='';
         lastclass=cls;
-        divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
+        divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro,help);
       } else if (tag == 'int') {
-	  divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
+	  divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro,help);
       } else if (tag == 'short') {
-	  divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
+	  divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro,help);
       } else if (tag == 'decimal') {
-	  divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro);
+	  divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro,help);
       } else if (tag == 'list') {
-	  divto[ind]=divto[ind]+CreateList(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].getAttribute('current'),where[0].childNodes[i].getAttribute('units'),id,where[0].childNodes[i].getElementsByTagName('item'),ro);
+	  divto[ind]=divto[ind]+CreateList(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].getAttribute('current'),where[0].childNodes[i].getAttribute('units'),id,where[0].childNodes[i].getElementsByTagName('item'),ro,help);
       } else if (tag == 'string') {
-	  divto[ind]=divto[ind]+CreateLabel(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id);
-      } else {
+	  divto[ind]=divto[ind]+CreateLabel(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,help);
+      } else if (tag == 'button') {
+	  divto[ind]=divto[ind]+CreateButton(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,help);
       }
     }
   }

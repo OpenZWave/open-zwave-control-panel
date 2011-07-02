@@ -22,13 +22,17 @@
       .normal {background-color: #FFFFFF}
       .click {background-color: #FF8888}
       .hide {display:none}
+      #tt {position:absolute; display:block}
+      #tttop {display:block; height:5px; margin-left:5px; overflow:hidden}
+      #ttcont {display:block; padding:2px 12px 3px 7px; margin-left:5px; background:#666; color:#FFF}
+      #ttbot {display:block; height:5px; margin-left:5px; overflow:hidden}
     </style>
   <link rel="icon" href="favicon.png" type="image/x-icon">
   <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
   <script type="text/javascript" src="cp.js">
     </script>
 </head>
-<body onload="return BED();">
+<body onload="return BED();" onmousemove="PosToolTip(event);">
 <div id="title" style="text-align: center; width: 100%;"> <big> <big>
 <span style="font-family: Arial Bold;">OpenZWave Control Panel</span> </big>
 </big>
