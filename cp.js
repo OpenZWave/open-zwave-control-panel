@@ -748,6 +748,8 @@ function CreateDivs(elem,genre,divto,ind,node)
     var i;
     var lastclass='';
     for (i = 0; i < where[0].childNodes.length; i++) {
+      if (where[0].childNodes[i].firstChild == null)
+	continue;
       if (where[0].childNodes[i].nodeType != 1)
 	continue;
       var ro=where[0].childNodes[i].getAttribute('readonly')=='true';
