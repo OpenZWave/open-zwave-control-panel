@@ -523,6 +523,19 @@ void OnNotification (Notification const* _notification, void* _context)
       cmode = "Slave";
     pthread_mutex_unlock(&glock);
     break;
+  case Notification::Type_DriverFailed:
+    Log::Write("Notification: Driver Failed, homeId %08x", _notification->GetHomeId());
+    pthread_mutex_lock(&glock);
+    done = false;
+    needsave = false;
+    homeId = 0;
+    cmode = "";
+    pthread_mutex_unlock(&glock);
+    pthread_mutex_lock(&nlock);
+    for (int i = 1; i <= MAX_NODES; i++)
+      MyNode::remove(i);
+    pthread_mutex_unlock(&nlock);
+    break;
   case Notification::Type_DriverReset:
     Log::Write("Notification: Driver Reset, homeId %08x", _notification->GetHomeId());
     pthread_mutex_lock(&glock);
@@ -548,7 +561,7 @@ void OnNotification (Notification const* _notification, void* _context)
     Log::Write("Notification: Node %d Queries Complete", _notification->GetNodeId());
     break;
   case Notification::Type_EssentialNodeQueriesComplete:
-    Log::Write("Notification: Essential Node %d Queries", _notification->GetNodeId());
+    Log::Write("Notification: Essential Node %d Queries Complete", _notification->GetNodeId());
     break;
   case Notification::Type_AwakeNodesQueried:
     Log::Write("Notification: Awake Nodes Queried");
