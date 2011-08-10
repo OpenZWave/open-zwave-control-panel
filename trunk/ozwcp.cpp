@@ -547,6 +547,9 @@ void OnNotification (Notification const* _notification, void* _context)
   case Notification::Type_NodeQueriesComplete:
     Log::Write("Notification: Node %d Queries Complete", _notification->GetNodeId());
     break;
+  case Notification::Type_EssentialNodeQueriesComplete:
+    Log::Write("Notification: Essential Node %d Queries", _notification->GetNodeId());
+    break;
   case Notification::Type_AwakeNodesQueried:
     Log::Write("Notification: Awake Nodes Queried");
     break;
