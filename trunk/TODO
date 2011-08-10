@@ -3,5 +3,5 @@ opwcp to do list: (3/12/2011)
 Update Makefile to automatically compile on Mac OS X
 Support various flavors of Internet Explorer
 Figure out packaging/distribution mechanism
-Finish HID support when OpenZWave support is complete
+Add routing table display
 Finish testing all controller functions
