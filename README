@@ -1,4 +1,4 @@
-OpenZWave Control Panel v0.1a 3/12/2011
+OpenZWave Control Panel v0.2a 8/8/2011
 
 Welcome to a very alpha release of the OpenZWave Control Panel.
 
@@ -64,3 +64,8 @@ envionment. Please report bugs to the OpenZWave google groups mailing list:
 http://groups.google.com/group/openzwave.
 
 See the file TODO for a list of things on the to do list.
+
+NOTE
+
+The html/javascript tooltip support came from:
+http://sixrevisions.com/tutorials/javascript_tutorial/create_lightweight_javascript_tooltip/
