@@ -42,8 +42,6 @@ class Webserver {
   Webserver(int const);
   ~Webserver();
   bool isReady() { return ready; }
-  bool getNodesChanged() { return nodeschanged; }
-  void setNodesChanged(bool ch) { nodeschanged = ch; }
   bool getAdminState() { return adminstate; }
   void setAdminState(bool st) { adminstate = st; }
   string getAdminFunction() { return adminfun; }
@@ -58,16 +56,16 @@ private:
   static void FreeEP(void *cls, struct MHD_Connection *conn, void **ptr, enum MHD_RequestTerminationCode code);
   void Free(struct MHD_Connection *conn, void **ptr, enum MHD_RequestTerminationCode code);
   void web_get_groups(int i, TiXmlElement *ep);
-  void web_get_genre(ValueID::ValueGenre vg, int i, TiXmlElement *ep);
+  void web_get_values(int i, TiXmlElement *ep);
   int SendPollResponse(struct MHD_Connection *conn);
+  char *SendSceneResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
 
-  bool usb;
-  char *devname;
+  static bool usb;
+  static char *devname;
+  static unsigned short port;
+  static bool ready;
   coltype_t sortcol;
-  unsigned short port;
-  bool ready;
   unsigned long logbytes;
-  bool nodeschanged;
   bool adminstate;
   string adminmsg;
   string adminfun;

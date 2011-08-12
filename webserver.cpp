@@ -74,8 +74,14 @@ typedef struct _conninfo {
   void *conn_arg2;
   void *conn_arg3;
   void *conn_arg4;
+  void *conn_res;
   struct MHD_PostProcessor *conn_pp;
 } conninfo_t;
+
+bool Webserver::usb = false;
+char *Webserver::devname = NULL;
+unsigned short Webserver::port = 0;
+bool Webserver::ready = false;
 
 extern pthread_mutex_t nlock;
 extern MyNode *nodes[];
@@ -83,7 +89,7 @@ extern pthread_mutex_t glock;
 extern bool done;
 extern bool needsave;
 extern uint32 homeId;
-extern uint8 nodeId;
+extern uint8 nodeId;		// controller node id
 extern char *cmode;
 extern int debug;
 
@@ -133,7 +139,7 @@ void web_close_file (void *cls)
  * web_send_file
  * Read files and send them out
  */
-int web_send_file (struct MHD_Connection *conn, const char *filename, const int code)
+int web_send_file (struct MHD_Connection *conn, const char *filename, const int code, const bool unl)
 {
   struct stat buf;
   FILE *fp;
@@ -172,6 +178,8 @@ int web_send_file (struct MHD_Connection *conn, const char *filename, const int 
     MHD_add_response_header(response, "Content-type", ct);
   ret = MHD_queue_response(conn, code, response);
   MHD_destroy_response(response);
+  if (unl)
+    unlink(filename);
   return ret;
 }
 
@@ -212,66 +220,174 @@ void Webserver::web_get_groups (int n, TiXmlElement *ep)
  * web_get_genre
  * Retreive class values based on genres
  */
-void Webserver::web_get_genre (ValueID::ValueGenre vg, int i, TiXmlElement *ep)
+void Webserver::web_get_values (int i, TiXmlElement *ep)
 {
-  int32 idcnt = nodes[i]->getValueCount(vg);
+  int32 idcnt = nodes[i]->getValueCount();
 
-  if (idcnt > 0) {
-    char *vgstr = valueGenreStr(vg);
-    int32 j;
-
-    TiXmlElement* genreElement = new TiXmlElement(vgstr);
-    ep->LinkEndChild(genreElement);
-    genreElement->SetAttribute("count", idcnt);
-    for (j = 0; j < idcnt; j++) {
-      MyValue *vals = nodes[i]->getValue(vg, j);
-      ValueID id = vals->getId();
-      TiXmlElement* valueElement = new TiXmlElement(valueTypeStr(id.GetType()));
-      valueElement->SetAttribute("class", cclassStr(id.GetCommandClassId()));
-      valueElement->SetAttribute("instance", id.GetInstance());
-      valueElement->SetAttribute("index", id.GetIndex());
-      valueElement->SetAttribute("label", Manager::Get()->GetValueLabel(id).c_str());
-      valueElement->SetAttribute("units", Manager::Get()->GetValueUnits(id).c_str());
-      valueElement->SetAttribute("readonly", Manager::Get()->IsValueReadOnly(id) ? "true" : "false");
-      if (vg != ValueID::ValueGenre_Config)
-	valueElement->SetAttribute("polled", Manager::Get()->isPolled(id) ? "true" : "false");
-      if (id.GetType() == ValueID::ValueType_List) {
-	vector<string> strs;
-	Manager::Get()->GetValueListItems(id, &strs);
-	valueElement->SetAttribute("count", strs.size());
-	string str;
-	Manager::Get()->GetValueListSelection(id, &str);
-	valueElement->SetAttribute("current", str.c_str());
-	for (vector<string>::iterator it = strs.begin(); it != strs.end(); it++) {
-	  TiXmlElement* itemElement = new TiXmlElement("item");
-	  valueElement->LinkEndChild(itemElement);
-	  TiXmlText *textElement = new TiXmlText((*it).c_str());
-	  itemElement->LinkEndChild(textElement);
-	}
-      } else {
-	string str;
-	TiXmlText *textElement;
-	if (Manager::Get()->GetValueAsString(id, &str))
-	  textElement = new TiXmlText(str.c_str());
-	else
-	  textElement = new TiXmlText("");
-	valueElement->LinkEndChild(textElement);
+  for (int j = 0; j < idcnt; j++) {
+    TiXmlElement* valueElement = new TiXmlElement("value");
+    MyValue *vals = nodes[i]->getValue(j);
+    ValueID id = vals->getId();
+    valueElement->SetAttribute("genre", valueGenreStr(id.GetGenre()));
+    valueElement->SetAttribute("type", valueTypeStr(id.GetType()));
+    valueElement->SetAttribute("class", cclassStr(id.GetCommandClassId()));
+    valueElement->SetAttribute("instance", id.GetInstance());
+    valueElement->SetAttribute("index", id.GetIndex());
+    valueElement->SetAttribute("label", Manager::Get()->GetValueLabel(id).c_str());
+    valueElement->SetAttribute("units", Manager::Get()->GetValueUnits(id).c_str());
+    valueElement->SetAttribute("readonly", Manager::Get()->IsValueReadOnly(id) ? "true" : "false");
+    if (id.GetGenre() != ValueID::ValueGenre_Config)
+      valueElement->SetAttribute("polled", Manager::Get()->isPolled(id) ? "true" : "false");
+    if (id.GetType() == ValueID::ValueType_List) {
+      vector<string> strs;
+      Manager::Get()->GetValueListItems(id, &strs);
+      valueElement->SetAttribute("count", strs.size());
+      string str;
+      Manager::Get()->GetValueListSelection(id, &str);
+      valueElement->SetAttribute("current", str.c_str());
+      for (vector<string>::iterator it = strs.begin(); it != strs.end(); it++) {
+	TiXmlElement* itemElement = new TiXmlElement("item");
+	valueElement->LinkEndChild(itemElement);
+	TiXmlText *textElement = new TiXmlText((*it).c_str());
+	itemElement->LinkEndChild(textElement);
       }
-
-      string str = Manager::Get()->GetValueHelp(id);
-      if (str.length() > 0) {
-	TiXmlElement* helpElement = new TiXmlElement("help");
-	TiXmlText *textElement = new TiXmlText(str.c_str());
-	helpElement->LinkEndChild(textElement);
-	valueElement->LinkEndChild(helpElement);
-      }
-      genreElement->LinkEndChild(valueElement);
+    } else {
+      string str;
+      TiXmlText *textElement;
+      if (Manager::Get()->GetValueAsString(id, &str))
+	textElement = new TiXmlText(str.c_str());
+      else
+	textElement = new TiXmlText("");
+      valueElement->LinkEndChild(textElement);
     }
+
+    string str = Manager::Get()->GetValueHelp(id);
+    if (str.length() > 0) {
+      TiXmlElement* helpElement = new TiXmlElement("help");
+      TiXmlText *textElement = new TiXmlText(str.c_str());
+      helpElement->LinkEndChild(textElement);
+      valueElement->LinkEndChild(helpElement);
+    }
+    ep->LinkEndChild(valueElement);
   }
 }
 
 /*
- * web_send_poll
+ * SendSceneResponse
+ * Process scene request and return appropiate scene data
+ */
+
+char *Webserver::SendSceneResponse (struct MHD_Connection *conn, const char *fun,
+				    const char *arg1, const char *arg2, const char *arg3)
+{
+  TiXmlDocument doc;
+  char str[16];
+  string s;
+  static char fntemp[32];
+  char *fn;
+  int cnt;
+  int i;
+  uint8 sid;
+  TiXmlDeclaration* decl = new TiXmlDeclaration( "1.0", "utf-8", "" );
+  doc.LinkEndChild(decl);
+  TiXmlElement* scenesElement = new TiXmlElement("scenes");
+  doc.LinkEndChild(scenesElement);
+
+  if (strcmp(fun, "create") == 0) {
+    sid = Manager::Get()->CreateScene();
+    if (sid == 0) {
+      fprintf(stderr, "sid = 0, out of scene ids\n");
+      return EMPTY;
+    }
+  }
+  if (strcmp(fun, "values") == 0 ||
+      strcmp(fun, "label") == 0 ||
+      strcmp(fun, "delete") == 0 ||
+      strcmp(fun, "execute") == 0 ||
+      strcmp(fun, "addvalue") == 0 ||
+      strcmp(fun, "update") == 0 ||
+      strcmp(fun, "remove") == 0) {
+    sid = atoi((char *)arg1);
+    if (strcmp(fun, "delete") == 0)
+      Manager::Get()->RemoveScene(sid);
+    if (strcmp(fun, "execute") == 0)
+      Manager::Get()->ActivateScene(sid);
+    if (strcmp(fun, "label") == 0)
+      Manager::Get()->SetSceneLabel(sid, string(arg2));
+    if (strcmp(fun, "addvalue") == 0 ||
+	strcmp(fun, "update") == 0 ||
+	strcmp(fun, "remove") == 0) {
+      MyValue *val = MyNode::lookup(string(arg2));
+      if (val != NULL) {
+	if (strcmp(fun, "addvalue") == 0) {
+	  if (!Manager::Get()->AddSceneValue(sid, val->getId(), string(arg3)))
+	    fprintf(stderr, "AddSceneValue failure\n");
+	} else if (strcmp(fun, "update") == 0) {
+	  if (!Manager::Get()->SetSceneValue(sid, val->getId(), string(arg3)))
+	    fprintf(stderr, "SetSceneValue failure\n");
+	} else if (strcmp(fun, "remove") == 0) {
+	  if (!Manager::Get()->RemoveSceneValue(sid, val->getId()))
+	    fprintf(stderr, "RemoveSceneValue failure\n");
+	}
+      }
+    }
+  }
+  if (strcmp(fun, "load") == 0 ||
+      strcmp(fun, "create") == 0 ||
+      strcmp(fun, "label") == 0 ||
+      strcmp(fun, "delete") == 0) { // send all sceneids
+    uint8 *sptr;
+    cnt = Manager::Get()->GetAllScenes(&sptr);
+    scenesElement->SetAttribute("sceneid", cnt);
+    for (i = 0; i < cnt; i++) {
+      TiXmlElement* sceneElement = new TiXmlElement("sceneid");
+      snprintf(str, sizeof(str), "%d", sptr[i]);
+      sceneElement->SetAttribute("id", str);
+      s = Manager::Get()->GetSceneLabel(sptr[i]);
+      sceneElement->SetAttribute("label", s.c_str());
+      scenesElement->LinkEndChild(sceneElement);
+    }
+    delete [] sptr;
+  }
+  if (strcmp(fun, "values") == 0 ||
+      strcmp(fun, "addvalue") == 0 ||
+      strcmp(fun, "remove") == 0 ||
+      strcmp(fun, "update") == 0) {
+    vector<ValueID> vids;
+    cnt = Manager::Get()->SceneGetValues(sid, &vids);
+    scenesElement->SetAttribute("scenevalue", cnt);
+    for (vector<ValueID>::iterator it = vids.begin(); it != vids.end(); it++) {
+      TiXmlElement* valueElement = new TiXmlElement("scenevalue");
+      valueElement->SetAttribute("id", sid);
+      snprintf(str, sizeof(str), "0x%x", (*it).GetHomeId());
+      valueElement->SetAttribute("home", str);
+      valueElement->SetAttribute("node", (*it).GetNodeId());
+      valueElement->SetAttribute("class", cclassStr((*it).GetCommandClassId()));
+      valueElement->SetAttribute("instance", (*it).GetInstance());
+      valueElement->SetAttribute("index", (*it).GetIndex());
+      valueElement->SetAttribute("type", valueTypeStr((*it).GetType()));
+      valueElement->SetAttribute("genre", valueGenreStr((*it).GetGenre()));
+      valueElement->SetAttribute("label", Manager::Get()->GetValueLabel(*it).c_str());
+      valueElement->SetAttribute("units", Manager::Get()->GetValueUnits(*it).c_str());
+      Manager::Get()->SceneGetValueAsString(sid, *it, &s);
+      TiXmlText *textElement = new TiXmlText(s.c_str());
+      valueElement->LinkEndChild(textElement);
+      scenesElement->LinkEndChild(valueElement);
+    }
+  }
+  strncpy(fntemp, "/tmp/ozwcp.scenes.XXXXXX", sizeof(fntemp));
+  fn = mktemp(fntemp);
+  if (fn == NULL)
+    return EMPTY;
+  strncat(fntemp, ".xml", sizeof(fntemp));
+  if (debug)
+    doc.Print(stdout, 0);
+  doc.SaveFile(fn);
+  return fn;
+}
+
+/*
+ * SendPollRespose
  * Process poll request from client and return
  * data as xml.
  */
@@ -338,12 +454,16 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
     adminmsg.clear();
   }
 
+  TiXmlElement* updateElement = new TiXmlElement("update");
+  pollElement->LinkEndChild(updateElement);
+  updateElement->SetAttribute("full", MyNode::getAllChanged() ? "true" : "false");
+
   pthread_mutex_lock(&nlock);
-  if (getNodesChanged()) {
+  if (MyNode::getAnyChanged() || MyNode::getAllChanged()) {
     i = 0;
     j = 1;
-    while (j <= MyNode::getNodeCount()) {
-      if (nodes[i] != NULL) {
+    while (j <= MyNode::getNodeCount() && i < MAX_NODES) {
+      if (nodes[i] != NULL && (MyNode::getAllChanged() || nodes[i]->getChanged())) {
 	TiXmlElement* nodeElement = new TiXmlElement("node");
 	pollElement->LinkEndChild(nodeElement);
 	nodeElement->SetAttribute("id", i);
@@ -357,14 +477,13 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
 	web_get_groups(i, nodeElement);
 	// Don't think the UI needs these
 	//web_get_genre(ValueID::ValueGenre_Basic, i, nodeElement);
-	web_get_genre(ValueID::ValueGenre_User, i, nodeElement);
-	web_get_genre(ValueID::ValueGenre_Config, i, nodeElement);
-	web_get_genre(ValueID::ValueGenre_System, i, nodeElement);
+	web_get_values(i, nodeElement);
+	nodes[i]->setChanged(false);
 	j++;
       }
       i++;
     }
-    setNodesChanged(false);
+    MyNode::setAllChanged(false);
   }
   pthread_mutex_unlock(&nlock);
   strncpy(fntemp, "/tmp/ozwcp.poll.XXXXXX", sizeof(fntemp));
@@ -375,8 +494,7 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
   if (debug)
     doc.Print(stdout, 0);
   doc.SaveFile(fn);
-  ret = web_send_file(conn, fn, MHD_HTTP_OK);
-  unlink(fn);
+  ret = web_send_file(conn, fn, MHD_HTTP_OK, true);
   return ret;
 }
 
@@ -479,6 +597,17 @@ int web_config_post (void *cls, enum MHD_ValueKind kind, const char *key, const 
   } else if (strcmp(cp->conn_url, "/savepost.html") == 0) {
     if (strcmp(key, "fun") == 0)
       cp->conn_arg1 = (void *)strdup(data);
+  } else if (strcmp(cp->conn_url, "/scenepost.html") == 0) {
+    if (strcmp(key, "fun") == 0)
+      cp->conn_arg1 = (void *)strdup(data);
+    else if (strcmp(key, "id") == 0)
+      cp->conn_arg2 = (void *)strdup(data);
+    else if (strcmp(key, "vid") == 0)
+      cp->conn_arg3 = (void *)strdup(data);
+    else if (strcmp(key, "label") == 0)
+      cp->conn_arg3 = (void *)strdup(data);
+    else if (strcmp(key, "value") == 0)
+      cp->conn_arg4 = (void *)strdup(data);
   }
   return MHD_YES;
 }
@@ -503,7 +632,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
   conninfo_t *cp;
 
   if (debug)
-    fprintf(stderr, "%s: \"%s\"\n", method, url);
+    fprintf(stderr, "%x: %s: \"%s\"\n", pthread_self(), method, url);
   if (*ptr == NULL) {	/* do never respond on first call */
     cp = (conninfo_t *)malloc(sizeof(conninfo_t));
     if (cp == NULL)
@@ -513,6 +642,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
     cp->conn_arg2 = NULL;
     cp->conn_arg3 = NULL;
     cp->conn_arg4 = NULL;
+    cp->conn_res = NULL;
     if (strcmp(method, MHD_HTTP_METHOD_POST) == 0) {
       cp->conn_pp = MHD_create_post_processor(conn, 512, web_config_post, (void *)cp);
       if (cp->conn_pp == NULL) {
@@ -532,11 +662,13 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
   if (strcmp(method, MHD_HTTP_METHOD_GET) == 0) {
     if (strcmp(url, "/") == 0 ||
 	strcmp(url, "/index.html") == 0)
-      ret = web_send_file(conn, "cp.html", MHD_HTTP_OK);
+      ret = web_send_file(conn, "cp.html", MHD_HTTP_OK, false);
+    else if (strcmp(url, "/scenes.html") == 0)
+      ret = web_send_file(conn, "scenes.html", MHD_HTTP_OK, false);
     else if (strcmp(url, "/cp.js") == 0)
-      ret = web_send_file(conn, "cp.js", MHD_HTTP_OK);
+      ret = web_send_file(conn, "cp.js", MHD_HTTP_OK, false);
     else if (strcmp(url, "/favicon.png") == 0)
-      ret = web_send_file(conn, "openzwavetinyicon.png", MHD_HTTP_OK);
+      ret = web_send_file(conn, "openzwavetinyicon.png", MHD_HTTP_OK, false);
     else if (strcmp(url, "/poll.xml") == 0 && (devname != NULL || usb))
       ret = SendPollResponse(conn);
     else
@@ -551,7 +683,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 
 	if (strcmp((char *)cp->conn_arg1, "open") == 0) { /* start connection */
 	  if (devname != NULL || usb) {
-	    setNodesChanged(true);
+	    MyNode::setAnyChanged(true);
 	  } else {
 	    if ((char *)cp->conn_arg3 != NULL && strcmp((char *)cp->conn_arg3, "true") == 0) {
 	      Manager::Get()->AddDriver("HID Controller", Driver::ControllerInterface_Hid );
@@ -633,6 +765,15 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	return MHD_YES;
       } else
 	ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
+    } else if (strcmp(url, "/scenepost.html") == 0) {
+      if (*up_data_size != 0) {
+	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
+	*up_data_size = 0;
+
+	cp->conn_res = (void *)SendSceneResponse(conn, (char *)cp->conn_arg1, (char *)cp->conn_arg2, (char *)cp->conn_arg3, (char *)cp->conn_arg4);
+      } else
+	ret = web_send_file(conn, (char *)cp->conn_res, MHD_HTTP_OK, true);
+//	ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
     } else if (strcmp(url, "/admpost.html") == 0) {
       if (*up_data_size != 0) {
 	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
@@ -870,8 +1011,9 @@ void Webserver::Free (struct MHD_Connection *conn, void **ptr, enum MHD_RequestT
  * Start up the web server
  */
 
-Webserver::Webserver (int const wport) : ready(false), logbytes(0), nodeschanged(false), adminstate(false), sortcol(COL_NODE), devname(NULL), usb(false)
+Webserver::Webserver (int const wport) : logbytes(0), adminstate(false), sortcol(COL_NODE)
 {
+  fprintf(stderr, "webserver starting port %d\n", wport);
   port = wport;
   wdata = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION | MHD_USE_DEBUG, port,
 			   NULL, NULL, &Webserver::HandlerEP, this,
@@ -889,6 +1031,9 @@ Webserver::Webserver (int const wport) : ready(false), logbytes(0), nodeschanged
 
 Webserver::~Webserver ()
 {
-  if (wdata != NULL)
+  if (wdata != NULL) {
     MHD_stop_daemon((MHD_Daemon *)wdata);
+    wdata = NULL;
+    ready = false;
+  }
 }
