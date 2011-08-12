@@ -1138,13 +1138,9 @@ function CreateButton(i,j,vid)
 function CreateDivs(genre,divto,ind)
 {
   divto[ind]='<table border="0" cellpadding="1" cellspacing="0"><tbody>';
-  if (where.length > 0) {
-    var i;
-    var lastclass='';
-    for (i = 0; i < where[0].childNodes.length; i++) {
-      if (where[0].childNodes[i].firstChild == null)
-	continue;
-      if (where[0].childNodes[i].nodeType != 1)
+  if (nodes[ind].values != null)
+    for (var i = 0; i < nodes[ind].values.length; i++) {
+      if (nodes[ind].values[i].genre != genre)
 	continue;
       var lastclass='';
       var vid=nodes[ind].id+'-'+nodes[ind].values[i].cclass+'-'+genre+'-'+nodes[ind].values[i].type+'-'+nodes[ind].values[i].instance+'-'+nodes[ind].values[i].index;
