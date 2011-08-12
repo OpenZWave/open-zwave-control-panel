@@ -84,11 +84,17 @@ public:
   void addValue(ValueID id);
   void removeValue(ValueID id);
   void saveValue(ValueID id);
-  int32 getValueCount(ValueID::ValueGenre vg);
+  int32 getValueCount();
   static MyValue *lookup(string id);
-  MyValue *getValue(ValueID::ValueGenre vg, int n);
+  MyValue *getValue(int n);
   uint32 getTime() { return mtime; }
   void setTime(uint32 t) { mtime = t; }
+  static bool getAnyChanged() { return nodechanged; }
+  static void setAnyChanged(bool ch) { nodechanged = ch; }
+  static bool getAllChanged() { return allchanged; }
+  static void setAllChanged(bool ch) { allchanged = ch; }
+  bool getChanged() { return changed; }
+  void setChanged(bool ch) { changed = ch; nodechanged = ch; }
   void addGroup(uint8 node, uint8 g, uint8 n, uint8 *v);
   MyGroup *getGroup(uint8 i);
   void updateGroup(uint8 node, uint8 grp, char *glist);
@@ -100,6 +106,9 @@ private:
   static int32 nodecount;
   int32 type;
   uint32 mtime;
+  bool changed;
+  static bool nodechanged;
+  static bool allchanged;
   vector <MyGroup*> groups;
-  list<MyValue*> values;
+  vector<MyValue*> values;
 };

@@ -13,7 +13,7 @@ AR     := ar rc
 RANLIB := ranlib
 
 DEBUG_CFLAGS    := -Wall -Wno-format -g -DDEBUG
-RELEASE_CFLAGS  := -Wall -Wno-unknown-pragmas -Wno-format -O3
+RELEASE_CFLAGS  := -Wall -Wno-unknown-pragmas -Wno-format -O3 -DNDEBUG
 
 DEBUG_LDFLAGS	:= -g
 
@@ -32,8 +32,8 @@ GNUTLS := #-lgnutls
 # Remove comment below for gnutls support
 GNUTLS := #-lgnutls
 # for Mac OS X comment out above 2 lines and uncomment next 2 lines
-#LIBZWAVE := $(wildcard ../open-zwave/cpp/lib/mac/*.a)
-#LIBUSB := -framework IOKit -framework CoreFoundation
+LIBZWAVE := $(wildcard ../open-zwave/cpp/lib/mac/*.a)
+LIBUSB := -framework IOKit -framework CoreFoundation
 LIBS := $(LIBZWAVE) $(GNUTLS) ../libmicrohttpd/src/daemon/.libs/libmicrohttpd.a -pthread $(LIBUSB)
 
 %.o : %.cpp

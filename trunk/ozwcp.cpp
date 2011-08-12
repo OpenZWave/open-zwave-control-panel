@@ -68,6 +68,8 @@ uint32 homeId = 0;
 uint8 nodeId = 0;
 char *cmode = "";
 int32 debug = false;
+bool MyNode::nodechanged = false;
+bool MyNode::allchanged = false;
 
 /*
  * MyNode::MyNode constructor
@@ -82,6 +84,7 @@ MyNode::MyNode (int32 const ind) : type(0)
   }
   newGroup(ind);
   setTime(time(NULL));
+  setChanged(true);
   nodes[ind] = this;
   nodecount++;
 }
@@ -93,8 +96,8 @@ MyNode::MyNode (int32 const ind) : type(0)
 MyNode::~MyNode ()
 {
   while (!values.empty()) {
-    MyValue *v = values.front();
-    values.pop_front();
+    MyValue *v = values.back();
+    values.pop_back();
     delete v;
   }
   while (!groups.empty()) {
@@ -118,6 +121,7 @@ void MyNode::remove (int32 const ind)
     delete nodes[ind];
     nodes[ind] = NULL;
     nodecount--;
+    setAllChanged(true);
   }
 }
 
@@ -128,9 +132,9 @@ void MyNode::remove (int32 const ind)
 void MyNode::addValue (ValueID id)
 {
   MyValue *v = new MyValue(id);
-
-  setTime(time(NULL));
   values.push_back(v);
+  setTime(time(NULL));
+  setChanged(true);
 }
 
 /*
@@ -139,13 +143,15 @@ void MyNode::addValue (ValueID id)
  */
 void MyNode::removeValue (ValueID id)
 {
-  for (list<MyValue*>::iterator it = values.begin(); it != values.end(); it++) {
+  for (vector<MyValue*>::iterator it = values.begin(); it != values.end(); it++) {
     if ((*it)->id == id) {
       values.erase(it);
       delete *it;
       break;
     }
   }
+  setChanged(true);
+  setTime(time(NULL));
 }
 
 /*
@@ -156,6 +162,7 @@ void MyNode::removeValue (ValueID id)
 void MyNode::saveValue (ValueID id)
 {
   setTime(time(NULL));
+  setChanged(true);
 }
 
 /*
@@ -186,6 +193,8 @@ void MyNode::addGroup (uint8 node, uint8 g, uint8 n, uint8 *v)
     if ((*it)->groupid == g) {
       for (int i = 0; i < n; i++)
 	(*it)->grouplist.push_back(v[i]);
+      setTime(time(NULL));
+      setChanged(true);
       return;
     }
   fprintf(stderr, "addgroup: node %d group %d not found in list\n", node, g);
@@ -260,7 +269,6 @@ void MyNode::updatePoll(char *ilist, char *plist)
   MyValue *v;
   char *p;
   char *np;
-  int i;
 
   p = ilist;
   while (p != NULL && *p) {
@@ -354,39 +362,27 @@ MyValue *MyNode::lookup (string data)
   MyNode *n = nodes[node];
   if (n == NULL)
     return NULL;
-  for (list<MyValue*>::iterator it = n->values.begin(); it != n->values.end(); it++)
+  for (vector<MyValue*>::iterator it = n->values.begin(); it != n->values.end(); it++)
     if ((*it)->id == id)
       return *it;
   return NULL;
 }
 
 /*
- * Returns a count of values of given genre
+ * Returns a count of values
  */
-int32 MyNode::getValueCount (ValueID::ValueGenre vg)
+int32 MyNode::getValueCount ()
 {
-  int32 cnt = 0;
-  for (list<MyValue*>::iterator it = values.begin(); it != values.end(); it++)
-    if ((*it)->id.GetGenre() == vg)
-      cnt++;
-  return cnt;
+  return values.size();
 }
 
 /*
- * Returns an n'th value of the same genre
+ * Returns an n'th value
  */
-MyValue *MyNode::getValue (ValueID::ValueGenre vg, int n)
+MyValue *MyNode::getValue (int n)
 {
-  int32 i = 0;
-
-  for (list<MyValue*>::iterator it = values.begin(); it != values.end(); it++) {
-    if ((*it)->id.GetGenre() == vg) {
-      if (i == n)
-	return (*it);
-      i++;
-    }
-  }
-
+  if (n < values.size())
+    return values[n];
   return NULL;
 }
 
@@ -396,7 +392,6 @@ MyValue *MyNode::getValue (ValueID::ValueGenre vg, int n)
 //-----------------------------------------------------------------------------
 void OnNotification (Notification const* _notification, void* _context)
 {
-  wserver->setNodesChanged(true);
   ValueID id = _notification->GetValueID();
   switch (_notification->GetType()) {
   case Notification::Type_ValueAdded:
@@ -457,6 +452,9 @@ void OnNotification (Notification const* _notification, void* _context)
     pthread_mutex_lock(&nlock);
     new MyNode(_notification->GetNodeId());
     pthread_mutex_unlock(&nlock);
+    pthread_mutex_lock(&glock);
+    needsave = true;
+    pthread_mutex_unlock(&glock);
     break;
   case Notification::Type_NodeRemoved:
     Log::Write("Notification: Node Removed Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
@@ -604,6 +602,9 @@ int32 main(int32 argc, char* argv[])
       fprintf(stderr, "usage: ozwcp [-d] -p <port>\n");
       exit(1);
     }
+
+  for (i = 0; i < MAX_NODES; i++)
+    nodes[i] = NULL;
 
   Options::Create("config/", "", "");
   Options::Get()->Lock();

@@ -1,9 +1,11 @@
 var pollhttp;
+var scenehttp;
 var polltmr=null;
 var pollwait=null;
 var divcur=new Array();
 var divcon=new Array();
 var divinfo=new Array();
+var nodes=new Array();
 var nodename=new Array();
 var nodeloc=new Array();
 var nodegrp=new Array();
@@ -27,12 +29,19 @@ var t=document.createElement('div');
 var c=document.createElement('div');
 var b=document.createElement('div');
 var ie=document.all ? true : false;
+var curnode=null;
+var curscene=null;
+var scenes=new Array();
 if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
   pollhttp=new XMLHttpRequest();
 } else {
   pollhttp=new ActiveXObject("Microsoft.XMLHTTP");
 }
-var curnode=null;
+if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
+  scenehttp=new XMLHttpRequest();
+} else {
+  scenehttp=new ActiveXObject("Microsoft.XMLHTTP");
+}
 function SaveNode(newid)
 {
   var i=newid.substr(4);
@@ -52,6 +61,7 @@ function SaveNode(newid)
   }
   curnode = newid;
   DoNodeHelp();
+  UpdateSceneValues(i);
   document.getElementById(curnode).className='click';
   return true;
 }
@@ -63,109 +73,6 @@ function PollTimeout()
 {
   pollhttp.abort();
   Poll();
-}
-function PollReply()
-{
-  var xml;
-  var elem;
-
-  if (pollhttp.readyState == 4 && pollhttp.status == 200) {
-    clearTimeout(pollwait);
-    xml = pollhttp.responseXML;
-    elem = xml.getElementsByTagName('poll');
-    if (elem[0].getAttribute('homeid') != document.getElementById('homeid').value)
-      document.getElementById('homeid').value = elem[0].getAttribute('homeid');
-    if (elem[0].getAttribute('nodecount') != nodecount) {
-      nodecount = elem[0].getAttribute('nodecount');
-      document.getElementById('nodecount').value = nodecount;
-    }
-    if (elem[0].getAttribute('nodeid') != nodeid) {
-      nodeid = elem[0].getAttribute('nodeid');
-    }
-    if (elem[0].getAttribute('cmode') != document.getElementById('cmode').value)
-      document.getElementById('cmode').value = elem[0].getAttribute('cmode');
-    if (elem[0].getAttribute('save') != needsave) {
-	needsave = elem[0].getAttribute('save');
-	if (needsave == '1') {
-	  document.getElementById('saveinfo').style.display = 'block';
-	} else {
-	  document.getElementById('saveinfo').style.display = 'none';
-	}
-    }
-    elem = xml.getElementsByTagName('admin');
-    if (elem[0].getAttribute('active') == 'true') {
-      if (!astate) {
-	document.AdmPost.admgo.style.display = 'none';
-	document.AdmPost.admcan.style.display = 'inline';    
-	document.AdmPost.adminops.disabled = true;
-	astate = true;
-      }
-    } else if (elem[0].getAttribute('active') == 'false') {
-      if (astate) {
-	document.AdmPost.admgo.style.display = 'inline';
-	document.AdmPost.admcan.style.display = 'none';    
-	document.AdmPost.adminops.disabled = false;
-	astate = false;
-      }
-    }
-    if (elem[0].firstChild != null) {
-      ainfo = document.getElementById('adminfo');
-      ainfo.innerHTML = elem[0].firstChild.nodeValue;
-      ainfo.style.display = 'block';
-    }
-    elem = xml.getElementsByTagName('node');
-    if (elem.length > 0) {
-      var stuff = '';
-      for (var i = 0; i < elem.length; i++) {
-	var dt = new Date(elem[i].getAttribute('time')*1000);
-	var yd = new Date(dt.getDate()-1);
-	var ts;
-	if (dt < yd)
-	  ts = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString();
-	else
-	  ts = dt.toLocaleTimeString();
-	var val = '';
-	if (elem[i].getAttribute('btype') != 'Static Controller') {
-	  var where = elem[i].getElementsByTagName('user');
-	  if (where.length > 0) {
-	    var j;
-	    for (j = 0; j < where[0].childNodes.length; j++) {
-	      if (where[0].childNodes[j].nodeType != 1)
-		continue;
-	      if (where[0].childNodes[j].firstChild != null)
-	        val = where[0].childNodes[j].firstChild.nodeValue;
-	      else
-		val = "N/A";
-	      if (val == 'False')
-		val = 'off';
-	      else if (val == 'True')
-		val = 'on';
-	      break;
-	    }
-	  }
-	}
-	var id = elem[i].getAttribute('id');
-	stuff=stuff+'<tr id="node'+i+'" onmouseover="this.className=\'highlight\';" onmouseout="if (this.id == curnode) this.className=\'click\'; else this.className=\'normal\';" onclick="return SaveNode(this.id);" ondblClick="SaveNode(this.id); return DisplayNode();"><td>'+id+(id == nodeid ? '*' : '')+'</td><td>'+elem[i].getAttribute('btype')+'</td><td>'+elem[i].getAttribute('gtype')+'</td><td>'+elem[i].getAttribute('manufacturer')+' '+elem[i].getAttribute('product')+'</td><td>'+elem[i].getAttribute('name')+'</td><td>'+elem[i].getAttribute('location')+'</td><td>'+val+'</td><td>'+ts+'</td></tr>';
-	CreateDivs(elem, 'user', divcur, i, id);
-	CreateDivs(elem, 'config', divcon, i, id);
-	CreateDivs(elem, 'system', divinfo, i, id);
-	CreateName(elem[i].getAttribute('name'), i);
-	CreateLocation(elem[i].getAttribute('location'), i);
-	CreateGroup(elem, i);
-	CreatePoll(elem, i);
-      }
-      document.getElementById('tbody').innerHTML=stuff;
-      if (curnode != null)
-	SaveNode(curnode);
-    }
-    elem = xml.getElementsByTagName('log');
-    if (elem != null && elem[0].getAttribute('size') > 0) {
-      var ta = document.getElementById('logdata');
-      ta.innerHTML = ta.innerHTML + return2br(elem[0].firstChild.nodeValue);
-      ta.scrollTop = ta.scrollHeight;
-    }
-    polltmr = setTimeout(Poll, 750);
-  }
 }
 function Poll()
 {
@@ -180,6 +87,168 @@ function Poll()
     pollwait = setTimeout(PollTimeout, 3000); //3 seconds
   } catch (e) {
     pollwait = setTimeout(PollTimeout, 3000); //3 seconds
+  }
+}
+function PollReply()
+{
+  var xml;
+  var elem;
+
+  if (pollhttp.readyState == 4 && pollhttp.status == 200) {
+    clearTimeout(pollwait);
+    xml = pollhttp.responseXML;
+    elem = xml.getElementsByTagName('poll');
+    if (elem.length > 0) {
+      var changed=false;
+      if (elem[0].getAttribute('homeid') != document.getElementById('homeid').value)
+	document.getElementById('homeid').value = elem[0].getAttribute('homeid');
+      if (elem[0].getAttribute('nodecount') != nodecount) {
+	nodecount = elem[0].getAttribute('nodecount');
+	document.getElementById('nodecount').value = nodecount;
+      }
+      if (elem[0].getAttribute('nodeid') != nodeid) {
+	nodeid = elem[0].getAttribute('nodeid');
+      }
+      if (elem[0].getAttribute('cmode') != document.getElementById('cmode').value)
+	document.getElementById('cmode').value = elem[0].getAttribute('cmode');
+      if (elem[0].getAttribute('save') != needsave) {
+	needsave = elem[0].getAttribute('save');
+	if (needsave == '1') {
+	  document.getElementById('saveinfo').style.display = 'block';
+	} else {
+          document.getElementById('saveinfo').style.display = 'none';
+	}
+      }
+      elem = xml.getElementsByTagName('admin');
+      if (elem[0].getAttribute('active') == 'true') {
+	if (!astate) {
+	  document.AdmPost.admgo.style.display = 'none';
+	  document.AdmPost.admcan.style.display = 'inline';    
+	  document.AdmPost.adminops.disabled = true;
+	  astate = true;
+	}
+      } else if (elem[0].getAttribute('active') == 'false') {
+	if (astate) {
+	  document.AdmPost.admgo.style.display = 'inline';
+	  document.AdmPost.admcan.style.display = 'none';    
+	  document.AdmPost.adminops.disabled = false;
+	  astate = false;
+	}
+      }
+      if (elem[0].firstChild != null) {
+	ainfo = document.getElementById('adminfo');
+	ainfo.innerHTML = elem[0].firstChild.nodeValue;
+	ainfo.style.display = 'block';
+      }
+      elem = xml.getElementsByTagName('update');
+      if (elem.length > 0 && elem[0].getAttribute('update') == 'true')
+	nodes = new Array;
+      elem = xml.getElementsByTagName('node');
+      changed = elem.length > 0;
+      for (var i = 0; i < elem.length; i++) {
+	var id = elem[i].getAttribute('id');
+	nodes[id] = {time: elem[i].getAttribute('time'), btype: elem[i].getAttribute('btype'),
+		     id: elem[i].getAttribute('id'), gtype: elem[i].getAttribute('gtype'),
+		     manufacturer: elem[i].getAttribute('manufacturer'), product: elem[i].getAttribute('product'),
+		     name: elem[i].getAttribute('name'), location: elem[i].getAttribute('location'),
+		     values: null, groups: null};
+	var k = 0;
+	var values = elem[i].getElementsByTagName('value');
+	nodes[id].values = new Array();
+	for (var j = 0; j < values.length; j++) {
+	  nodes[id].values[k] = {readonly: values[j].getAttribute('readonly') == 'true',
+				 genre: values[j].getAttribute('genre'),
+				 cclass: values[j].getAttribute('class'),
+				 type: values[j].getAttribute('type'),
+				 instance: values[j].getAttribute('instance'),
+				 index: values[j].getAttribute('index'),
+				 label: values[j].getAttribute('label'),
+				 units: values[j].getAttribute('units'),
+				 polled: values[j].getAttribute('polled') == true,
+				 help: null, value: null};
+	  var help = values[j].getElementsByTagName('help');
+	  if (help.length > 0)
+	    nodes[id].values[k].help = help[0].firstChild.nodeValue;
+	  else
+	    nodes[id].values[k].help = '';
+	  if (nodes[id].values[k].type == 'list') {
+	    var items = values[j].getElementsByTagName('item');
+	    var current = values[j].getAttribute('current');
+	    nodes[id].values[k].value = new Array();
+	    for (var l = 0; l < items.length; l++) {
+	      nodes[id].values[k].value[l] = {item: items[l].firstChild.nodeValue, selected: (current == items[l].firstChild.nodeValue)};
+	    }
+	  } else
+	    nodes[id].values[k].value = values[j].firstChild.nodeValue;
+	  k++;
+	}
+	var groups = elem[i].getElementsByTagName('groups');
+	nodes[id].groups = new Array();
+	groups = groups[0].getElementsByTagName('group');
+	k = 0;
+	for (var j = 0; j < groups.length; j++) {
+	  nodes[id].groups[k] = {id: groups[j].getAttribute('ind'),
+				 max: groups[j].getAttribute('max'),
+				 label: groups[j].getAttribute('label'),
+				 nodes: null};
+	  if (groups[j].firstChild != null)
+	    nodes[id].groups[k].nodes = groups[j].firstChild.nodeValue.split(',');
+	  else
+	    nodes[id].groups[k].nodes = new Array();
+	  k++;
+	}
+      }
+      elem = xml.getElementsByTagName('log');
+      if (elem != null && elem[0].getAttribute('size') > 0) {
+	var ta = document.getElementById('logdata');
+	ta.innerHTML = ta.innerHTML + return2br(elem[0].firstChild.nodeValue);
+	ta.scrollTop = ta.scrollHeight;
+      }
+      if (changed) {
+	var stuff = '';
+	for (var i = 1; i < nodes.length; i++) {
+	  var dt = new Date(nodes[i].time*1000);
+	  var yd = new Date(dt.getDate()-1);
+	  var ts;
+	  if (dt < yd)
+	    ts = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString();
+	  else
+	    ts = dt.toLocaleTimeString();
+	  var val = '';
+	  if (nodes[i].values.length > 0)
+	    for (var j = 0; j < nodes[i].values.length; j++) {
+	      if (nodes[i].values[j].genre != 'user')
+		continue;
+	      if (nodes[i].values[j].type == 'list') {
+		for (var l = 0; l < nodes[i].values[j].value.length; l++)
+		  if (!nodes[i].values[j].value[l].selected)
+		    continue;
+		  else
+		    val = nodes[i].values[j].value[l].item;
+	      } else if (nodes[i].values[j] != null) {
+		val = nodes[i].values[j].value;
+		if (val == 'False')
+		  val = 'off';
+		else if (val == 'True')
+		  val = 'on';
+	      }
+	      break;
+	    }
+	  stuff=stuff+'<tr id="node'+i+'" onmouseover="this.className=\'highlight\';" onmouseout="if (this.id == curnode) this.className=\'click\'; else this.className=\'normal\';" onclick="return SaveNode(this.id);" ondblClick="SaveNode(this.id); return DisplayNode();"><td>'+nodes[i].id+(nodes[i].id == nodeid ? '*' : '')+'</td><td>'+nodes[i].btype+'</td><td>'+nodes[i].gtype+'</td><td>'+nodes[i].manufacturer+' '+nodes[i].product+'</td><td>'+nodes[i].name+'</td><td>'+nodes[i].location+'</td><td>'+val+'</td><td>'+ts+'</td></tr>';
+	  CreateDivs('user', divcur, i);
+	  CreateDivs('config', divcon, i);
+	  CreateDivs('system', divinfo, i);
+	  CreateName(nodes[i].name, i);
+	  CreateLocation(nodes[i].location, i);
+	  CreateGroup(i);
+	  CreatePoll(i);
+	}
+	document.getElementById('tbody').innerHTML=stuff;
+	if (curnode != null)
+	  SaveNode(curnode);
+      }
+    }
+    polltmr = setTimeout(Poll, 750);
   }
 }
 function BED()
@@ -203,7 +272,13 @@ function BED()
     if (forms[i].name == '')
       continue;
     for (var j = 0; j < forms[i].elements.length; j++) {
-      if (forms[i].elements[j].tagName == 'BUTTON' && forms[i].elements[j].name != 'initialize')
+	if ((forms[i].elements[j].name == 'initialize') ||
+	    (forms[i].elements[j].name == 'devname') ||
+	    (forms[i].elements[j].name == 'usbb'))
+	    continue;
+	if ((forms[i].elements[j].tagName == 'BUTTON') ||
+	    (forms[i].elements[j].tagName == 'SELECT') ||
+	    (forms[i].elements[j].tagName == 'INPUT'))
         forms[i].elements[j].disabled = off;
       else
 	forms[i].elements[j].disabled = !off;
@@ -215,9 +290,13 @@ function BED()
   document.getElementById('configcon').checked = false;
   document.getElementById('configinfo').disabled = off;
   document.getElementById('configinfo').checked = false;
+  document.NetPost.netops.selectedIndex = 0;
+  document.NetPost.netops.disabled = off;
+  info = document.getElementById('netinfo');
+  info.style.display = 'none';
   document.AdmPost.adminops.selectedIndex = 0;
   document.AdmPost.adminops.disabled = off;
-  info = document.getElementById('adminfo');
+  info = document.getElementById('netinfo');
   info.style.display = 'none';
   document.NodePost.nodeops.selectedIndex = 0;
   document.NodePost.nodeops.disabled = off;
@@ -403,6 +482,31 @@ function DoDevPost(fun)
   }
   return false;
 }
+function DoNetHelp()
+{
+  var ninfo = document.getElementById('netinfo');
+  var scencntl = document.getElementById('scencntl');
+  var topocntl = document.getElementById('topocntl');
+  if (document.NetPost.netops.value == 'scen') {
+    ninfo.innerHTML = 'Scene management and execution.';
+    ninfo.style.display = 'block';
+    scencntl.style.display = 'block';
+    topocntl.style.display = 'none';
+    SceneLoad('load');
+  } else if (document.NetPost.netops.value == 'topo') {
+    ninfo.innerHTML = 'Topology views';
+    ninfo.style.display = 'block';
+    scencntl.style.display = 'none';
+    topocntl.style.display = 'block';
+    curscene = null;
+  } else {
+    ninfo.style.display = 'none';
+    scencntl.style.display = 'none';
+    topocntl.style.display = 'none';
+    curscene = null;
+  }
+  return true;
+}
 function DoAdmPost(can)
 {
   var posthttp;
@@ -552,8 +656,9 @@ function DoNodeHelp()
   } else if (document.NodePost.nodeops.value == 'pol') {
     ninfo.innerHTML = 'Polling settings';
     ninfo.style.display = 'block';
-    ncntl.innerHTML = nodepoll[node]+nodepollpoll[node][0];
+    ncntl.innerHTML = nodepoll[node];
     ncntl.style.display = 'block';
+    DoPoll();
   } else {
     ninfo.style.display = 'none';
     ncntl.style.display = 'none';
@@ -597,8 +702,10 @@ function DoPoll()
 {
   var node=curnode.substr(4);
   var npoll = document.getElementById('nodepoll');
+  var polled = document.getElementById('polled');
 
-  npoll.innerHTML = nodepollpoll[node][document.NodePost.polled.value];
+  if (polled != null)
+    npoll.innerHTML = nodepollpoll[node][polled.value];
   return true;
 }
 function DoPollPost()
@@ -649,6 +756,297 @@ function DoSavePost()
 
   return false;
 }
+function SceneLoad(fun)
+{
+  var params='fun='+fun;
+  if (fun == 'load') {
+    DisplaySceneSceneValue(null);
+    var scenescenevalues = document.getElementById('scenescenevalues');
+    while (scenescenevalues.options.length > 0)
+      scenescenevalues.remove(0);
+  }
+  if (fun == 'delete') {
+    if (curscene == null) {
+      alert("Scene not selected");
+      return false;
+    }
+    DisplaySceneSceneValue(null);
+    params=params+'&id='+curscene;
+    var slt = document.getElementById('scenelabeltext');
+    slt.value = '';
+  } else if (fun == 'execute') {
+    if (curscene == null) {
+      alert("Scene not selected");
+      return false;
+    }
+    params=params+'&id='+curscene;
+  } else if (fun == 'values') {
+    if (curscene == null) {
+      alert("Scene not selected");
+      return false;
+    }
+    params=params+'&id='+curscene;
+    var slt = document.getElementById('scenelabeltext');
+    slt.value = scenes[curscene].label;
+    DisplaySceneSceneValue(null);
+  } else if (fun == 'label') {
+    if (curscene == null) {
+      alert("Scene not selected");
+      return false;
+    }
+    var slt = document.getElementById('scenelabeltext');
+    if (slt.value.length == 0) {
+      alert('Missing label text');
+      return false;
+    }
+    params=params+'&id='+curscene+'&label='+slt.value;
+    slt.value = '';
+  } else if (fun == 'addvalue') {
+    if (curscene == null) {
+      alert("Scene not selected");
+      return false;
+    }
+    if (curnode == null) {
+      alert('Node not selected');
+      return false;
+    }
+    var values = document.getElementById('scenevalues');
+    if (values.options.selectedIndex == -1) {
+      alert('Value not selected');
+      return false;
+    }
+    var vals = values.options[values.options.selectedIndex].value.split('-');
+    if (vals[3] != 'list' && vals[3] != 'bool') {
+      var value = document.getElementById('valuetext');
+      if (value.value.length == 0) {
+	alert('Data not entered');
+	return false;
+      }
+      params=params+'&id='+curscene+'&vid='+vals[0]+'-'+vals[1]+'-'+vals[2]+'-'+vals[3]+'-'+vals[4]+'-'+vals[5]+'&value='+value.value;
+    } else {
+      var value = document.getElementById('valueselect');
+      params=params+'&id='+curscene+'&vid='+vals[0]+'-'+vals[1]+'-'+vals[2]+'-'+vals[3]+'-'+vals[4]+'-'+vals[5]+'&value='+value.options[value.selectedIndex].value;
+    }
+    DisplaySceneSceneValue(null);
+  } else if (fun == 'update') {
+    if (curscene == null) {
+      alert("Scene not selected");
+      return false;
+    }
+    if (curnode == null) {
+      alert('Node not selected');
+      return false;
+    }
+    var values = document.getElementById('scenescenevalues');
+    if (values.options.selectedIndex == -1) {
+      alert('Value not selected');
+      return false;
+    }
+    var vals = values.options[values.options.selectedIndex].value.split('-');
+    if (vals[3] != 'list' && vals[3] != 'bool') {
+      var value = document.getElementById('scenevaluetext');
+      if (value.value.length == 0) {
+	alert('Data not entered');
+	return false;
+      }
+      params=params+'&id='+curscene+'&vid='+vals[0]+'-'+vals[1]+'-'+vals[2]+'-'+vals[3]+'-'+vals[4]+'-'+vals[5]+'&value='+value.value;
+    } else {
+      var value = document.getElementById('valueselect');
+      params=params+'&id='+curscene+'&vid='+vals[0]+'-'+vals[1]+'-'+vals[2]+'-'+vals[3]+'-'+vals[4]+'-'+vals[5]+'&value='+value.options[value.selectedIndex].value;
+    }
+    DisplaySceneSceneValue(null);
+  } else if (fun == 'remove') {
+    if (curscene == null) {
+      alert("Scene not selected");
+      return false;
+    }
+    var values = document.getElementById('scenescenevalues');
+    if (values.options.selectedIndex == -1) {
+      alert('Scene value not selected');
+      return false;
+    }
+    var vals = values.options[values.options.selectedIndex].value.split('-');
+    params=params+'&id='+curscene+'&vid='+vals[0]+'-'+vals[1]+'-'+vals[2]+'-'+vals[3]+'-'+vals[4]+'-'+vals[5];
+    DisplaySceneSceneValue(null);
+  }
+  console.log('SceneLoad '+params);
+  scenehttp.open('POST','scenepost.html',false);
+  scenehttp.onreadystatechange = SceneReply;
+  scenehttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  scenehttp.setRequestHeader("Content-length", params.length);
+  scenehttp.setRequestHeader("Connection", "close");
+  scenehttp.send(params);
+
+  return false;
+}
+function SceneReply()
+{
+  var xml;
+  var elem;
+
+  if (scenehttp.readyState == 4 && scenehttp.status == 200) {
+    xml = scenehttp.responseXML;
+    elem = xml.getElementsByTagName('scenes');
+    if (elem.length > 0) {
+      var i;
+      var sceneids = document.getElementById('sceneids');
+      var scenevalues = document.getElementById('scenevalues');
+      var scenescenevalues = document.getElementById('scenescenevalues');
+      var id, home, node, label, units, genre, type, cclass, instance, index;
+      i = elem[0].getAttribute('sceneid');
+      if (i != null) {
+	scenes = new Array();
+	while (sceneids.options.length > 0)
+	  sceneids.remove(0);
+      }
+      i = elem[0].getAttribute('scenevalue');
+      if (i != null) {
+	scenes[curscene].values = new Array();
+	while (scenescenevalues.options.length > 0)
+	  scenescenevalues.remove(0);
+      }
+      for (i = 0; i < elem[0].childNodes.length; i++) {
+	if (elem[0].childNodes[i].nodeType != 1)
+	  continue;
+	if (elem[0].childNodes[i].tagName == 'sceneid') {
+	  id = elem[0].childNodes[i].getAttribute('id');
+	  label = elem[0].childNodes[i].getAttribute('label');
+	  scenes[id] = {label: label, values: new Array()};
+	  sceneids.add(new Option(id, id));
+	} else if (elem[0].childNodes[i].tagName == 'scenevalue') {
+	  var value;
+	  id = elem[0].childNodes[i].getAttribute('id');
+	  home = elem[0].childNodes[i].getAttribute('home');
+	  node = elem[0].childNodes[i].getAttribute('node');
+	  label = elem[0].childNodes[i].getAttribute('label');
+	  units = elem[0].childNodes[i].getAttribute('units');
+	  genre = elem[0].childNodes[i].getAttribute('genre');
+	  type = elem[0].childNodes[i].getAttribute('type');
+	  cclass = elem[0].childNodes[i].getAttribute('class');
+	  instance = elem[0].childNodes[i].getAttribute('instance');
+	  index = elem[0].childNodes[i].getAttribute('index');
+	  value = elem[0].childNodes[i].firstChild.nodeValue;
+	  var val = node+','+label;
+	  var vid = node+'-'+cclass+'-'+genre+'-'+type+'-'+instance+'-'+index;
+	  scenescenevalues.add(new Option(val,vid));
+	  scenes[id].values.push({home: home, node: node, label: label, units: units, type: type, cclass: cclass, genre: genre, instance: instance, index: index, value: value});
+	}
+      }
+    }
+  }
+}
+function UpdateSceneValues(c)
+{
+  var sv = document.getElementById('scenevalues');
+  while (sv.options.length > 0)
+    sv.remove(0);
+  if (c == -1)
+    return;
+  for (var i = 0; i < nodes[c].values.length; i++) {
+    if (nodes[c].values[i].genre != 'user')
+      continue;
+    if (nodes[c].values[i].readonly)
+      continue;
+    if (nodes[c].values[i].type == 'button')
+      continue;
+    var vid=nodes[c].id+'-'+nodes[c].values[i].cclass+'-user-'+nodes[c].values[i].type+'-'+nodes[c].values[i].instance+'-'+nodes[c].values[i].index;
+    sv.add(new Option(nodes[c].values[i].label,vid));
+  }
+  DisplaySceneValue(null);
+}
+function DisplaySceneValue(opt)
+{
+  var vt = document.getElementById('valuetext');
+  var vs = document.getElementById('valueselect');
+  var vu = document.getElementById('valueunits');
+  if (opt == null) {
+    vt.style.display = 'inline';
+    vs.style.display = 'none';
+    vt.value = '';
+    while(vs.options.length > 0)
+      vs.remove(0);
+    vu.innerHTML = '';
+    return false;
+  }
+  var vals = opt.value.split('-');
+  var j;
+  for (j = 0; j < nodes[vals[0]].values.length; j++)
+    if (nodes[vals[0]].values[j].cclass == vals[1] &&
+	nodes[vals[0]].values[j].genre == 'user' &&
+	nodes[vals[0]].values[j].type == vals[3] &&
+	nodes[vals[0]].values[j].instance == vals[4] &&
+	nodes[vals[0]].values[j].index == vals[5])
+      break;
+  if (vals[3] == 'list') {
+    vt.style.display = 'none';
+    vs.style.display = 'inline';
+  } else if (vals[3] == 'bool') {
+    if (nodes[vals[0]].values[j].value == 'True') {
+      vs.add(new Option('On','true',true));
+      vs.add(new Option('Off','false'));
+    } else {
+      vs.add(new Option('Off','false',true));
+      vs.add(new Option('On','true'));
+    }
+    vt.style.display = 'none';
+    vs.style.display = 'inline';
+  } else {
+    vt.value = nodes[vals[0]].values[j].value;
+    vt.style.display = 'inline';
+    vs.style.display = 'none';
+  }
+  vu.innerHTML = nodes[vals[0]].values[j].units;
+  return false;
+}
+function DisplaySceneSceneValue(opt)
+{
+  var vt = document.getElementById('scenevaluetext');
+  var vs = document.getElementById('scenevalueselect');
+  var vu = document.getElementById('scenevalueunits');
+  if (opt == null) {
+    vt.style.display = 'inline';
+    vs.style.display = 'none';
+    vt.value = '';
+    while(vs.options.length > 0)
+      vs.remove(0);
+    vu.innerHTML = '';
+    return false;
+  }
+  var vals = opt.value.split('-');
+  var j;
+  for (j = 0; j < scenes[curscene].values.length; j++) {
+    if (scenes[curscene].values[j].cclass == vals[1] &&
+	scenes[curscene].values[j].genre == 'user' &&
+	scenes[curscene].values[j].type == vals[3] &&
+	scenes[curscene].values[j].instance == vals[4] &&
+	scenes[curscene].values[j].index == vals[5])
+      break;
+  }
+  if (vals[3] == 'list') {
+    vt.style.display = 'none';
+    vs.style.display = 'inline';
+  } else if (vals[3] == 'bool') {
+    if (scenes[curscene].values[j].value == 'True') {
+      vs.add(new Option('On','on',true));
+      vs.add(new Option('Off','off'));
+    } else {
+      vs.add(new Option('Off','off',true));
+      vs.add(new Option('On','on'));
+    }
+    vt.style.display = 'none';
+    vs.style.display = 'inline';
+  } else {
+    vt.value = scenes[curscene].values[j].value;
+    vt.style.display = 'inline';
+    vs.style.display = 'none';
+  }
+  vu.innerHTML = scenes[curscene].values[j].units;
+  return false;
+}
+function RefreshTopo()
+{
+  return false;
+}
 function quotestring(s)
 {
   return s.replace(/\'/g, "");
@@ -663,86 +1061,82 @@ function boxsize(field)
     return 8;
   return field.length+2;
 }
-function CreateOnOff(label,value,units,id,ro,help)
+function CreateOnOff(i,j,vid)
 {
   var data='<tr><td style="float: right;"';
-  if (help)
-      data=data+' onmouseover="ShowToolTip(\''+quotestring(help)+'\',0);" onmouseout="HideToolTip();"';
-  data=data+'><label><span class="legend">'+label+':&nbsp;</span></label></td><td><select id="'+id+'" onchange="return DoValue(\''+id+'\');"'
-  if (ro)
+  if (nodes[i].values[j].help.length > 0)
+    data=data+' onmouseover="ShowToolTip(\''+quotestring(nodes[i].values[j].help)+'\',0);" onmouseout="HideToolTip();"';
+  data=data+'><label><span class="legend">'+nodes[i].values[j].label+':&nbsp;</span></label></td><td><select id="'+vid+'" onchange="return DoValue(\''+vid+'\');"'
+  if (nodes[i].values[j].readonly)
     data=data+' disabled="true"';
-  if (help)
-      data=data+' onmouseover="ShowToolTip(\''+quotestring(help)+'\',0);" onmouseout="HideToolTip();"';
+  if (nodes[i].values[j].help.length > 0)
+    data=data+' onmouseover="ShowToolTip(\''+quotestring(nodes[i].values[j].help)+'\',0);" onmouseout="HideToolTip();"';
   data=data+'>';
-  if (value == 'True')
+  if (nodes[i].values[j].value == 'True')
     data=data+'<option value="off">Off</option><option value="on" selected="true">On</option>';
   else
     data=data+'<option value="off" selected="true">Off</option><option value="on">On</option>';
-  data=data+'</select></td><td><span class="legend">'+units+'</span></td></tr>';
+  data=data+'</select></td><td><span class="legend">'+nodes[i].values[j].units+'</span></td></tr>';
   return data;
 }
-function CreateTextBox(label,value,units,id,ro,help)
+function CreateTextBox(i,j,vid)
 {
   var data = '<tr><td style="float: right;"';
-  if (help)
-      data=data+' onmouseover="ShowToolTip(\''+quotestring(help)+'\',0);" onmouseout="HideToolTip();"';
-  value=value.replace(/(\n\s*$)/, "");
-  data=data+'><label><span class="legend">'+label+':&nbsp;</span></label></td><td><input type="text" class="legend" size="'+boxsize(value)+'" id="'+id+'" value="'+value+'"';
-  if (help)
-      data=data+' onmouseover="ShowToolTip(\''+quotestring(help)+'\',0);" onmouseout="HideToolTip();"';
-  if (ro)
+  if (nodes[i].values[j].help.length > 0)
+    data=data+' onmouseover="ShowToolTip(\''+quotestring(nodes[i].values[j].help)+'\',0);" onmouseout="HideToolTip();"';
+  var value=nodes[i].values[j].value.replace(/(\n\s*$)/, "");
+  data=data+'><label><span class="legend">'+nodes[i].values[j].label+':&nbsp;</span></label></td><td><input type="text" class="legend" size="'+boxsize(value)+'" id="'+vid+'" value="'+value+'"';
+  if (nodes[i].values[j].help.length > 0)
+    data=data+' onmouseover="ShowToolTip(\''+quotestring(nodes[i].values[j].help)+'\',0);" onmouseout="HideToolTip();"';
+  if (nodes[i].values[j].readonly)
     data=data+' disabled="true">';
   else
     data=data+'>';
-  data=data+'<span class="legend">'+units+'</span>';
-  if (!ro)
-    data=data+'<button type="submit" onclick="return DoValue(\''+id+'\');">Submit</button>';
+  data=data+'<span class="legend">'+nodes[i].values[j].units+'</span>';
+  if (!nodes[i].values[j].readonly)
+    data=data+'<button type="submit" onclick="return DoValue(\''+vid+'\');">Submit</button>';
   data=data+'</td></tr>';
   return data;
 }
-function CreateList(label,value,units,id,options,ro,help)
+function CreateList(i,j,vid)
 {
-  var cnt=options.length;
-  var i;
   var data='<tr><td style="float: right;"';
-  if (help)
-      data=data+' onmouseover="ShowToolTip(\''+quotestring(help)+'\',0);" onmouseout="HideToolTip();"';
-  data=data+'><label><span class="legend">'+label+':&nbsp;</span></label></td><td><select id="'+id+'" onchange="return DoValue(\''+id+'\');"';
-  if (help)
-      data=data+' onmouseover="ShowToolTip(\''+quotestring(help)+'\',0);" onmouseout="HideToolTip();"';
-  if (ro)
+  if (nodes[i].values[j].help.length > 0)
+    data=data+' onmouseover="ShowToolTip(\''+quotestring(nodes[i].values[j].help)+'\',0);" onmouseout="HideToolTip();"';
+  data=data+'><label><span class="legend">'+nodes[i].values[j].label+':&nbsp;</span></label></td><td><select id="'+vid+'" onchange="return DoValue(\''+vid+'\');"';
+  if (nodes[i].values[j].help.length > 0)
+    data=data+' onmouseover="ShowToolTip(\''+quotestring(nodes[i].values[j].help)+'\',0);" onmouseout="HideToolTip();"';
+  if (nodes[i].values[j].readonly)
     data=data+' disabled="true">';
   else
     data=data+'>';
-  for (i=0; i<cnt; i++) {
-    var opt=options[i].firstChild.nodeValue;
-    data=data+'<option value="'+opt+'"';
-    if (opt == value)
-      data=data+' selected="true"';
-    data=data+'>'+opt+'</option>';
-  }
-  data=data+'</select><span class="legend">'+units+'</span></td></tr>';
+  if (nodes[i].values[j].value != null)
+    for (k=0; k<nodes[i].values[j].value.length; k++) {
+      data=data+'<option value="'+nodes[i].values[j].value[k].item+'"';
+      if (nodes[i].values[j].value[k].selected)
+	data=data+' selected="true"';
+      data=data+'>'+nodes[i].values[j].value[k].item+'</option>';
+    }
+  data=data+'</select><span class="legend">'+nodes[i].values[j].units+'</span></td></tr>';
   return data;
 }
-function CreateLabel(label,value,units,id,help)
+function CreateLabel(i,j,vid)
 {
-    return '<tr><td style="float: right;"><label><span class="legend">'+label+':&nbsp;</span></label></td><td><input type="text" class="legend" disabled="true" size="'+boxsize(value)+'" id="'+id+'" value="'+value+'"><span class="legend">'+units+'</span></td></tr>';
+    return '<tr><td style="float: right;"><label><span class="legend">'+nodes[i].values[j].label+':&nbsp;</span></label></td><td><input type="text" class="legend" disabled="true" size="'+boxsize(nodes[i].values[j].value)+'" id="'+vid+'" value="'+nodes[i].values[j].value+'"><span class="legend">'+nodes[i].values[j].units+'</span></td></tr>';
 }
-function CreateButton(label,value,units,id,ro,help)
+function CreateButton(i,j,vid)
 {
   var data='<tr><td style="float: right;"';
-  if (help)
-      data=data+' onmouseover="ShowToolTip(\''+quotestring(help)+'\',0);" onmouseout="HideToolTip();"';
-  data=data+'><label><span class="legend">'+label+':&nbsp;</span></label></td><td><button type="submit" id="'+id+'" onclick="return false;" onmousedown="return DoButton(\''+id+'\',true);" onmouseup="return DoButton(\''+id+'\',false);"'
-  if (ro)
+  if (nodes[i].values[j].help.length > 0)
+      data=data+' onmouseover="ShowToolTip(\''+quotestring(nodes[i].values[j].help)+'\',0);" onmouseout="HideToolTip();"';
+  data=data+'><label><span class="legend">'+nodes[i].values[j].label+':&nbsp;</span></label></td><td><button type="submit" id="'+vid+'" onclick="return false;" onmousedown="return DoButton(\''+vid+'\',true);" onmouseup="return DoButton(\''+vid+'\',false);"'
+  if (nodes[i].values[j].readonly)
     data=data+' disabled="true"';
-  data=data+'>Submit</button></td><td><span class="legend">'+units+'</span></td></tr>';
+  data=data+'>Submit</button></td><td><span class="legend">'+nodes[i].values[j].units+'</span></td></tr>';
   return data;
 }
-function CreateDivs(elem,genre,divto,ind,node)
+function CreateDivs(genre,divto,ind)
 {
-  var where=elem[ind].getElementsByTagName(genre);
-
   divto[ind]='<table border="0" cellpadding="1" cellspacing="0"><tbody>';
   if (where.length > 0) {
     var i;
@@ -752,37 +1146,29 @@ function CreateDivs(elem,genre,divto,ind,node)
 	continue;
       if (where[0].childNodes[i].nodeType != 1)
 	continue;
-      var ro=where[0].childNodes[i].getAttribute('readonly')=='true';
-      var cls=where[0].childNodes[i].getAttribute('class');
-      var tag=where[0].childNodes[i].tagName;
-      var id=node+'-'+cls+'-'+genre+'-'+tag+'-'+where[0].childNodes[i].getAttribute('instance')+'-'+where[0].childNodes[i].getAttribute('index');
-      var help=where[0].childNodes[i].getElementsByTagName('help');
-      if (help.length > 0)
-	help=help[0].firstChild.nodeValue;
-      else
-	help='';
-      if (tag == 'bool') {
-	  divto[ind]=divto[ind]+CreateOnOff(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro,help);
-      } else if (tag == 'byte') {
-        if (lastclass == 'BASIC' && cls == 'SWITCH MULTILEVEL')
-          divto[ind]='';
-        lastclass=cls;
-        divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro,help);
-      } else if (tag == 'int') {
-	  divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro,help);
-      } else if (tag == 'short') {
-	  divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro,help);
-      } else if (tag == 'decimal') {
-	  divto[ind]=divto[ind]+CreateTextBox(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,ro,help);
-      } else if (tag == 'list') {
-	  divto[ind]=divto[ind]+CreateList(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].getAttribute('current'),where[0].childNodes[i].getAttribute('units'),id,where[0].childNodes[i].getElementsByTagName('item'),ro,help);
-      } else if (tag == 'string') {
-	  divto[ind]=divto[ind]+CreateLabel(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,help);
-      } else if (tag == 'button') {
-	  divto[ind]=divto[ind]+CreateButton(where[0].childNodes[i].getAttribute('label'),where[0].childNodes[i].firstChild.nodeValue,where[0].childNodes[i].getAttribute('units'),id,help);
+      var lastclass='';
+      var vid=nodes[ind].id+'-'+nodes[ind].values[i].cclass+'-'+genre+'-'+nodes[ind].values[i].type+'-'+nodes[ind].values[i].instance+'-'+nodes[ind].values[i].index;
+      if (nodes[ind].values[i].type == 'bool') {
+	divto[ind]=divto[ind]+CreateOnOff(ind,i,vid);
+      } else if (nodes[ind].values[i].type == 'byte') {
+	if (lastclass == 'BASIC' && cls == 'SWITCH MULTILEVEL')
+	  divto[ind]='';
+	lastclass=nodes[ind].values[i].cclass;
+	divto[ind]=divto[ind]+CreateTextBox(ind,i,vid);
+      } else if (nodes[ind].values[i].type == 'int') {
+	divto[ind]=divto[ind]+CreateTextBox(ind,i,vid);
+      } else if (nodes[ind].values[i].type == 'short') {
+	divto[ind]=divto[ind]+CreateTextBox(ind,i,vid);
+      } else if (nodes[ind].values[i].type == 'decimal') {
+	divto[ind]=divto[ind]+CreateTextBox(ind,i,vid);
+      } else if (nodes[ind].values[i].type == 'list') {
+	divto[ind]=divto[ind]+CreateList(ind,i,vid);
+      } else if (nodes[ind].values[i].type == 'string') {
+	divto[ind]=divto[ind]+CreateLabel(ind,i,vid);
+      } else if (nodes[ind].values[i].type == 'button') {
+	divto[ind]=divto[ind]+CreateButton(ind,i,vid);
       }
     }
-  }
   divto[ind]=divto[ind]+'</tbody></table>';
 }
 function CreateName(val,ind)
@@ -793,42 +1179,29 @@ function CreateLocation(val,ind)
 {
   nodeloc[ind]='<tr><td style="float: right;"><label><span class="legend">Location:&nbsp;</span></label></td><td><input type="text" class="legend" size="'+boxsize(val)+'" id="location" value="'+val+'"><button type="submit" style="margin-left: 5px;" onclick="return DoNodePost(document.NodePost.location.value);">Submit</button></td></tr>';
 }
-function CreateGroup(elem,ind)
+function CreateGroup(ind)
 {
-  var where=elem[ind].getElementsByTagName('groups');
-  var cnt=where[0].getAttribute('cnt');
   var grp;
   var i, j, k;
-  var id;
-  var mx;
-  var str;
 
-  if (cnt == 0) {
+  if (nodes[ind].groups.length == 0) {
     nodegrp[ind]='';
     nodegrpgrp[ind] = new Array();
     nodegrpgrp[ind][1]='';
     return;
   }
   nodegrp[ind]='<tr><td style="float: right;"><label><span class="legend">Groups:&nbsp;</span></label></td><td><select id="group" style="margin-left: 5px;" onchange="return DoGroup();">';
-  nodegrpgrp[ind] = new Array(cnt);
+  nodegrpgrp[ind] = new Array(nodes[ind].groups.length);
   grp = 1;
-  for (i = 0; i < where[0].childNodes.length; i++) {
-    if (where[0].childNodes[i].nodeType != 1)
-      continue;
-    id = where[0].childNodes[i].getAttribute('ind');
-    nodegrp[ind]=nodegrp[ind]+'<option value="'+id+'">'+where[0].childNodes[i].getAttribute('label')+' ('+id+')</option>';
-    mx = where[0].childNodes[i].getAttribute('max');
-    if (where[0].childNodes[i].firstChild != null) {
-      str = where[0].childNodes[i].firstChild.nodeValue;
-      str = str.split(",");
-    } else
-      str = new Array();
+  for (i = 0; i < nodes[ind].groups.length; i++) {
+    nodegrp[ind]=nodegrp[ind]+'<option value="'+nodes[ind].groups[i].id+'">'+nodes[ind].groups[i].label+' ('+nodes[ind].groups[i].id+')</option>';
     nodegrpgrp[ind][grp] = '<td><div id="nodegrp" name="nodegrp" style="float: right;"><select id="groups" multiple size="4" style="vertical-align: top; margin-left: 5px;">';
     k = 0;
     for (j = 1; j <= nodecount; j++) {
-      while (k < str.length && str[k] < j)
-	k++;
-      if (str[k] == j)
+      if (nodes[ind].groups[i].nodes != null)
+	while (k < nodes[ind].groups[i].nodes.length && nodes[ind].groups[i].nodes[k] < j)
+	  k++;
+      if (nodes[ind].groups[i].nodes[k] == j)
 	nodegrpgrp[ind][grp]=nodegrpgrp[ind][grp]+'<option selected="true">'+j+'</option>';
       else
 	nodegrpgrp[ind][grp]=nodegrpgrp[ind][grp]+'<option>'+j+'</option>';
@@ -838,38 +1211,46 @@ function CreateGroup(elem,ind)
   }
   nodegrp[ind]=nodegrp[ind]+'</select></td>';
 }
-function CreatePoll(elem,ind)
+function CreatePoll(ind)
 {
-  if (elem[ind].getElementsByTagName('user').length > 0 || elem[ind].getElementsByTagName('system').length > 0)
-    nodepoll[ind]='<tr><td style="float: right;"><label><span class="legend">Polling&nbsp;</span></label></td><td><select id="polled" style="margin-left: 5px;" onchange="return DoPoll();"><option value="0">User</option><option value="1">System</option></select></td>';
+  var uc = 0;
+  var sc = 0;
+  if (nodes[ind].values != null)
+    for (var i = 0; i < nodes[ind].values.length; i++) {
+      if (nodes[ind].values[i].genre == 'user')
+	uc++;
+      if (nodes[ind].values[i].genre == 'system')
+	sc++;
+    }
+  if (uc > 0 || sc > 0)
+    nodepoll[ind]='<tr><td style="float: right;"><label><span class="legend">Polling&nbsp;</span></label></td><td><select id="polled" style="margin-left: 5px;" onchange="return DoPoll();"><option value="0">User</option><option value="1">System</option></select></td><td><div id="nodepoll" name="nodepoll" style="float: left;"></div></td><td><button type="submit" style="margin-left: 5px; vertical-align: top;" onclick="return DoPollPost();">Submit</button></td></tr>';
   else
     nodepoll[ind]='';
   nodepollpoll[ind] = new Array(2);
-  CreatePollPoll(elem,'user', ind);
-  CreatePollPoll(elem,'system', ind);
+  CreatePollPoll('user', ind, uc);
+  CreatePollPoll('system', ind, sc);
 }
-function CreatePollPoll(elem,genre,ind)
+function CreatePollPoll(genre,ind,cnt)
 {
   var ind1;
-  var where=elem[ind].getElementsByTagName(genre);
   if (genre == 'user')
     ind1 = 0;
   else
     ind1 = 1;
-  nodepollpoll[ind][ind1]='<td><div id="nodepoll" name="nodepoll" style="float: right;"><select id="polls" multiple size="4" style="vertical-align: top; margin-left: 5px;">';
-  if (where.length > 0) {
-    var i;
-    for (i = 0; i < where[0].childNodes.length; i++) {
-      if (where[0].childNodes[i].nodeType != 1)
+  nodepollpoll[ind][ind1]='<select id="polls" multiple size="4" style="vertical-align: top; margin-left: 5px;">';
+  if (cnt > 0) {
+    for (var i = 0; i < nodes[ind].values.length; i++) {
+      if (nodes[ind].values[i].genre != genre)
 	continue;
-      var p=where[0].childNodes[i].getAttribute('polled') == 'true';
-      var id=(ind+1)+'-'+where[0].childNodes[i].getAttribute('class')+'-'+genre+'-'+where[0].childNodes[i].tagName+'-'+where[0].childNodes[i].getAttribute('instance')+'-'+where[0].childNodes[i].getAttribute('index');
-      nodepollpoll[ind][ind1]=nodepollpoll[ind][ind1]+'<option id="'+id+'"';
-      if (p)
+      if (nodes[ind].values[i].type == 'button')
+	continue;
+      var vid=nodes[ind].id+'-'+nodes[ind].values[i].cclass+'-'+genre+'-'+nodes[ind].values[i].type+'-'+nodes[ind].values[i].instance+'-'+nodes[ind].values[i].index;
+      nodepollpoll[ind][ind1]=nodepollpoll[ind][ind1]+'<option id="'+vid+'"';
+      if (nodes[ind].values[i].polled)
 	  nodepollpoll[ind][ind1]=nodepollpoll[ind][ind1]+' selected="true"';
-      nodepollpoll[ind][ind1]=nodepollpoll[ind][ind1]+'>'+where[0].childNodes[i].getAttribute('label')+'</option>';
+      nodepollpoll[ind][ind1]=nodepollpoll[ind][ind1]+'>'+nodes[ind].values[i].label+'</option>';
     }
-    nodepollpoll[ind][ind1]=nodepollpoll[ind][ind1]+'</select></td><button type="submit" style="margin-left: 5px;" onclick="return DoPollPost();">Submit</button></div></td></tr>';
+    nodepollpoll[ind][ind1]=nodepollpoll[ind][ind1]+'</select>';
   } else
     nodepollpoll[ind][ind1]='';
 }
