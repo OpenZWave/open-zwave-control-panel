@@ -207,6 +207,8 @@ function PollReply()
       if (changed) {
 	var stuff = '';
 	for (var i = 1; i < nodes.length; i++) {
+	  if (nodes[i] == undefined)
+	    continue;
 	  var dt = new Date(nodes[i].time*1000);
 	  var yd = new Date(dt.getDate()-1);
 	  var ts;
