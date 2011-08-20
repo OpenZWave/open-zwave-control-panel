@@ -1,5 +1,6 @@
 var pollhttp;
 var scenehttp;
+var topohttp;
 var polltmr=null;
 var pollwait=null;
 var divcur=new Array();
@@ -32,6 +33,7 @@ var ie=document.all ? true : false;
 var curnode=null;
 var curscene=null;
 var scenes=new Array();
+var routes=new Array();
 if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
   pollhttp=new XMLHttpRequest();
 } else {
@@ -41,6 +43,11 @@ if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
   scenehttp=new XMLHttpRequest();
 } else {
   scenehttp=new ActiveXObject("Microsoft.XMLHTTP");
+}
+if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
+  topohttp=new XMLHttpRequest();
+} else {
+  topohttp=new ActiveXObject("Microsoft.XMLHTTP");
 }
 function SaveNode(newid)
 {
@@ -141,10 +148,20 @@ function PollReply()
 	ainfo.style.display = 'block';
       }
       elem = xml.getElementsByTagName('update');
-      if (elem.length > 0 && elem[0].getAttribute('update') == 'true')
-	nodes = new Array;
+      if (elem.length > 0) {
+	var remove = elem[0].getAttribute('remove');
+	if (remove != undefined) {
+	  console.log('remove='+remove);
+	  var remnodes = remove.split(',');
+	  console.log('remnodes len='+remnodes.length);
+	  changed = true;
+	  for (var i = 0; i < remnodes.length; i++) {
+	      nodes[remnodes[i]] = null;
+	  }
+	}
+      }
       elem = xml.getElementsByTagName('node');
-      changed = elem.length > 0;
+      changed |= elem.length > 0;
       for (var i = 0; i < elem.length; i++) {
 	var id = elem[i].getAttribute('id');
 	nodes[id] = {time: elem[i].getAttribute('time'), btype: elem[i].getAttribute('btype'),
@@ -207,7 +224,7 @@ function PollReply()
       if (changed) {
 	var stuff = '';
 	for (var i = 1; i < nodes.length; i++) {
-	  if (nodes[i] == undefined)
+	  if (nodes[i] == null)
 	    continue;
 	  var dt = new Date(nodes[i].time*1000);
 	  var yd = new Date(dt.getDate()-1);
@@ -489,22 +506,27 @@ function DoNetHelp()
   var ninfo = document.getElementById('netinfo');
   var scencntl = document.getElementById('scencntl');
   var topocntl = document.getElementById('topocntl');
+  var topo = document.getElementById('topo');
   if (document.NetPost.netops.value == 'scen') {
     ninfo.innerHTML = 'Scene management and execution.';
     ninfo.style.display = 'block';
     scencntl.style.display = 'block';
     topocntl.style.display = 'none';
+    topo.style.display = 'none';
     SceneLoad('load');
   } else if (document.NetPost.netops.value == 'topo') {
     ninfo.innerHTML = 'Topology views';
     ninfo.style.display = 'block';
     scencntl.style.display = 'none';
     topocntl.style.display = 'block';
+    topo.style.display = 'block';
     curscene = null;
+    TopoLoad('load');
   } else {
     ninfo.style.display = 'none';
     scencntl.style.display = 'none';
     topocntl.style.display = 'none';
+    topo.style.display = 'none';
     curscene = null;
   }
   return true;
@@ -591,7 +613,7 @@ function DoAdmHelp()
     ainfo.style.display = 'block';
     ainfo.innerHTML = 'Update the controller with network information from the SUC/SIS.';
   } else if (document.AdmPost.adminops.value == 'reqnnu') {
-    ainfo.innerHTML = 'Get a node to rebuild it\'s neighbour list.';
+    ainfo.innerHTML = 'Get a node to rebuild its neighbour list.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'assrr') {
     ainfo.innerHTML = 'Assign a network return route to a device.';
@@ -871,7 +893,6 @@ function SceneLoad(fun)
     params=params+'&id='+curscene+'&vid='+vals[0]+'-'+vals[1]+'-'+vals[2]+'-'+vals[3]+'-'+vals[4]+'-'+vals[5];
     DisplaySceneSceneValue(null);
   }
-  console.log('SceneLoad '+params);
   scenehttp.open('POST','scenepost.html',false);
   scenehttp.onreadystatechange = SceneReply;
   scenehttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
@@ -1045,9 +1066,68 @@ function DisplaySceneSceneValue(opt)
   vu.innerHTML = scenes[curscene].values[j].units;
   return false;
 }
-function RefreshTopo()
+function TopoLoad(fun)
 {
+  var params='fun='+fun;
+  topohttp.open('POST','topopost.html',false);
+  topohttp.onreadystatechange = TopoReply;
+  topohttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  topohttp.setRequestHeader("Content-length", params.length);
+  topohttp.setRequestHeader("Connection", "close");
+  topohttp.send(params);
+
   return false;
+}
+function TopoReply()
+{
+  var xml;
+  var elem;
+
+  if (topohttp.readyState == 4 && topohttp.status == 200) {
+    xml = topohttp.responseXML;
+    elem = xml.getElementsByTagName('topo');
+    if (elem.length > 0) {
+      var i;
+      var id;
+      var list;
+      for (i = 0; i < elem[0].childNodes.length; i++) {
+	if (elem[0].childNodes[i].nodeType != 1)
+	  continue;
+	if (elem[0].childNodes[i].tagName == 'node') {
+	  id = elem[0].childNodes[i].getAttribute('id');
+	  list = elem[0].childNodes[i].firstChild.nodeValue;
+	  routes[id] = list.split(',');
+	}
+      }
+      var stuff = '<tr><th>Nodes</th>';
+      var topohead = document.getElementById('topohead');
+      for (i = 1; i < routes.length; i++) {
+	if (routes[i] == undefined)
+	  routes[i]=new Array();
+	stuff=stuff+'<th>'+i+'</th>';
+      }
+      stuff=stuff+'</tr>'
+      topohead.innerHTML = stuff;
+      stuff = '';
+      for (i = 1; i < routes.length; i++) {
+	stuff=stuff+'<tr><td style="vertical-align: top; text-decoration: underline; background-color: #FFFFFF;">'+i+'</td>';
+	var j, k = 0;
+	for (j = 1; j < routes.length; j++) {
+	  if (i == j) {
+	    stuff=stuff+'<td>*</td>';
+	  } else if (k < routes[i].length && j == routes[i][k]) {
+	    stuff=stuff+'<td>*</td>';
+	    k++;
+	  } else {
+	    stuff=stuff+'<td>&nbsp;</td>';
+	  }
+	}
+	stuff=stuff+'</tr>';
+      }
+      var topobody = document.getElementById('topobody');
+      topobody.innerHTML = stuff;
+    }
+  }
 }
 function quotestring(s)
 {

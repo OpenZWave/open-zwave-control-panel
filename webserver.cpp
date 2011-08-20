@@ -145,7 +145,7 @@ int web_send_file (struct MHD_Connection *conn, const char *filename, const int 
   FILE *fp;
   struct MHD_Response *response;
   const char *p;
-  char *ct = NULL;
+  const char *ct = NULL;
   int ret;
 
   if ((p = strchr(filename, '.')) != NULL) {
@@ -203,7 +203,7 @@ void Webserver::web_get_groups (int n, TiXmlElement *ep)
     groupElement->SetAttribute("max", p->max);
     groupElement->SetAttribute("label", p->label.c_str());
     string str = "";
-    for (int j = 0; j < p->grouplist.size(); j++) {
+    for (uint j = 0; j < p->grouplist.size(); j++) {
       char s[12];
       snprintf(s, sizeof(s), "%d", p->grouplist[j]);
       str += s;
@@ -273,12 +273,67 @@ void Webserver::web_get_values (int i, TiXmlElement *ep)
 }
 
 /*
+ * SendTopoResponse
+ * Process topology request and return appropiate data
+ */
+
+const char *Webserver::SendTopoResponse (struct MHD_Connection *conn, const char *fun,
+					 const char *arg1, const char *arg2, const char *arg3)
+{
+  TiXmlDocument doc;
+  char str[16];
+  string s;
+  static char fntemp[32];
+  char *fn;
+  uint i, j;
+  uint8 cnt;
+  uint32 len;
+  uint8 *neighbors;
+  TiXmlDeclaration* decl = new TiXmlDeclaration( "1.0", "utf-8", "" );
+  doc.LinkEndChild(decl);
+  TiXmlElement* topoElement = new TiXmlElement("topo");
+  doc.LinkEndChild(topoElement);
+
+  if (strcmp(fun, "load") == 0) {
+    cnt = MyNode::getNodeCount();
+    for (i = 0; i < cnt; i++) {
+      len = Manager::Get()->GetNodeNeighbors(homeId, i+1, &neighbors);
+      if (len > 0) {
+	TiXmlElement* nodeElement = new TiXmlElement("node");
+	snprintf(str, sizeof(str), "%d", i+1);
+	nodeElement->SetAttribute("id", str);
+	string list = "";
+	for (j = 0; j < len; j++) {
+	  snprintf(str, sizeof(str), "%d", neighbors[j]);
+	  list += str;
+	  if (j < (len - 1))
+	    list += ",";
+	}
+	TiXmlText *textElement = new TiXmlText(list.c_str());
+	nodeElement->LinkEndChild(textElement);
+	topoElement->LinkEndChild(nodeElement);
+      }
+      delete [] neighbors;
+    }
+  }
+  strncpy(fntemp, "/tmp/ozwcp.scenes.XXXXXX", sizeof(fntemp));
+  fn = mktemp(fntemp);
+  if (fn == NULL)
+    return EMPTY;
+  strncat(fntemp, ".xml", sizeof(fntemp));
+  if (debug)
+    doc.Print(stdout, 0);
+  doc.SaveFile(fn);
+  return fn;
+}
+
+/*
  * SendSceneResponse
  * Process scene request and return appropiate scene data
  */
 
-char *Webserver::SendSceneResponse (struct MHD_Connection *conn, const char *fun,
-				    const char *arg1, const char *arg2, const char *arg3)
+const char *Webserver::SendSceneResponse (struct MHD_Connection *conn, const char *fun,
+					  const char *arg1, const char *arg2, const char *arg3)
 {
   TiXmlDocument doc;
   char str[16];
@@ -456,14 +511,26 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
 
   TiXmlElement* updateElement = new TiXmlElement("update");
   pollElement->LinkEndChild(updateElement);
-  updateElement->SetAttribute("full", MyNode::getAllChanged() ? "true" : "false");
+  i = MyNode::getRemovedCount();
+  if (i > 0) {
+    logbuffer[0] = '\0';
+    while (i > 0) {
+      uint8 node = MyNode::getRemoved();
+      snprintf(str, sizeof(str), "%d", node);
+      strcat(logbuffer, str);
+      i = MyNode::getRemovedCount();
+      if (i > 0)
+	strcat(logbuffer, ",");
+    }
+    updateElement->SetAttribute("remove", logbuffer);
+  }
 
   pthread_mutex_lock(&nlock);
-  if (MyNode::getAnyChanged() || MyNode::getAllChanged()) {
+  if (MyNode::getAnyChanged()) {
     i = 0;
     j = 1;
     while (j <= MyNode::getNodeCount() && i < MAX_NODES) {
-      if (nodes[i] != NULL && (MyNode::getAllChanged() || nodes[i]->getChanged())) {
+      if (nodes[i] != NULL && nodes[i]->getChanged()) {
 	TiXmlElement* nodeElement = new TiXmlElement("node");
 	pollElement->LinkEndChild(nodeElement);
 	nodeElement->SetAttribute("id", i);
@@ -483,7 +550,6 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
       }
       i++;
     }
-    MyNode::setAllChanged(false);
   }
   pthread_mutex_unlock(&nlock);
   strncpy(fntemp, "/tmp/ozwcp.poll.XXXXXX", sizeof(fntemp));
@@ -608,6 +674,9 @@ int web_config_post (void *cls, enum MHD_ValueKind kind, const char *key, const 
       cp->conn_arg3 = (void *)strdup(data);
     else if (strcmp(key, "value") == 0)
       cp->conn_arg4 = (void *)strdup(data);
+  } else if (strcmp(cp->conn_url, "/topopost.html") == 0) {
+    if (strcmp(key, "fun") == 0)
+      cp->conn_arg1 = (void *)strdup(data);
   }
   return MHD_YES;
 }
@@ -773,7 +842,14 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	cp->conn_res = (void *)SendSceneResponse(conn, (char *)cp->conn_arg1, (char *)cp->conn_arg2, (char *)cp->conn_arg3, (char *)cp->conn_arg4);
       } else
 	ret = web_send_file(conn, (char *)cp->conn_res, MHD_HTTP_OK, true);
-//	ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
+    } else if (strcmp(url, "/topopost.html") == 0) {
+      if (*up_data_size != 0) {
+	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
+	*up_data_size = 0;
+
+	cp->conn_res = (void *)SendTopoResponse(conn, (char *)cp->conn_arg1, (char *)cp->conn_arg2, (char *)cp->conn_arg3, (char *)cp->conn_arg4);
+      } else
+	ret = web_send_file(conn, (char *)cp->conn_res, MHD_HTTP_OK, true);
     } else if (strcmp(url, "/admpost.html") == 0) {
       if (*up_data_size != 0) {
 	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
@@ -820,7 +896,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 							       web_controller_update, this, true));
 	} else if (strcmp((char *)cp->conn_arg1, "hnf") == 0) {
 	  if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
-	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10) + 1;
+	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 	    setAdminFunction("Has Node Failed");
 	    setAdminState(
 			  Manager::Get()->BeginControllerCommand(homeId,
@@ -829,7 +905,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	  }
 	} else if (strcmp((char *)cp->conn_arg1, "remfn") == 0) {
 	  if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
-	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10) + 1;
+	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 	    setAdminFunction("Remove Failed Node");
 	    setAdminState(
 			  Manager::Get()->BeginControllerCommand(homeId,
@@ -838,7 +914,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	  }
 	} else if (strcmp((char *)cp->conn_arg1, "repfn") == 0) {
 	  if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
-	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10) + 1;
+	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 	    setAdminFunction("Replace Failed Node");
 	    setAdminState(
 			  Manager::Get()->BeginControllerCommand(homeId,
@@ -853,7 +929,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 							       web_controller_update, this, true));
 	} else if (strcmp((char *)cp->conn_arg1, "reqnu") == 0) {
 	  if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
-	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10) + 1;
+	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 	    setAdminFunction("Request Network Update");
 	    setAdminState(
 			  Manager::Get()->BeginControllerCommand(homeId,
@@ -862,7 +938,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	  }
 	} else if (strcmp((char *)cp->conn_arg1, "reqnnu") == 0) {
 	  if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
-	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10) + 1;
+	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 	    setAdminFunction("Request Node Neighbor Update");
 	    setAdminState(
 			  Manager::Get()->BeginControllerCommand(homeId,
@@ -871,7 +947,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	  }
 	} else if (strcmp((char *)cp->conn_arg1, "assrr") == 0) {
 	  if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
-	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10) + 1;
+	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 	    setAdminFunction("Assign Return Route");
 	    setAdminState(
 			  Manager::Get()->BeginControllerCommand(homeId,
@@ -880,7 +956,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	  }
 	} else if (strcmp((char *)cp->conn_arg1, "delarr") == 0) {
 	  if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
-	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10) + 1;
+	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 	    setAdminFunction("Delete All Return Routes");
 	    setAdminState(
 			  Manager::Get()->BeginControllerCommand(homeId,
@@ -1011,7 +1087,7 @@ void Webserver::Free (struct MHD_Connection *conn, void **ptr, enum MHD_RequestT
  * Start up the web server
  */
 
-Webserver::Webserver (int const wport) : logbytes(0), adminstate(false), sortcol(COL_NODE)
+Webserver::Webserver (int const wport) : sortcol(COL_NODE), logbytes(0), adminstate(false)
 {
   fprintf(stderr, "webserver starting port %d\n", wport);
   port = wport;

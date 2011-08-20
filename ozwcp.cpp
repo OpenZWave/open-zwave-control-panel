@@ -66,10 +66,10 @@ bool done = false;
 bool needsave = false;
 uint32 homeId = 0;
 uint8 nodeId = 0;
-char *cmode = "";
+const char *cmode = "";
 int32 debug = false;
 bool MyNode::nodechanged = false;
-bool MyNode::allchanged = false;
+list<uint8> MyNode::removed;
 
 /*
  * MyNode::MyNode constructor
@@ -118,10 +118,10 @@ void MyNode::remove (int32 const ind)
     return;
   }
   if (nodes[ind] != NULL) {
+    addRemoved(ind);
     delete nodes[ind];
     nodes[ind] = NULL;
     nodecount--;
-    setAllChanged(true);
   }
 }
 
@@ -321,7 +321,7 @@ MyValue *MyNode::lookup (string data)
   uint8 ind;
   ValueID::ValueGenre vg;
   ValueID::ValueType typ;
-  uint32 pos1, pos2;
+  size_t pos1, pos2;
   string str;
 
   node = strtol(data.c_str(), NULL, 10);
@@ -379,11 +379,25 @@ int32 MyNode::getValueCount ()
 /*
  * Returns an n'th value
  */
-MyValue *MyNode::getValue (int n)
+MyValue *MyNode::getValue (uint8 n)
 {
   if (n < values.size())
     return values[n];
   return NULL;
+}
+
+/*
+ * Returns next item on the removed list.
+ */
+
+uint8 MyNode::getRemoved()
+{
+  if (removed.size() > 0) {
+    uint8 node = removed.front();
+    removed.pop_front();
+    return node;
+  }
+  return 0;
 }
 
 //-----------------------------------------------------------------------------

@@ -37,7 +37,7 @@
 #include <string.h>
 #include "ozwcp.h"
 
-char *valueGenreStr (ValueID::ValueGenre vg)
+const char *valueGenreStr (ValueID::ValueGenre vg)
 {
   switch (vg) {
   case ValueID::ValueGenre_Basic:
@@ -70,7 +70,7 @@ ValueID::ValueGenre valueGenreNum (char const *str)
     return (ValueID::ValueGenre)255;
 }
 
-char *valueTypeStr (ValueID::ValueType vt)
+const char *valueTypeStr (ValueID::ValueType vt)
 {
   switch (vt) {
   case ValueID::ValueType_Bool:
@@ -119,7 +119,7 @@ ValueID::ValueType valueTypeNum (char const *str)
     return (ValueID::ValueType)255;
 }
 
-char *nodeBasicStr (uint8 basic)
+const char *nodeBasicStr (uint8 basic)
 {
   switch (basic) {
   case 1:
@@ -134,7 +134,7 @@ char *nodeBasicStr (uint8 basic)
   return "unknown";
 }
 
-char *cclassStr (uint8 cc)
+const char *cclassStr (uint8 cc)
 {
   switch (cc) {
   default:
