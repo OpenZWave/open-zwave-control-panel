@@ -50,12 +50,12 @@ using namespace OpenZWave;
 
 #define MAX_NODES 255
 
-extern char *valueGenreStr(ValueID::ValueGenre);
+extern const char *valueGenreStr(ValueID::ValueGenre);
 extern ValueID::ValueGenre valueGenreNum(char const *);
-extern char *valueTypeStr(ValueID::ValueType);
+extern const char *valueTypeStr(ValueID::ValueType);
 extern ValueID::ValueType valueTypeNum(char const *);
-extern char *nodeBasicStr (uint8);
-extern char *cclassStr(uint8);
+extern const char *nodeBasicStr (uint8);
+extern const char *cclassStr(uint8);
 extern uint8 cclassNum(char const *str);
 
 class MyValue {
@@ -86,15 +86,16 @@ public:
   void saveValue(ValueID id);
   int32 getValueCount();
   static MyValue *lookup(string id);
-  MyValue *getValue(int n);
+  MyValue *getValue(uint8 n);
   uint32 getTime() { return mtime; }
   void setTime(uint32 t) { mtime = t; }
   static bool getAnyChanged() { return nodechanged; }
   static void setAnyChanged(bool ch) { nodechanged = ch; }
-  static bool getAllChanged() { return allchanged; }
-  static void setAllChanged(bool ch) { allchanged = ch; }
   bool getChanged() { return changed; }
   void setChanged(bool ch) { changed = ch; nodechanged = ch; }
+  static void addRemoved(uint8 node) { removed.push_back(node); }
+  static uint32 getRemovedCount() { return removed.size(); }
+  static uint8 getRemoved();
   void addGroup(uint8 node, uint8 g, uint8 n, uint8 *v);
   MyGroup *getGroup(uint8 i);
   void updateGroup(uint8 node, uint8 grp, char *glist);
@@ -108,7 +109,7 @@ private:
   uint32 mtime;
   bool changed;
   static bool nodechanged;
-  static bool allchanged;
+  static list<uint8> removed;
   vector <MyGroup*> groups;
   vector<MyValue*> values;
 };

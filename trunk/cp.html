@@ -227,11 +227,32 @@
 	  </div>
 	  <div id="topocntl" name="topocntl" class="rsb" style="display: none; margin-right: 10px;">
 	    <div class="rsb" style="margin-left: 10px;">
-	      <button id="refreshtopo" name="refreshtopo" onclick="return RefreshTopo();" type="submit">Refresh</button>
+	      <button id="refreshtopo" name="refreshtopo" onclick="return TopoLoad('load');" type="submit">Refresh</button>
 	    </div>
 	  </div>
 	  <div class="rsb" style="margin-left: 10px;">
-	    <span id="netinfo" name="netinfo" class="admmsg"></span>
+	    <span id="netinfo" name="netinfo" class="admmsg" style="display: none;"></span>
+	  </div>
+	  <br>
+	  <div id="topo" style="float: left; width: 65%; display: none;"><br><br>
+	    <table border="0" cellpadding="1" cellspacing="0" style="text-align: center;">
+	      <thead id="topohead">
+		<tr>
+		  <th>&nbsp;</th>
+		  <th>&nbsp;</th>
+		</tr>
+	      </thead>
+	      <tbody id="topobody">
+		<tr>
+		  <td>&nbsp;</td>
+		  <td>&nbsp;</td>
+		</tr>
+		<tr>
+		  <td>&nbsp;</td>
+		  <td>&nbsp;</td>
+		</tr>
+	      </tbody>
+	    </table>
 	  </div>
 	</form>
       </fieldset>
