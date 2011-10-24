@@ -258,6 +258,11 @@ void Webserver::web_get_values (int i, TiXmlElement *ep)
 	textElement = new TiXmlText(str.c_str());
       else
 	textElement = new TiXmlText("");
+      if (id.GetType() == ValueID::ValueType_Decimal) {
+	uint8 precision;
+	if (Manager::Get()->GetValueFloatPrecision(id, &precision))
+	  fprintf(stderr, "node = %d id = %d value = %s precision = %d\n", i, j, str.c_str(), precision);
+      }
       valueElement->LinkEndChild(textElement);
     }
 
