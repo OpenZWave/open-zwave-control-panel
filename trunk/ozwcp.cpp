@@ -126,6 +126,24 @@ void MyNode::remove (int32 const ind)
 }
 
 /*
+ * compareValue
+ * Function to compare values in the vector for sorting.
+ */
+bool compareValue (MyValue *a, MyValue *b)
+{
+  return (a->getId() < b->getId());
+}
+
+/*
+ * MyNode::sortValues
+ * Sort the ValueIDs
+ */
+void MyNode::sortValues ()
+{
+  sort(values.begin(), values.end(), compareValue);
+  setChanged(true);
+}
+/*
  * MyNode::addValue
  * Per notifications, add a value to a node.
  */
@@ -571,6 +589,9 @@ void OnNotification (Notification const* _notification, void* _context)
     break;
   case Notification::Type_NodeQueriesComplete:
     Log::Write("Notification: Node %d Queries Complete", _notification->GetNodeId());
+    pthread_mutex_lock(&nlock);
+    nodes[_notification->GetNodeId()]->sortValues();
+    pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_EssentialNodeQueriesComplete:
     Log::Write("Notification: Essential Node %d Queries Complete", _notification->GetNodeId());

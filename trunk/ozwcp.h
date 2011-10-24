@@ -81,6 +81,7 @@ public:
   MyNode(int32 const);
   static void remove(int32 const);
   static int32 getNodeCount() { return nodecount; };
+  void sortValues();
   void addValue(ValueID id);
   void removeValue(ValueID id);
   void saveValue(ValueID id);
