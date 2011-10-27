@@ -35,6 +35,7 @@
 //-----------------------------------------------------------------------------
 
 #include <list>
+#include <algorithm>
 #include "Notification.h"
 #include "ValueStore.h"
 #include "Value.h"
