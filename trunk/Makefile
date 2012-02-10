@@ -37,8 +37,8 @@ GNUTLS := #-lgnutls
 #LIBUSB := -ludev
 
 # for Mac OS X comment out above 2 lines and uncomment next 2 lines
-LIBZWAVE := $(wildcard $(OPENZWAVE)/cpp/lib/mac/*.a)
-LIBUSB := -framework IOKit -framework CoreFoundation
+#LIBZWAVE := $(wildcard $(OPENZWAVE)/cpp/lib/mac/*.a)
+#LIBUSB := -framework IOKit -framework CoreFoundation
 
 LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB)
 

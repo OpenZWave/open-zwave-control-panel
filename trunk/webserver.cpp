@@ -290,7 +290,7 @@ const char *Webserver::SendTopoResponse (struct MHD_Connection *conn, const char
   string s;
   static char fntemp[32];
   char *fn;
-  uint i, j;
+  uint i, j, k;
   uint8 cnt;
   uint32 len;
   uint8 *neighbors;
@@ -301,24 +301,30 @@ const char *Webserver::SendTopoResponse (struct MHD_Connection *conn, const char
 
   if (strcmp(fun, "load") == 0) {
     cnt = MyNode::getNodeCount();
-    for (i = 0; i < cnt; i++) {
-      len = Manager::Get()->GetNodeNeighbors(homeId, i+1, &neighbors);
-      if (len > 0) {
-	TiXmlElement* nodeElement = new TiXmlElement("node");
-	snprintf(str, sizeof(str), "%d", i+1);
-	nodeElement->SetAttribute("id", str);
-	string list = "";
-	for (j = 0; j < len; j++) {
-	  snprintf(str, sizeof(str), "%d", neighbors[j]);
-	  list += str;
-	  if (j < (len - 1))
-	    list += ",";
+    i = 0;
+    j = 1;
+    while (j <= cnt && i < MAX_NODES) {
+      if (nodes[i] != NULL) {
+	len = Manager::Get()->GetNodeNeighbors(homeId, i, &neighbors);
+	if (len > 0) {
+	  TiXmlElement* nodeElement = new TiXmlElement("node");
+	  snprintf(str, sizeof(str), "%d", i);
+	  nodeElement->SetAttribute("id", str);
+	  string list = "";
+	  for (k = 0; k < len; k++) {
+	    snprintf(str, sizeof(str), "%d", neighbors[k]);
+	    list += str;
+	    if (k < (len - 1))
+	      list += ",";
+	  }
+	  TiXmlText *textElement = new TiXmlText(list.c_str());
+	  nodeElement->LinkEndChild(textElement);
+	  topoElement->LinkEndChild(nodeElement);
+	  delete [] neighbors;
 	}
-	TiXmlText *textElement = new TiXmlText(list.c_str());
-	nodeElement->LinkEndChild(textElement);
-	topoElement->LinkEndChild(nodeElement);
+	j++;
       }
-      delete [] neighbors;
+      i++;
     }
   }
   strncpy(fntemp, "/tmp/ozwcp.scenes.XXXXXX", sizeof(fntemp));
