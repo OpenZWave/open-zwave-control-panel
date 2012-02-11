@@ -259,9 +259,9 @@
     </div>
     <div id="admin" style="float: left; width: 100%;">
       <fieldset> <legend> Controller </legend>
-	<form name="AdmPost" method="post"> <input name="admhidden"
-						   class="hide" value="hidden">
-	  <div class="esb" style="margin-left: 14px; width: 275px;">
+	<form name="AdmPost" method="post">
+	  <input name="admhidden" class="hide" value="hidden">
+	  <div class="esb" style="margin-left: 14px; width: 200px;">
 	    <select id="adminops" onchange="return DoAdmHelp();">
 	      <option value="choice" selected="true">Select an operation:</option>
 	      <option value="addc">Add Controller</option>
@@ -278,13 +278,18 @@
 	      <option value="reqnnu">Request Node Neighbor Update</option>
 	      <option value="assrr">Assign Return Route</option>
 	      <option value="delarr">Delete All Return Routes</option>
+	      <option value="addbtn">Add Button</option>
+	      <option value="delbtn">Delete Button</option>
 	    </select>
-	    <button id="admgo" name="go" style="text-align: center;"
-		    onclick="return DoAdmPost(0);" type="submit">Go</button> 
-	    <button id="admcan" name="cancel" style="text-align: center; display: none;"
-		    onclick="return DoAdmPost(1);" type="submit">Cancel</button>
 	  </div>
-	  <div class="rsb"><span id="adminfo" name="adminfo" class="admmsg"></span></div>
+	  <div id="admcntl" name="admcntl" class="rsb" style="display: none;"></div>
+	  <button id="admgo" name="go" style="float: left; text-align: center; display: none; margin-left: 10px;"
+		  onclick="return DoAdmPost(0);" type="submit">Go</button> 
+	  <button id="admcan" name="cancel" style="float: left; text-align: center; display: none;"
+		  onclick="return DoAdmPost(1);" type="submit">Cancel</button>
+	  <div class="rsb" style="margin-left: 10px;">
+	    <span id="adminfo" name="adminfo" class="admmsg"></span>
+	  </div>
 	</form>
       </fieldset>
     </div>

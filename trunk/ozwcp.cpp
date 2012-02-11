@@ -205,6 +205,7 @@ void MyNode::newGroup (uint8 node)
  */
 void MyNode::addGroup (uint8 node, uint8 g, uint8 n, uint8 *v)
 {
+  fprintf(stderr, "addGroup: node %d group %d n %d\n", node, g, n);
   if (groups.size() == 0)
     newGroup(node);
   for (vector<MyGroup*>::iterator it = groups.begin(); it != groups.end(); ++it)
@@ -243,11 +244,12 @@ void MyNode::updateGroup (uint8 node, uint8 grp, char *glist)
   uint8 n;
   uint8 j;
 
+  fprintf(stderr, "updateGroup: node %d group %d\n", node, grp);
   for (it = groups.begin(); it != groups.end(); ++it)
     if ((*it)->groupid == grp)
       break;
   if (it == groups.end()) {
-    fprintf(stderr, "updateGroup: group %d not found\n", grp);
+    fprintf(stderr, "updateGroup: node %d group %d not found\n", node, grp);
     return;
   }
   v = new uint8((*it)->max);
@@ -459,12 +461,10 @@ void OnNotification (Notification const* _notification, void* _context)
 		 _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetGroupIdx());
       uint8 *v;
       int8 n = Manager::Get()->GetAssociations(homeId, _notification->GetNodeId(), _notification->GetGroupIdx(), &v);
-      if (n > 0) {
-	pthread_mutex_lock(&nlock);
-	nodes[_notification->GetNodeId()]->addGroup(_notification->GetNodeId(), _notification->GetGroupIdx(), n, v);
-	pthread_mutex_unlock(&nlock);
-	delete [] v;
-      }
+      pthread_mutex_lock(&nlock);
+      nodes[_notification->GetNodeId()]->addGroup(_notification->GetNodeId(), _notification->GetGroupIdx(), n, v);
+      pthread_mutex_unlock(&nlock);
+      delete [] v;
     }
     break;
   case Notification::Type_NodeNew:
@@ -500,15 +500,6 @@ void OnNotification (Notification const* _notification, void* _context)
     needsave = true;
     pthread_mutex_unlock(&glock);
     break;
-  case Notification::Type_NodeEvent:
-    Log::Write("Notification: Node Event Home %08x Node %d Status %d Genre %s Class %s Instance %d Index %d Type %s",
-	       _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetEvent(),
-	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
-	       id.GetIndex(), valueTypeStr(id.GetType()));
-    pthread_mutex_lock(&nlock);
-    nodes[_notification->GetNodeId()]->saveValue(id);
-    pthread_mutex_unlock(&nlock);
-    break;
   case Notification::Type_NodeProtocolInfo:
     Log::Write("Notification: Node Protocol Info Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
 	       _notification->GetHomeId(), _notification->GetNodeId(),
@@ -520,6 +511,15 @@ void OnNotification (Notification const* _notification, void* _context)
 	       _notification->GetHomeId(), _notification->GetNodeId(),
 	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
 	       id.GetIndex(), valueTypeStr(id.GetType()));
+    break;
+  case Notification::Type_NodeEvent:
+    Log::Write("Notification: Node Event Home %08x Node %d Status %d Genre %s Class %s Instance %d Index %d Type %s",
+	       _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetEvent(),
+	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
+	       id.GetIndex(), valueTypeStr(id.GetType()));
+    pthread_mutex_lock(&nlock);
+    nodes[_notification->GetNodeId()]->saveValue(id);
+    pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_PollingDisabled:
     Log::Write("Notification: Polling Disabled Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
@@ -538,6 +538,22 @@ void OnNotification (Notification const* _notification, void* _context)
     //pthread_mutex_lock(&nlock);
     //nodes[_notification->GetNodeId()]->setPolled(true);
     //pthread_mutex_unlock(&nlock);
+    break;
+  case Notification::Type_CreateButton:
+    Log::Write("Notification: Create button Home %08x Node %d Button %d",
+	       _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetButtonId());
+    break;
+  case Notification::Type_DeleteButton:
+    Log::Write("Notification: Delete button Home %08x Node %d Button %d",
+	       _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetButtonId());
+    break;
+  case Notification::Type_ButtonOn:
+    Log::Write("Notification: Button On Home %08x Node %d Button %d",
+	       _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetButtonId());
+    break;
+  case Notification::Type_ButtonOff:
+    Log::Write("Notification: Button Off Home %08x Node %d Button %d",
+	       _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetButtonId());
     break;
   case Notification::Type_DriverReady:
     Log::Write("Notification: Driver Ready, homeId %08x, nodeId %d", _notification->GetHomeId(),
@@ -587,14 +603,14 @@ void OnNotification (Notification const* _notification, void* _context)
   case Notification::Type_MsgComplete:
     Log::Write("Notification: Message Complete");
     break;
+  case Notification::Type_EssentialNodeQueriesComplete:
+    Log::Write("Notification: Essential Node %d Queries Complete", _notification->GetNodeId());
+    break;
   case Notification::Type_NodeQueriesComplete:
     Log::Write("Notification: Node %d Queries Complete", _notification->GetNodeId());
     pthread_mutex_lock(&nlock);
     nodes[_notification->GetNodeId()]->sortValues();
     pthread_mutex_unlock(&nlock);
-    break;
-  case Notification::Type_EssentialNodeQueriesComplete:
-    Log::Write("Notification: Essential Node %d Queries Complete", _notification->GetNodeId());
     break;
   case Notification::Type_AwakeNodesQueried:
     Log::Write("Notification: Awake Nodes Queried");
@@ -641,7 +657,7 @@ int32 main(int32 argc, char* argv[])
   for (i = 0; i < MAX_NODES; i++)
     nodes[i] = NULL;
 
-  Options::Create("config/", "", "");
+  Options::Create("./config/", "", "--SaveConfiguration=false");
   Options::Get()->Lock();
 
   Manager::Create();
