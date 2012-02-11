@@ -592,7 +592,7 @@ void web_controller_update (Driver::ControllerState cs, void *ct)
     cp->setAdminMessage(": waiting for a user action.");
     break;
   case Driver::ControllerState_InProgress:
-    cp->setAdminMessage(": communicationg with the other device.");
+    cp->setAdminMessage(": communicating with the other device.");
     break;
   case Driver::ControllerState_Completed:
     cp->setAdminMessage(": command has completed successfully.");
@@ -646,6 +646,8 @@ int web_config_post (void *cls, enum MHD_ValueKind kind, const char *key, const 
       cp->conn_arg1 = (void *)strdup(data);
     else if (strcmp(key, "node") == 0)
       cp->conn_arg2 = (void *)strdup(data);
+    else if (strcmp(key, "button") == 0)
+      cp->conn_arg3 = (void *)strdup(data);
   } else if (strcmp(cp->conn_url, "/nodepost.html") == 0) {
     if (strcmp(key, "fun") == 0)
       cp->conn_arg1 = (void *)strdup(data);
@@ -974,6 +976,28 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 								 Driver::ControllerCommand_DeleteAllReturnRoutes,
 								 web_controller_update, this, true, node));
 	  }
+	} else if (strcmp((char *)cp->conn_arg1, "addbtn") == 0) {
+	  if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4 &&
+	      cp->conn_arg3 != NULL) {
+	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
+	    uint8 button = strtol(((char *)cp->conn_arg3), NULL, 10);
+	    setAdminFunction("Add Button");
+	    setAdminState(
+			  Manager::Get()->BeginControllerCommand(homeId,
+								 Driver::ControllerCommand_CreateButton,
+								 web_controller_update, this, true, node, button));
+	  }
+	} else if (strcmp((char *)cp->conn_arg1, "delbtn") == 0) {
+	  if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4 &&
+	      cp->conn_arg3 != NULL) {
+	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
+	    uint8 button = strtol(((char *)cp->conn_arg3), NULL, 10);
+	    setAdminFunction("Delete Button");
+	    setAdminState(
+			  Manager::Get()->BeginControllerCommand(homeId,
+								 Driver::ControllerCommand_DeleteButton,
+								 web_controller_update, this, true, node, button));
+	  }
 	}
 	return MHD_YES;
       } else
@@ -1007,7 +1031,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 
 	if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4 &&
 	    cp->conn_arg3 != NULL && strlen((char *)cp->conn_arg3) > 0 && cp->conn_arg4 != NULL) {
-	  node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10) + 1;
+	  node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 	  grp = strtol((char *)cp->conn_arg3, NULL, 10);
 	  if (strcmp((char *)cp->conn_arg1, "group") == 0) { /* Group update */
 	    pthread_mutex_lock(&nlock);

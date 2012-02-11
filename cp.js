@@ -315,7 +315,9 @@ function BED()
   info.style.display = 'none';
   document.AdmPost.adminops.selectedIndex = 0;
   document.AdmPost.adminops.disabled = off;
-  info = document.getElementById('netinfo');
+  info = document.getElementById('adminfo');
+  info.style.display = 'none';
+  info = document.getElementById('admcntl');
   info.style.display = 'none';
   document.NodePost.nodeops.selectedIndex = 0;
   document.NodePost.nodeops.disabled = off;
@@ -549,15 +551,29 @@ function DoAdmPost(can)
   }
   params = 'fun='+fun;
 
-  if ((fun == 'hnf' || fun == 'remfn' || fun == 'repfn' || fun == 'reqnu' || fun == 'reqnnu' ||
-       fun == 'assrr' || fun == 'delarr') && curnode == null) {
-    ainfo = document.getElementById('adminfo');
-    ainfo.innerHTML = 'Must select a node below for this function.';
-    ainfo.style.display = 'block';
-    return false;
+  if (fun == 'hnf' || fun == 'remfn' || fun == 'repfn' || fun == 'reqnu' ||
+      fun == 'reqnnu' || fun == 'assrr' || fun == 'delarr' || 
+      fun == 'addbtn' || fun == 'delbtn') {
+    if (curnode == null) {
+      ainfo = document.getElementById('adminfo');
+      ainfo.innerHTML = 'Must select a node below for this function.';
+      ainfo.style.display = 'block';
+      return false;
+    }
+    params = params+'&node='+curnode;
   }
 
-  params = params+'&node='+curnode;
+  if (fun == 'addbtn' || fun == 'delbtn') {
+    if (document.AdmPost.button.value.length == 0) {
+      ainfo = document.getElementById('adminfo');
+      ainfo.innerHTML = 'Button number is required.';
+      ainfo.style.display = 'block';
+      document.AdmPost.button.select();
+      return false;
+    }
+    params = params+'&button='+document.AdmPost.button.value;
+  }
+
   if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
     posthttp=new XMLHttpRequest();
   } else {
@@ -579,6 +595,9 @@ function DoAdmPost(can)
 function DoAdmHelp()
 {
   ainfo = document.getElementById('adminfo');
+  var acntl = document.getElementById('admcntl');
+  acntl.innerHTML = '';
+  document.AdmPost.admgo.style.display = 'inline';
   if (document.AdmPost.adminops.value == 'addc') {
     ainfo.innerHTML = 'Add a new secondary controller to the Z-Wave network.';
     ainfo.style.display = 'block';
@@ -586,7 +605,7 @@ function DoAdmHelp()
     ainfo.innerHTML = 'Add a new device (but not a controller) to the Z-Wave network.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'cprim') {
-    ainfo.innerHTML = '(Not yet implemented)';
+    ainfo.innerHTML = 'Add a new primary controller in place of dead old controller.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'rconf') {
     ainfo.innerHTML = 'Receive configuration from another controller.';   
@@ -607,7 +626,7 @@ function DoAdmHelp()
     ainfo.innerHTML = 'Replace a failed device with another.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'tranpr') {
-    ainfo.innerHTML = '(Not yet implemented) - Add a new controller to the network and make it the primary.';
+    ainfo.innerHTML = 'Add a new controller to the network and make it the primary.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'reqnu') {
     ainfo.style.display = 'block';
@@ -621,8 +640,26 @@ function DoAdmHelp()
   } else if (document.AdmPost.adminops.value == 'delarr') {
     ainfo.innerHTML = 'Delete all network return routes from a device.';
     ainfo.style.display = 'block';
+  } else if (document.AdmPost.adminops.value == 'addbtn' ||
+	     document.AdmPost.adminops.value == 'delbtn') {
+    if (curnode == null) {
+      ainfo.innerHTML = 'Must select a node below for this funcion.';
+      ainfo.style.display = 'block';
+      document.AdmPost.adminops.selectedIndex = 0;
+      document.AdmPost.admgo.style.display = 'none';
+      return false;
+    }
+    acntl.innerHTML = '<label style="margin-left: 10px;"><span class="legend">Button number:&nbsp;</span></label><input type="text" class="legend" size="3" id="button" value="">';
+    acntl.style.display = 'block';
+    document.AdmPost.button.select();
+    if (document.AdmPost.adminops.value == 'addbtn')
+      ainfo.innerHTML = 'Add a button from a handheld.';
+    else
+      ainfo.innerHTML = 'Remove a button from a handheld.';
+    ainfo.style.display = 'block';
   } else {
     ainfo.style.display = 'none';
+    document.AdmPost.admgo.style.display = 'none';
   }
   return true;
 }
@@ -1275,7 +1312,9 @@ function CreateGroup(ind)
     nodegrp[ind]=nodegrp[ind]+'<option value="'+nodes[ind].groups[i].id+'">'+nodes[ind].groups[i].label+' ('+nodes[ind].groups[i].id+')</option>';
     nodegrpgrp[ind][grp] = '<td><div id="nodegrp" name="nodegrp" style="float: right;"><select id="groups" multiple size="4" style="vertical-align: top; margin-left: 5px;">';
     k = 0;
-    for (j = 1; j <= nodecount; j++) {
+    for (j = 1; j < nodes.length; j++) {
+      if (nodes[j] == null)
+	continue;
       if (nodes[ind].groups[i].nodes != null)
 	while (k < nodes[ind].groups[i].nodes.length && nodes[ind].groups[i].nodes[k] < j)
 	  k++;
