@@ -317,6 +317,7 @@ const char *Webserver::SendTopoResponse (struct MHD_Connection *conn, const char
 	    if (k < (len - 1))
 	      list += ",";
 	  }
+	  fprintf(stderr, "topo: node=%d %s\n", i, list.c_str());
 	  TiXmlText *textElement = new TiXmlText(list.c_str());
 	  nodeElement->LinkEndChild(textElement);
 	  topoElement->LinkEndChild(nodeElement);
@@ -803,13 +804,13 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	  Manager::Get()->SoftReset(homeId);
 	} else if (strcmp((char *)cp->conn_arg1, "exit") == 0) { /* exit */
 	  pthread_mutex_lock(&glock);
-	  Manager::Get()->RemoveDriver(devname ? devname : "HID Controller");
-	  if (devname != NULL) {
+	  if (devname != NULL || usb) {
+	    Manager::Get()->RemoveDriver(devname ? devname : "HID Controller");
 	    free(devname);
 	    devname = NULL;
+	    homeId = 0;
+	    usb = false;
 	  }
-	  homeId = 0;
-	  usb = false;
 	  done = true;						 // let main exit
 	  pthread_mutex_unlock(&glock);
 	}

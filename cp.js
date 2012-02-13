@@ -1151,7 +1151,7 @@ function TopoReply()
 	var j, k = 0;
 	for (j = 1; j < routes.length; j++) {
 	  if (i == j) {
-	    stuff=stuff+'<td>*</td>';
+	    stuff=stuff+'<td>&nbsp;</td>';
 	  } else if (k < routes[i].length && j == routes[i][k]) {
 	    stuff=stuff+'<td>*</td>';
 	    k++;
