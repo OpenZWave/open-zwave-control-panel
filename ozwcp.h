@@ -112,6 +112,6 @@ private:
   bool changed;
   static bool nodechanged;
   static list<uint8> removed;
-  vector <MyGroup*> groups;
+  vector<MyGroup*> groups;
   vector<MyValue*> values;
 };

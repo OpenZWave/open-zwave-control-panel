@@ -161,13 +161,22 @@ void MyNode::addValue (ValueID id)
  */
 void MyNode::removeValue (ValueID id)
 {
-  for (vector<MyValue*>::iterator it = values.begin(); it != values.end(); it++) {
+  vector<MyValue*>::iterator it;
+  bool found = false;
+  for (it = values.begin(); it != values.end(); it++) {
     if ((*it)->id == id) {
-      values.erase(it);
       delete *it;
+      values.erase(it);
+      found = true;
       break;
     }
   }
+  if (!found)
+    fprintf(stderr, "removeValue not found Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s\n",
+	    id.GetHomeId(), id.GetNodeId(), valueGenreStr(id.GetGenre()),
+	    cclassStr(id.GetCommandClassId()), id.GetInstance(), id.GetIndex(),
+	    valueTypeStr(id.GetType()));
+
   setChanged(true);
   setTime(time(NULL));
 }
