@@ -1,4 +1,5 @@
 #!/bin/bash
+#valgrind --track-fds=yes --time-stamp=yes --leak-check=full --show-reachable=yes --track-origins=yes --malloc-fill=01 --free-fill=80 ./ozwcp -d -p 9900
 if [ "$1" = "" ]; then
   echo usage: test.sh host:port
   exit 1
