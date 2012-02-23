@@ -1,6 +1,7 @@
 var pollhttp;
 var scenehttp;
 var topohttp;
+var racphttp;
 var polltmr=null;
 var pollwait=null;
 var divcur=new Array();
@@ -48,6 +49,11 @@ if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
   topohttp=new XMLHttpRequest();
 } else {
   topohttp=new ActiveXObject("Microsoft.XMLHTTP");
+}
+if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
+  racphttp=new XMLHttpRequest();
+} else {
+  racphttp=new ActiveXObject("Microsoft.XMLHTTP");
 }
 function SaveNode(newid)
 {
@@ -168,6 +174,9 @@ function PollReply()
 		     id: elem[i].getAttribute('id'), gtype: elem[i].getAttribute('gtype'),
 		     manufacturer: elem[i].getAttribute('manufacturer'), product: elem[i].getAttribute('product'),
 		     name: elem[i].getAttribute('name'), location: elem[i].getAttribute('location'),
+		     listening: elem[i].getAttribute('listening') == 'true', frequent: elem[i].getAttribute('frequent') == 'true',
+		     beam: elem[i].getAttribute('beam') == 'true', routing: elem[i].getAttribute('routing') == 'true',
+		     security: elem[i].getAttribute('security') == 'true',
 		     values: null, groups: null};
 	var k = 0;
 	var values = elem[i].getElementsByTagName('value');
@@ -229,6 +238,8 @@ function PollReply()
 	  var dt = new Date(nodes[i].time*1000);
 	  var yd = new Date(dt.getDate()-1);
 	  var ts;
+	  var ext;
+	  var exthelp;
 	  if (dt < yd)
 	    ts = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString();
 	  else
@@ -253,7 +264,35 @@ function PollReply()
 	      }
 	      break;
 	    }
-	  stuff=stuff+'<tr id="node'+i+'" onmouseover="this.className=\'highlight\';" onmouseout="if (this.id == curnode) this.className=\'click\'; else this.className=\'normal\';" onclick="return SaveNode(this.id);" ondblClick="SaveNode(this.id); return DisplayNode();"><td>'+nodes[i].id+(nodes[i].id == nodeid ? '*' : '')+'</td><td>'+nodes[i].btype+'</td><td>'+nodes[i].gtype+'</td><td>'+nodes[i].manufacturer+' '+nodes[i].product+'</td><td>'+nodes[i].name+'</td><td>'+nodes[i].location+'</td><td>'+val+'</td><td>'+ts+'</td></tr>';
+	  ext = ' ';
+	  exthelp = '';
+	  if (nodes[i].id == nodeid) {
+	    ext = ext + '*';
+	    exthelp = exthelp + 'controller, ';
+	  }
+	  if (nodes[i].listening) {
+	    ext = ext + 'L';
+	    exthelp = exthelp + 'listening, ';
+	  }
+	  if (nodes[i].frequent) {
+	    ext = ext + 'F';
+	    exthelp = exthelp + 'FLiRS, ';
+	  }
+	  if (nodes[i].beam) {
+	    ext = ext + 'B';
+	    exthelp = exthelp + 'beaming, ';
+	  }
+	  if (nodes[i].routing) {
+	    ext = ext + 'R';
+	    exthelp = exthelp + 'routing, ';
+	  }
+	  if (nodes[i].security) {
+	    ext = ext + 'S';
+	    exthelp = exthelp + 'security, ';
+	  }
+	  if (exthelp.length > 0)
+	    exthelp = exthelp.substr(0, exthelp.length - 2);
+	  stuff=stuff+'<tr id="node'+i+'" onmouseover="this.className=\'highlight\';" onmouseout="if (this.id == curnode) this.className=\'click\'; else this.className=\'normal\';" onclick="return SaveNode(this.id);" ondblClick="SaveNode(this.id); return DisplayNode();"><td onmouseover="ShowToolTip(\''+exthelp+'\',0);" onmouseout="HideToolTip();">'+nodes[i].id+ext+'</td><td>'+nodes[i].btype+'</td><td>'+nodes[i].gtype+'</td><td>'+nodes[i].manufacturer+' '+nodes[i].product+'</td><td>'+nodes[i].name+'</td><td>'+nodes[i].location+'</td><td>'+val+'</td><td>'+ts+'</td></tr>';
 	  CreateDivs('user', divcur, i);
 	  CreateDivs('config', divcon, i);
 	  CreateDivs('system', divinfo, i);
@@ -1138,21 +1177,23 @@ function TopoReply()
       }
       var stuff = '<tr><th>Nodes</th>';
       var topohead = document.getElementById('topohead');
-      for (i = 1; i < routes.length; i++) {
-	if (routes[i] == undefined)
-	  routes[i]=new Array();
+      for (i = 1; i < nodes.length; i++) {
+	if (nodes[i] == null)
+	  continue;
 	stuff=stuff+'<th>'+i+'</th>';
       }
       stuff=stuff+'</tr>'
       topohead.innerHTML = stuff;
       stuff = '';
-      for (i = 1; i < routes.length; i++) {
+      for (i = 1; i < nodes.length; i++) {
+	if (nodes[i] == null)
+	  continue;
 	stuff=stuff+'<tr><td style="vertical-align: top; text-decoration: underline; background-color: #FFFFFF;">'+i+'</td>';
 	var j, k = 0;
-	for (j = 1; j < routes.length; j++) {
-	  if (i == j) {
-	    stuff=stuff+'<td>&nbsp;</td>';
-	  } else if (k < routes[i].length && j == routes[i][k]) {
+	for (j = 1; j < nodes.length; j++) {
+	  if (nodes[j] == null)
+	    continue;
+	  if (routes[i] != undefined && k < routes[i].length && j == routes[i][k]) {
 	    stuff=stuff+'<td>*</td>';
 	    k++;
 	  } else {
@@ -1165,6 +1206,18 @@ function TopoReply()
       topobody.innerHTML = stuff;
     }
   }
+}
+function RequestAllConfig(n)
+{
+  var params='fun=racp&node='+n;
+  racphttp.open('POST','confparmpost.html',false);
+  racphttp.onreadystatechange = PollReply;
+  racphttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  racphttp.setRequestHeader("Content-length", params.length);
+  racphttp.setRequestHeader("Connection", "close");
+  racphttp.send(params);
+
+  return false;
 }
 function quotestring(s)
 {
@@ -1257,7 +1310,7 @@ function CreateButton(i,j,vid)
 function CreateDivs(genre,divto,ind)
 {
   divto[ind]='<table border="0" cellpadding="1" cellspacing="0"><tbody>';
-  if (nodes[ind].values != null)
+  if (nodes[ind].values != null) {
     for (var i = 0; i < nodes[ind].values.length; i++) {
       if (nodes[ind].values[i].genre != genre)
 	continue;
@@ -1284,6 +1337,9 @@ function CreateDivs(genre,divto,ind)
 	divto[ind]=divto[ind]+CreateButton(ind,i,vid);
       }
     }
+    if (genre == 'config')
+      divto[ind]=divto[ind]+'<tr><td>&nbsp;</td><td><button type="submit" id="requestallconfig" name="requestallconfig" onclick="return RequestAllConfig('+ind+');">Refresh</button></td><td>&nbsp;</td></tr>';
+  }
   divto[ind]=divto[ind]+'</tbody></table>';
 }
 function CreateName(val,ind)
