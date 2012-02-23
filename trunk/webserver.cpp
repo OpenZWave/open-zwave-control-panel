@@ -552,6 +552,11 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
 	nodeElement->SetAttribute("location", Manager::Get()->GetNodeLocation(homeId, i).c_str());
 	nodeElement->SetAttribute("manufacturer", Manager::Get()->GetNodeManufacturerName(homeId, i).c_str());
 	nodeElement->SetAttribute("product", Manager::Get()->GetNodeProductName(homeId, i).c_str());
+	nodeElement->SetAttribute("listening", Manager::Get()->IsNodeListeningDevice(homeId, i) ? "true" : "false");
+	nodeElement->SetAttribute("frequent", Manager::Get()->IsNodeFrequentListeningDevice(homeId, i) ? "true" : "false");
+	nodeElement->SetAttribute("beam", Manager::Get()->IsNodeBeamingDevice(homeId, i) ? "true" : "false");
+	nodeElement->SetAttribute("routing", Manager::Get()->IsNodeRoutingDevice(homeId, i) ? "true" : "false");
+	nodeElement->SetAttribute("security", Manager::Get()->IsNodeSecurityDevice(homeId, i) ? "true" : "false");
 	nodeElement->SetAttribute("time", nodes[i]->getTime());
 	web_get_groups(i, nodeElement);
 	// Don't think the UI needs these
@@ -691,6 +696,11 @@ int web_config_post (void *cls, enum MHD_ValueKind kind, const char *key, const 
   } else if (strcmp(cp->conn_url, "/topopost.html") == 0) {
     if (strcmp(key, "fun") == 0)
       cp->conn_arg1 = (void *)strdup(data);
+  } else if (strcmp(cp->conn_url, "/confparmpost.html") == 0) {
+    if (strcmp(key, "fun") == 0)
+      cp->conn_arg1 = (void *)strdup(data);
+    else if (strcmp(key, "node") == 0)
+      cp->conn_arg2 = (void *)strdup(data);
   }
   return MHD_YES;
 }
@@ -864,6 +874,17 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	cp->conn_res = (void *)SendTopoResponse(conn, (char *)cp->conn_arg1, (char *)cp->conn_arg2, (char *)cp->conn_arg3, (char *)cp->conn_arg4);
       } else
 	ret = web_send_file(conn, (char *)cp->conn_res, MHD_HTTP_OK, true);
+    } else if (strcmp(url, "/confparmpost.html") == 0) {
+      if (*up_data_size != 0) {
+	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
+	*up_data_size = 0;
+	if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 0) {
+	  uint8 node = strtol((char *)cp->conn_arg2, NULL, 10);
+	  Manager::Get()->RequestAllConfigParams(homeId, node);
+	}
+	return MHD_YES;
+      } else
+	ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
     } else if (strcmp(url, "/admpost.html") == 0) {
       if (*up_data_size != 0) {
 	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
@@ -1011,7 +1032,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	*up_data_size = 0;
 
 	if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4 && cp->conn_arg3 != NULL) {
-	  node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10) + 1;
+	  node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 	  if (strcmp((char *)cp->conn_arg1, "nam") == 0) { /* Node naming */
 	    Manager::Get()->SetNodeName(homeId, node, (char *)cp->conn_arg3);
 	  } else if (strcmp((char *)cp->conn_arg1, "loc") == 0) { /* Node location */

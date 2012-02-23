@@ -78,7 +78,7 @@ list<uint8> MyNode::removed;
 MyNode::MyNode (int32 const ind) : type(0)
 {
   if (ind < 1 || ind > MAX_NODES) {
-    Log::Write("new: bad node value %d, ignoring...", ind);
+    Log::Write(LogLevel_Info, "new: bad node value %d, ignoring...", ind);
     delete this;
     return;
   }
@@ -114,7 +114,7 @@ MyNode::~MyNode ()
 void MyNode::remove (int32 const ind)
 {
   if (ind < 1 || ind > MAX_NODES) {
-    Log::Write("remove: bad node value %d, ignoring...", ind);
+    Log::Write(LogLevel_Info, "remove: bad node value %d, ignoring...", ind);
     return;
   }
   if (nodes[ind] != NULL) {
@@ -438,7 +438,7 @@ void OnNotification (Notification const* _notification, void* _context)
   ValueID id = _notification->GetValueID();
   switch (_notification->GetType()) {
   case Notification::Type_ValueAdded:
-    Log::Write("Notification: Value Added Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
+    Log::Write(LogLevel_Info, "Notification: Value Added Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
 	       _notification->GetHomeId(), _notification->GetNodeId(),
 	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
 	       id.GetIndex(), valueTypeStr(id.GetType()));
@@ -447,7 +447,7 @@ void OnNotification (Notification const* _notification, void* _context)
     pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_ValueRemoved:
-    Log::Write("Notification: Value Removed Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
+    Log::Write(LogLevel_Info, "Notification: Value Removed Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
 	       _notification->GetHomeId(), _notification->GetNodeId(),
 	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
 	       id.GetIndex(), valueTypeStr(id.GetType()));
@@ -456,7 +456,7 @@ void OnNotification (Notification const* _notification, void* _context)
     pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_ValueChanged:
-    Log::Write("Notification: Value Changed Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
+    Log::Write(LogLevel_Info, "Notification: Value Changed Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
 	       _notification->GetHomeId(), _notification->GetNodeId(),
 	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
 	       id.GetIndex(), valueTypeStr(id.GetType()));
@@ -466,7 +466,7 @@ void OnNotification (Notification const* _notification, void* _context)
     break;
   case Notification::Type_Group:
     {
-      Log::Write("Notification: Group Home 0x%08x Node %d Group %d",
+      Log::Write(LogLevel_Info, "Notification: Group Home 0x%08x Node %d Group %d",
 		 _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetGroupIdx());
       uint8 *v;
       int8 n = Manager::Get()->GetAssociations(homeId, _notification->GetNodeId(), _notification->GetGroupIdx(), &v);
@@ -477,7 +477,7 @@ void OnNotification (Notification const* _notification, void* _context)
     }
     break;
   case Notification::Type_NodeNew:
-    Log::Write("Notification: Node New Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
+    Log::Write(LogLevel_Info, "Notification: Node New Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
 	       _notification->GetHomeId(), _notification->GetNodeId(),
 	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
 	       id.GetIndex(), valueTypeStr(id.GetType()));
@@ -486,7 +486,7 @@ void OnNotification (Notification const* _notification, void* _context)
     pthread_mutex_unlock(&glock);
     break;
   case Notification::Type_NodeAdded:
-    Log::Write("Notification: Node Added Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
+    Log::Write(LogLevel_Info, "Notification: Node Added Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
 	       _notification->GetHomeId(), _notification->GetNodeId(),
 	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
 	       id.GetIndex(), valueTypeStr(id.GetType()));
@@ -498,7 +498,7 @@ void OnNotification (Notification const* _notification, void* _context)
     pthread_mutex_unlock(&glock);
     break;
   case Notification::Type_NodeRemoved:
-    Log::Write("Notification: Node Removed Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
+    Log::Write(LogLevel_Info, "Notification: Node Removed Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
 	       _notification->GetHomeId(), _notification->GetNodeId(),
 	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
 	       id.GetIndex(), valueTypeStr(id.GetType()));
@@ -510,19 +510,25 @@ void OnNotification (Notification const* _notification, void* _context)
     pthread_mutex_unlock(&glock);
     break;
   case Notification::Type_NodeProtocolInfo:
-    Log::Write("Notification: Node Protocol Info Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
+    Log::Write(LogLevel_Info, "Notification: Node Protocol Info Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
 	       _notification->GetHomeId(), _notification->GetNodeId(),
 	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
 	       id.GetIndex(), valueTypeStr(id.GetType()));
+    pthread_mutex_lock(&nlock);
+    nodes[_notification->GetNodeId()]->saveValue(id);
+    pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_NodeNaming:
-    Log::Write("Notification: Node Naming Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
+    Log::Write(LogLevel_Info, "Notification: Node Naming Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
 	       _notification->GetHomeId(), _notification->GetNodeId(),
 	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
 	       id.GetIndex(), valueTypeStr(id.GetType()));
+    pthread_mutex_lock(&nlock);
+    nodes[_notification->GetNodeId()]->saveValue(id);
+    pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_NodeEvent:
-    Log::Write("Notification: Node Event Home %08x Node %d Status %d Genre %s Class %s Instance %d Index %d Type %s",
+    Log::Write(LogLevel_Info, "Notification: Node Event Home %08x Node %d Status %d Genre %s Class %s Instance %d Index %d Type %s",
 	       _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetEvent(),
 	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
 	       id.GetIndex(), valueTypeStr(id.GetType()));
@@ -531,7 +537,7 @@ void OnNotification (Notification const* _notification, void* _context)
     pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_PollingDisabled:
-    Log::Write("Notification: Polling Disabled Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
+    Log::Write(LogLevel_Info, "Notification: Polling Disabled Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
 	       _notification->GetHomeId(), _notification->GetNodeId(),
 	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
 	       id.GetIndex(), valueTypeStr(id.GetType()));
@@ -540,7 +546,7 @@ void OnNotification (Notification const* _notification, void* _context)
     //pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_PollingEnabled:
-    Log::Write("Notification: Polling Enabled Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
+    Log::Write(LogLevel_Info, "Notification: Polling Enabled Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
 	       _notification->GetHomeId(), _notification->GetNodeId(),
 	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
 	       id.GetIndex(), valueTypeStr(id.GetType()));
@@ -549,23 +555,23 @@ void OnNotification (Notification const* _notification, void* _context)
     //pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_CreateButton:
-    Log::Write("Notification: Create button Home %08x Node %d Button %d",
+    Log::Write(LogLevel_Info, "Notification: Create button Home %08x Node %d Button %d",
 	       _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetButtonId());
     break;
   case Notification::Type_DeleteButton:
-    Log::Write("Notification: Delete button Home %08x Node %d Button %d",
+    Log::Write(LogLevel_Info, "Notification: Delete button Home %08x Node %d Button %d",
 	       _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetButtonId());
     break;
   case Notification::Type_ButtonOn:
-    Log::Write("Notification: Button On Home %08x Node %d Button %d",
+    Log::Write(LogLevel_Info, "Notification: Button On Home %08x Node %d Button %d",
 	       _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetButtonId());
     break;
   case Notification::Type_ButtonOff:
-    Log::Write("Notification: Button Off Home %08x Node %d Button %d",
+    Log::Write(LogLevel_Info, "Notification: Button Off Home %08x Node %d Button %d",
 	       _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetButtonId());
     break;
   case Notification::Type_DriverReady:
-    Log::Write("Notification: Driver Ready, homeId %08x, nodeId %d", _notification->GetHomeId(),
+    Log::Write(LogLevel_Info, "Notification: Driver Ready, homeId %08x, nodeId %d", _notification->GetHomeId(),
 	       _notification->GetNodeId());
     pthread_mutex_lock(&glock);
     homeId = _notification->GetHomeId();
@@ -579,7 +585,7 @@ void OnNotification (Notification const* _notification, void* _context)
     pthread_mutex_unlock(&glock);
     break;
   case Notification::Type_DriverFailed:
-    Log::Write("Notification: Driver Failed, homeId %08x", _notification->GetHomeId());
+    Log::Write(LogLevel_Info, "Notification: Driver Failed, homeId %08x", _notification->GetHomeId());
     pthread_mutex_lock(&glock);
     done = false;
     needsave = false;
@@ -592,7 +598,7 @@ void OnNotification (Notification const* _notification, void* _context)
     pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_DriverReset:
-    Log::Write("Notification: Driver Reset, homeId %08x", _notification->GetHomeId());
+    Log::Write(LogLevel_Info, "Notification: Driver Reset, homeId %08x", _notification->GetHomeId());
     pthread_mutex_lock(&glock);
     done = false;
     needsave = false;
@@ -610,25 +616,25 @@ void OnNotification (Notification const* _notification, void* _context)
     pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_MsgComplete:
-    Log::Write("Notification: Message Complete");
+    Log::Write(LogLevel_Info, "Notification: Message Complete");
     break;
   case Notification::Type_EssentialNodeQueriesComplete:
-    Log::Write("Notification: Essential Node %d Queries Complete", _notification->GetNodeId());
+    Log::Write(LogLevel_Info, "Notification: Essential Node %d Queries Complete", _notification->GetNodeId());
     break;
   case Notification::Type_NodeQueriesComplete:
-    Log::Write("Notification: Node %d Queries Complete", _notification->GetNodeId());
+    Log::Write(LogLevel_Info, "Notification: Node %d Queries Complete", _notification->GetNodeId());
     pthread_mutex_lock(&nlock);
     nodes[_notification->GetNodeId()]->sortValues();
     pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_AwakeNodesQueried:
-    Log::Write("Notification: Awake Nodes Queried");
+    Log::Write(LogLevel_Info, "Notification: Awake Nodes Queried");
     break;
   case Notification::Type_AllNodesQueried:
-    Log::Write("Notification: All Nodes Queried");
+    Log::Write(LogLevel_Info, "Notification: All Nodes Queried");
     break;
   default:
-    Log::Write("Notification: type %d home %08x node %d genre %d class %d instance %d index %d type %d",
+    Log::Write(LogLevel_Info, "Notification: type %d home %08x node %d genre %d class %d instance %d index %d type %d",
 	       _notification->GetType(), _notification->GetHomeId(),
 	       _notification->GetNodeId(), id.GetGenre(), id.GetCommandClassId(),
 	       id.GetInstance(), id.GetIndex(), id.GetType());
