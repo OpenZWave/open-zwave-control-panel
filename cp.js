@@ -479,10 +479,8 @@ function DoValue(id)
     } else {
       posthttp=new ActiveXObject("Microsoft.XMLHTTP");
     }
-    posthttp.open('POST','valuepost.html',false);
+    posthttp.open('POST','valuepost.html', true);
     posthttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    posthttp.setRequestHeader("Content-length", params.length);
-    posthttp.setRequestHeader("Connection", "close");
     posthttp.send(params);
   }
   return false;
@@ -504,10 +502,8 @@ function DoButton(id,pushed)
     } else {
       posthttp=new ActiveXObject("Microsoft.XMLHTTP");
     }
-    posthttp.open('POST','buttonpost.html',false);
+    posthttp.open('POST','buttonpost.html', true);
     posthttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    posthttp.setRequestHeader("Content-length", params.length);
-    posthttp.setRequestHeader("Connection", "close");
     posthttp.send(params);
   }
   return false;
@@ -529,10 +525,8 @@ function DoDevPost(fun)
     } else {
       posthttp=new ActiveXObject("Microsoft.XMLHTTP");
     }
-    posthttp.open('POST','devpost.html',false);
+    posthttp.open('POST','devpost.html', true);
     posthttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    posthttp.setRequestHeader("Content-length", params.length);
-    posthttp.setRequestHeader("Connection", "close");
     posthttp.send(params);
     if (fun == 'close') {
       document.DevPost.devname = '';
@@ -618,10 +612,8 @@ function DoAdmPost(can)
   } else {
     posthttp=new ActiveXObject("Microsoft.XMLHTTP");
   }
-  posthttp.open('POST','admpost.html',false);
+  posthttp.open('POST','admpost.html', true);
   posthttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-  posthttp.setRequestHeader("Content-length", params.length);
-  posthttp.setRequestHeader("Connection", "close");
   posthttp.send(params);
   if (fun == 'remc' || fun == 'remd') {
     document.getElementById('divconfigcur').innerHTML = '';
@@ -718,10 +710,8 @@ function DoNodePost(val)
   } else {
     posthttp=new ActiveXObject("Microsoft.XMLHTTP");
   }
-  posthttp.open('POST','nodepost.html',false);
+  posthttp.open('POST','nodepost.html', true);
   posthttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-  posthttp.setRequestHeader("Content-length", params.length);
-  posthttp.setRequestHeader("Connection", "close");
   posthttp.send(params);
   return false;
 }
@@ -790,10 +780,8 @@ function DoGrpPost()
   } else {
     posthttp=new ActiveXObject("Microsoft.XMLHTTP");
   }
-  posthttp.open('POST','grouppost.html',false);
+  posthttp.open('POST','grouppost.html', true);
   posthttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-  posthttp.setRequestHeader("Content-length", params.length);
-  posthttp.setRequestHeader("Connection", "close");
   posthttp.send(params);
 
   return false;
@@ -830,10 +818,8 @@ function DoPollPost()
   } else {
     posthttp=new ActiveXObject("Microsoft.XMLHTTP");
   }
-  posthttp.open('POST','pollpost.html',false);
+  posthttp.open('POST','pollpost.html', true);
   posthttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-  posthttp.setRequestHeader("Content-length", params.length);
-  posthttp.setRequestHeader("Connection", "close");
   posthttp.send(params);
 
   return false;
@@ -848,10 +834,8 @@ function DoSavePost()
   } else {
     posthttp=new ActiveXObject("Microsoft.XMLHTTP");
   }
-  posthttp.open('POST','savepost.html',false);
+  posthttp.open('POST','savepost.html', true);
   posthttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-  posthttp.setRequestHeader("Content-length", params.length);
-  posthttp.setRequestHeader("Connection", "close");
   posthttp.send(params);
 
   return false;
@@ -969,11 +953,9 @@ function SceneLoad(fun)
     params=params+'&id='+curscene+'&vid='+vals[0]+'-'+vals[1]+'-'+vals[2]+'-'+vals[3]+'-'+vals[4]+'-'+vals[5];
     DisplaySceneSceneValue(null);
   }
-  scenehttp.open('POST','scenepost.html',false);
+  scenehttp.open('POST','scenepost.html', true);
   scenehttp.onreadystatechange = SceneReply;
   scenehttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-  scenehttp.setRequestHeader("Content-length", params.length);
-  scenehttp.setRequestHeader("Connection", "close");
   scenehttp.send(params);
 
   return false;
@@ -1145,11 +1127,9 @@ function DisplaySceneSceneValue(opt)
 function TopoLoad(fun)
 {
   var params='fun='+fun;
-  topohttp.open('POST','topopost.html',false);
+  topohttp.open('POST','topopost.html', true);
   topohttp.onreadystatechange = TopoReply;
   topohttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-  topohttp.setRequestHeader("Content-length", params.length);
-  topohttp.setRequestHeader("Connection", "close");
   topohttp.send(params);
 
   return false;
@@ -1210,11 +1190,9 @@ function TopoReply()
 function RequestAllConfig(n)
 {
   var params='fun=racp&node='+n;
-  racphttp.open('POST','confparmpost.html',false);
+  racphttp.open('POST','confparmpost.html', true);
   racphttp.onreadystatechange = PollReply;
   racphttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-  racphttp.setRequestHeader("Content-length", params.length);
-  racphttp.setRequestHeader("Connection", "close");
   racphttp.send(params);
 
   return false;

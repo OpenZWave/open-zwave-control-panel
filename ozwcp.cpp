@@ -464,6 +464,15 @@ void OnNotification (Notification const* _notification, void* _context)
     nodes[_notification->GetNodeId()]->saveValue(id);
     pthread_mutex_unlock(&nlock);
     break;
+  case Notification::Type_ValueRefreshed:
+    Log::Write(LogLevel_Info, "Notification: Value Refreshed Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
+	       _notification->GetHomeId(), _notification->GetNodeId(),
+	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
+	       id.GetIndex(), valueTypeStr(id.GetType()));
+    pthread_mutex_lock(&nlock);
+    nodes[_notification->GetNodeId()]->setChanged(true);
+    pthread_mutex_unlock(&nlock);
+    break;
   case Notification::Type_Group:
     {
       Log::Write(LogLevel_Info, "Notification: Group Home 0x%08x Node %d Group %d",
@@ -672,7 +681,7 @@ int32 main(int32 argc, char* argv[])
   for (i = 0; i < MAX_NODES; i++)
     nodes[i] = NULL;
 
-  Options::Create("./config/", "", "--SaveConfiguration=true");
+  Options::Create("./config/", "", "--SaveConfiguration=true --DumpTriggerLevel=0");
   Options::Get()->Lock();
 
   Manager::Create();
