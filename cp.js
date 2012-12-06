@@ -204,8 +204,10 @@ function PollReply()
 	    for (var l = 0; l < items.length; l++) {
 	      nodes[id].values[k].value[l] = {item: items[l].firstChild.nodeValue, selected: (current == items[l].firstChild.nodeValue)};
 	    }
-	  } else
+	  } else if (values[j].firstChild != null)
 	    nodes[id].values[k].value = values[j].firstChild.nodeValue;
+	  else
+	    nodes[id].values[k].value = '0';
 	  k++;
 	}
 	var groups = elem[i].getElementsByTagName('groups');

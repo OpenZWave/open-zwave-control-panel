@@ -219,6 +219,7 @@ void MyNode::addGroup (uint8 node, uint8 g, uint8 n, uint8 *v)
     newGroup(node);
   for (vector<MyGroup*>::iterator it = groups.begin(); it != groups.end(); ++it)
     if ((*it)->groupid == g) {
+      (*it)->grouplist.clear();
       for (int i = 0; i < n; i++)
 	(*it)->grouplist.push_back(v[i]);
       setTime(time(NULL));
