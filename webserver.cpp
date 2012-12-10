@@ -91,6 +91,7 @@ extern bool needsave;
 extern uint32 homeId;
 extern uint8 nodeId;		// controller node id
 extern char *cmode;
+extern bool noop;
 extern int debug;
 
 /*
@@ -287,7 +288,6 @@ const char *Webserver::SendTopoResponse (struct MHD_Connection *conn, const char
 {
   TiXmlDocument doc;
   char str[16];
-  string s;
   static char fntemp[32];
   char *fn;
   uint i, j, k;
@@ -328,7 +328,164 @@ const char *Webserver::SendTopoResponse (struct MHD_Connection *conn, const char
       i++;
     }
   }
-  strncpy(fntemp, "/tmp/ozwcp.scenes.XXXXXX", sizeof(fntemp));
+  strncpy(fntemp, "/tmp/ozwcp.topo.XXXXXX", sizeof(fntemp));
+  fn = mktemp(fntemp);
+  if (fn == NULL)
+    return EMPTY;
+  strncat(fntemp, ".xml", sizeof(fntemp));
+  if (debug)
+    doc.Print(stdout, 0);
+  doc.SaveFile(fn);
+  return fn;
+}
+
+static TiXmlElement *newstat (char const *tag, char const *label, uint32 const value)
+{
+  char str[32];
+
+  TiXmlElement* statElement = new TiXmlElement(tag);
+  statElement->SetAttribute("label", label);
+  snprintf(str, sizeof(str), "%d", value);
+  TiXmlText *textElement = new TiXmlText(str);
+  statElement->LinkEndChild(textElement);
+  return statElement;
+}
+
+static TiXmlElement *newstat (char const *tag, char const *label, char const *value)
+{
+  TiXmlElement* statElement = new TiXmlElement(tag);
+  statElement->SetAttribute("label", label);
+  TiXmlText *textElement = new TiXmlText(value);
+  statElement->LinkEndChild(textElement);
+  return statElement;
+}
+
+/*
+ * SendStatResponse
+ * Process statistics request and return appropiate data
+ */
+
+const char *Webserver::SendStatResponse (struct MHD_Connection *conn, const char *fun,
+					 const char *arg1, const char *arg2, const char *arg3)
+{
+  TiXmlDocument doc;
+  static char fntemp[32];
+  char *fn;
+
+  TiXmlDeclaration* decl = new TiXmlDeclaration( "1.0", "utf-8", "" );
+  doc.LinkEndChild(decl);
+  TiXmlElement* statElement = new TiXmlElement("stats");
+  doc.LinkEndChild(statElement);
+
+  if (strcmp(fun, "load") == 0) {
+    struct Driver::DriverData data;
+    int i, j;
+    int cnt;
+    char str[16];
+
+    Manager::Get()->GetDriverStatistics(homeId, &data);
+
+    TiXmlElement* errorsElement = new TiXmlElement("errors");
+    errorsElement->LinkEndChild(newstat("stat", "ACK Waiting", data.m_ACKWaiting));
+    errorsElement->LinkEndChild(newstat("stat", "Read Aborts", data.m_readAborts));
+    errorsElement->LinkEndChild(newstat("stat", "Bad Checksums", data.m_badChecksum));
+    errorsElement->LinkEndChild(newstat("stat", "CANs", data.m_CANCnt));
+    errorsElement->LinkEndChild(newstat("stat", "NAKs", data.m_NAKCnt));
+    errorsElement->LinkEndChild(newstat("stat", "Out of Frame", data.m_OOFCnt));
+    statElement->LinkEndChild(errorsElement);
+
+    TiXmlElement* countsElement = new TiXmlElement("counts");
+    countsElement->LinkEndChild(newstat("stat", "SOF", data.m_SOFCnt));
+    countsElement->LinkEndChild(newstat("stat", "Total Reads", data.m_readCnt));
+    countsElement->LinkEndChild(newstat("stat", "Total Writes", data.m_writeCnt));
+    countsElement->LinkEndChild(newstat("stat", "ACKs", data.m_ACKCnt));
+    countsElement->LinkEndChild(newstat("stat", "Total Broadcasts Received", data.m_broadcastReadCnt));
+    countsElement->LinkEndChild(newstat("stat", "Total Broadcasts Transmitted", data.m_broadcastWriteCnt));
+    statElement->LinkEndChild(countsElement);
+
+    TiXmlElement* infoElement = new TiXmlElement("info");
+    infoElement->LinkEndChild(newstat("stat", "Dropped", data.m_dropped));
+    infoElement->LinkEndChild(newstat("stat", "Retries", data.m_retries));
+    infoElement->LinkEndChild(newstat("stat", "Unexpected Callbacks", data.m_callbacks));
+    infoElement->LinkEndChild(newstat("stat", "Bad Routes", data.m_badroutes));
+    infoElement->LinkEndChild(newstat("stat", "No ACK", data.m_noack));
+    infoElement->LinkEndChild(newstat("stat", "Network Busy", data.m_netbusy));
+    infoElement->LinkEndChild(newstat("stat", "Non Delivery", data.m_nondelivery));
+    infoElement->LinkEndChild(newstat("stat", "Routes Busy", data.m_routedbusy));
+    statElement->LinkEndChild(infoElement);
+
+    cnt = MyNode::getNodeCount();
+    i = 0;
+    j = 1;
+    while (j <= cnt && i < MAX_NODES) {
+      struct Node::NodeData ndata;
+
+      if (nodes[i] != NULL) {
+	Manager::Get()->GetNodeStatistics(homeId, i, &ndata);
+	TiXmlElement* nodeElement = new TiXmlElement("node");
+	snprintf(str, sizeof(str), "%d", i);
+	nodeElement->SetAttribute("id", str);
+	nodeElement->LinkEndChild(newstat("nstat", "Sent messages", ndata.m_sentCnt));
+	nodeElement->LinkEndChild(newstat("nstat", "Failed sent messages", ndata.m_sentFailed));
+	nodeElement->LinkEndChild(newstat("nstat", "Retried sent messages", ndata.m_retries));
+	nodeElement->LinkEndChild(newstat("nstat", "Received messages", ndata.m_receivedCnt));
+	nodeElement->LinkEndChild(newstat("nstat", "Received duplicates", ndata.m_receivedDups));
+	nodeElement->LinkEndChild(newstat("nstat", "Last sent message", ndata.m_sentTS.c_str()));
+	nodeElement->LinkEndChild(newstat("nstat", "Last received message", ndata.m_receivedTS.c_str()));
+	nodeElement->LinkEndChild(newstat("nstat", "Last RTT", ndata.m_averageRTT));
+	nodeElement->LinkEndChild(newstat("nstat", "Average RTT", ndata.m_averageRTT));
+	nodeElement->LinkEndChild(newstat("nstat", "Quality", ndata.m_quality));
+	while (!ndata.m_ccData.empty()) {
+	  Node::CommandClassData ccd = ndata.m_ccData.front();
+	  TiXmlElement* ccElement = new TiXmlElement("commandclass");
+	  snprintf(str, sizeof(str), "%d", ccd.m_commandClassId);
+	  ccElement->SetAttribute("id", str);
+	  ccElement->SetAttribute("name", cclassStr(ccd.m_commandClassId));
+	  ccElement->LinkEndChild(newstat("cstat", "Messages sent", ccd.m_sentCnt));
+	  ccElement->LinkEndChild(newstat("cstat", "Messages received", ccd.m_receivedCnt));
+	  nodeElement->LinkEndChild(ccElement);
+	  ndata.m_ccData.pop_front();
+	}
+	statElement->LinkEndChild(nodeElement);
+	j++;
+      }
+      i++;
+    }
+  }
+  strncpy(fntemp, "/tmp/ozwcp.stat.XXXXXX", sizeof(fntemp));
+  fn = mktemp(fntemp);
+  if (fn == NULL)
+    return EMPTY;
+  strncat(fntemp, ".xml", sizeof(fntemp));
+  if (debug)
+    doc.Print(stdout, 0);
+  doc.SaveFile(fn);
+  return fn;
+}
+
+/*
+ * SendTestResponse
+ * Process network test request
+ */
+
+const char *Webserver::SendTestResponse (struct MHD_Connection *conn, const char *fun,
+					 const char *arg1, const char *arg2, const char *arg3)
+{
+  TiXmlDocument doc;
+  int cnt;
+  static char fntemp[32];
+  char *fn;
+
+  TiXmlDeclaration* decl = new TiXmlDeclaration( "1.0", "utf-8", "" );
+  doc.LinkEndChild(decl);
+  TiXmlElement* testElement = new TiXmlElement("test");
+  doc.LinkEndChild(testElement);
+
+  if (strcmp(fun, "load") == 0 && arg1 != NULL) {
+    cnt = atoi((char *)arg1);
+    Manager::Get()->TestNetwork(homeId, cnt);
+  }
+  strncpy(fntemp, "/tmp/ozwcp.test.XXXXXX", sizeof(fntemp));
   fn = mktemp(fntemp);
   if (fn == NULL)
     return EMPTY;
@@ -490,6 +647,9 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
   pollElement->SetAttribute("nodecount", MyNode::getNodeCount());
   pollElement->SetAttribute("cmode", cmode);
   pollElement->SetAttribute("save", needsave);
+  pollElement->SetAttribute("noop", noop);
+  if (noop)
+    noop = false;
   bcnt = logbytes;
   if (stat("./OZW_Log.txt", &buf) != -1 &&
       buf.st_size > bcnt &&
@@ -696,6 +856,14 @@ int web_config_post (void *cls, enum MHD_ValueKind kind, const char *key, const 
   } else if (strcmp(cp->conn_url, "/topopost.html") == 0) {
     if (strcmp(key, "fun") == 0)
       cp->conn_arg1 = (void *)strdup(data);
+  } else if (strcmp(cp->conn_url, "/statpost.html") == 0) {
+    if (strcmp(key, "fun") == 0)
+      cp->conn_arg1 = (void *)strdup(data);
+  } else if (strcmp(cp->conn_url, "/testpost.html") == 0) {
+    if (strcmp(key, "fun") == 0)
+      cp->conn_arg1 = (void *)strdup(data);
+    if (strcmp(key, "cnt") == 0)
+      cp->conn_arg2 = (void *)strdup(data);
   } else if (strcmp(cp->conn_url, "/confparmpost.html") == 0) {
     if (strcmp(key, "fun") == 0)
       cp->conn_arg1 = (void *)strdup(data);
@@ -725,7 +893,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
   conninfo_t *cp;
 
   if (debug)
-    fprintf(stderr, "%x: %s: \"%s\"\n", pthread_self(), method, url);
+    fprintf(stderr, "%x: %s: \"%s\" conn=%x size=%d *ptr=%x\n", pthread_self(), method, url, conn, *up_data_size, *ptr);
   if (*ptr == NULL) {	/* do never respond on first call */
     cp = (conninfo_t *)malloc(sizeof(conninfo_t));
     if (cp == NULL)
@@ -737,7 +905,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
     cp->conn_arg4 = NULL;
     cp->conn_res = NULL;
     if (strcmp(method, MHD_HTTP_METHOD_POST) == 0) {
-      cp->conn_pp = MHD_create_post_processor(conn, 512, web_config_post, (void *)cp);
+      cp->conn_pp = MHD_create_post_processor(conn, 1024, web_config_post, (void *)cp);
       if (cp->conn_pp == NULL) {
 	free(cp);
 	return MHD_NO;
@@ -803,13 +971,6 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	  homeId = 0;
 	} else if (strcmp((char *)cp->conn_arg1, "reset") == 0) { /* reset */
 	  Manager::Get()->ResetController(homeId);
-	  sleep(2);
-	  Manager::Get()->RemoveDriver(devname ? devname : "HID Controller");
-	  sleep(5);
-	  if (devname != NULL)
-	    Manager::Get()->AddDriver(devname);
-	  else
-	    Manager::Get()->AddDriver("HID Controller", Driver::ControllerInterface_Hid );
 	} else if (strcmp((char *)cp->conn_arg1, "sreset") == 0) { /* soft reset */
 	  Manager::Get()->SoftReset(homeId);
 	} else if (strcmp((char *)cp->conn_arg1, "exit") == 0) { /* exit */
@@ -835,7 +996,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	if (val != NULL) {
 	  string arg = (char *)cp->conn_arg2;
 	  if (!Manager::Get()->SetValue(val->getId(), arg))
-	    fprintf(stderr, "SetValue string failed");
+	    fprintf(stderr, "SetValue string failed\n");
 	}
 	return MHD_YES;
       } else
@@ -864,6 +1025,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	*up_data_size = 0;
 
 	cp->conn_res = (void *)SendSceneResponse(conn, (char *)cp->conn_arg1, (char *)cp->conn_arg2, (char *)cp->conn_arg3, (char *)cp->conn_arg4);
+	return MHD_YES;
       } else
 	ret = web_send_file(conn, (char *)cp->conn_res, MHD_HTTP_OK, true);
     } else if (strcmp(url, "/topopost.html") == 0) {
@@ -872,6 +1034,25 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	*up_data_size = 0;
 
 	cp->conn_res = (void *)SendTopoResponse(conn, (char *)cp->conn_arg1, (char *)cp->conn_arg2, (char *)cp->conn_arg3, (char *)cp->conn_arg4);
+	return MHD_YES;
+      } else
+	ret = web_send_file(conn, (char *)cp->conn_res, MHD_HTTP_OK, true);
+    } else if (strcmp(url, "/statpost.html") == 0) {
+      if (*up_data_size != 0) {
+	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
+	*up_data_size = 0;
+
+	cp->conn_res = (void *)SendStatResponse(conn, (char *)cp->conn_arg1, (char *)cp->conn_arg2, (char *)cp->conn_arg3, (char *)cp->conn_arg4);
+      } else
+	ret = web_send_file(conn, (char *)cp->conn_res, MHD_HTTP_OK, true);
+	return MHD_YES;
+    } else if (strcmp(url, "/testpost.html") == 0) {
+      if (*up_data_size != 0) {
+	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
+	*up_data_size = 0;
+
+	cp->conn_res = (void *)SendTestResponse(conn, (char *)cp->conn_arg1, (char *)cp->conn_arg2, (char *)cp->conn_arg3, (char *)cp->conn_arg4);
+	return MHD_YES;
       } else
 	ret = web_send_file(conn, (char *)cp->conn_res, MHD_HTTP_OK, true);
     } else if (strcmp(url, "/confparmpost.html") == 0) {

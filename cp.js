@@ -1,6 +1,8 @@
 var pollhttp;
 var scenehttp;
 var topohttp;
+var stathttp;
+var atsthttp;
 var racphttp;
 var polltmr=null;
 var pollwait=null;
@@ -35,6 +37,8 @@ var curnode=null;
 var curscene=null;
 var scenes=new Array();
 var routes=new Array();
+var curclassstat=null;
+var classstats=new Array();
 if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
   pollhttp=new XMLHttpRequest();
 } else {
@@ -49,6 +53,16 @@ if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
   topohttp=new XMLHttpRequest();
 } else {
   topohttp=new ActiveXObject("Microsoft.XMLHTTP");
+}
+if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
+  stathttp=new XMLHttpRequest();
+} else {
+  stathttp=new ActiveXObject("Microsoft.XMLHTTP");
+}
+if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
+  atsthttp=new XMLHttpRequest();
+} else {
+  atsthttp=new ActiveXObject("Microsoft.XMLHTTP");
 }
 if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
   racphttp=new XMLHttpRequest();
@@ -132,6 +146,10 @@ function PollReply()
           document.getElementById('saveinfo').style.display = 'none';
 	}
       }
+      if (elem[0].getAttribute('noop') == '1') {
+	var testreport = document.getElementById('testreport');
+	testreport.innerHTML = testreport.innerHTML + 'No Operation message completed.<br>';  
+      }	  
       elem = xml.getElementsByTagName('admin');
       if (elem[0].getAttribute('active') == 'true') {
 	if (!astate) {
@@ -157,9 +175,7 @@ function PollReply()
       if (elem.length > 0) {
 	var remove = elem[0].getAttribute('remove');
 	if (remove != undefined) {
-	  console.log('remove='+remove);
 	  var remnodes = remove.split(',');
-	  console.log('remnodes len='+remnodes.length);
 	  changed = true;
 	  for (var i = 0; i < remnodes.length; i++) {
 	      nodes[remnodes[i]] = null;
@@ -544,12 +560,24 @@ function DoNetHelp()
   var scencntl = document.getElementById('scencntl');
   var topocntl = document.getElementById('topocntl');
   var topo = document.getElementById('topo');
+  var statcntl = document.getElementById('statcntl');
+  var statnet = document.getElementById('statnet');
+  var statnode = document.getElementById('statnode');
+  var statclass = document.getElementById('statclass');
+  var testcntl = document.getElementById('testcntl');
+  var testreport = document.getElementById('testreport');
   if (document.NetPost.netops.value == 'scen') {
     ninfo.innerHTML = 'Scene management and execution.';
     ninfo.style.display = 'block';
     scencntl.style.display = 'block';
     topocntl.style.display = 'none';
     topo.style.display = 'none';
+    statcntl.style.display = 'none';
+    statnet.style.display = 'none';
+    statnode.style.display = 'none';
+    statclass.style.display = 'none';
+    testcntl.style.display = 'none';
+    testreport.style.display = 'none';
     SceneLoad('load');
   } else if (document.NetPost.netops.value == 'topo') {
     ninfo.innerHTML = 'Topology views';
@@ -557,13 +585,51 @@ function DoNetHelp()
     scencntl.style.display = 'none';
     topocntl.style.display = 'block';
     topo.style.display = 'block';
+    statcntl.style.display = 'none';
+    statnet.style.display = 'none';
+    statnode.style.display = 'none';
+    statclass.style.display = 'none';
+    testcntl.style.display = 'none';
+    testreport.style.display = 'none';
     curscene = null;
     TopoLoad('load');
+  } else if (document.NetPost.netops.value == 'stat') {
+    ninfo.innerHTML = 'Statistic views';
+    ninfo.style.display = 'block';
+    scencntl.style.display = 'none';
+    topocntl.style.display = 'none';
+    topo.style.display = 'none';
+    statcntl.style.display = 'block';
+    statnet.style.display = 'block';
+    statnode.style.display = 'block';
+    testcntl.style.display = 'none';
+    testreport.style.display = 'none';
+    curscene = null;
+    StatLoad('load');
+  } else if (document.NetPost.netops.value == 'test') {
+    ninfo.innerHTML = 'Test Network';
+    ninfo.style.display = 'block';
+    scencntl.style.display = 'none';
+    topocntl.style.display = 'none';
+    topo.style.display = 'none';
+    statcntl.style.display = 'none';
+    statnet.style.display = 'none';
+    statnode.style.display = 'none';
+    statclass.style.display = 'none';
+    testcntl.style.display = 'block';
+    testreport.style.display = 'block';
+    curscene = null;
   } else {
     ninfo.style.display = 'none';
     scencntl.style.display = 'none';
     topocntl.style.display = 'none';
     topo.style.display = 'none';
+    statcntl.style.display = 'none';
+    statnet.style.display = 'none';
+    statnode.style.display = 'none';
+    statclass.style.display = 'none';
+    testcntl.style.display = 'none';
+    testreport.style.display = 'none';
     curscene = null;
   }
   return true;
@@ -729,7 +795,7 @@ function DoNodeHelp()
   var node=curnode.substr(4);
   var ncntl = document.getElementById('nodecntl');
   if (document.NodePost.nodeops.value == 'nam') {
-    ninfo.innerHTML = 'Node naming functions.';
+    ninfo.innerHTML = 'Naming functions.';
     ninfo.style.display = 'block';
     ncntl.innerHTML = nodename[node];
     ncntl.style.display = 'block';
@@ -1186,6 +1252,152 @@ function TopoReply()
       }
       var topobody = document.getElementById('topobody');
       topobody.innerHTML = stuff;
+    }
+  }
+}
+function DisplayStatClass(t,n)
+{
+  var scb = document.getElementById('statclassbody');
+  var sn = document.getElementById('statnode');
+  if (curclassstat != null) {
+    var lastn = curclassstat.id.substr(8);
+    if (n != lastn) {
+      curclassstat.className = 'normal';
+    }
+  }
+  if (curclassstat == null || t != curclassstat) {
+    curclassstat = t;
+    t.className = 'highlight';
+    sn.style.width = '72%';
+    scb.innerHTML = classstats[n];
+    document.getElementById('statclass').style.display = 'block';
+  } else {
+    curclassstat = null;
+    t.className = 'normal';
+    sn.style.width = '100%';
+    scb.innerHTML = '';
+    document.getElementById('statclass').style.display = 'none';
+  }
+  return true;
+}
+function StatLoad(fun)
+{
+  var params='fun='+fun;
+  stathttp.open('POST','statpost.html', true);
+  stathttp.onreadystatechange = StatReply;
+  stathttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  stathttp.send(params);
+
+  return false;
+}
+function StatReply()
+{
+  var xml;
+  var elem;
+
+  if (stathttp.readyState == 4 && stathttp.status == 200) {
+    xml = stathttp.responseXML;
+    elem = xml.getElementsByTagName('stats');
+    if (elem.length > 0) {
+      var errors = xml.getElementsByTagName('errors');
+      var counts = xml.getElementsByTagName('counts');
+      var info = xml.getElementsByTagName('info');
+      var cnt = errors[0].childNodes.length;
+      if (counts[0].childNodes.length > cnt)
+	cnt = counts[0].childNodes.length;
+      if (info[0].childNodes.length > cnt)
+	cnt = info[0].childNodes.length;
+      var stuff = '';
+      var i;
+      for (i = 0; i < cnt; i++) {
+	if (i < errors[0].childNodes.length)
+	  if (errors[0].childNodes[i].nodeType != 1)
+	    continue;
+	if (i < counts[0].childNodes.length)
+	  if (counts[0].childNodes[i].nodeType != 1)
+	    continue;
+	if (i < info[0].childNodes.length)
+	  if (info[0].childNodes[i].nodeType != 1)
+	    continue;
+	stuff = stuff + '<tr>';
+	if (i < errors[0].childNodes.length)
+	  stuff = stuff + '<td style="text-align: right;">'+errors[0].childNodes[i].getAttribute('label')+': </td><td style="text-align: left;">'+errors[0].childNodes[i].firstChild.nodeValue+'</td>';
+	else
+	  stuff = stuff + '<td>&nbsp;</td><td>&nbsp;</td>';
+	if (i < counts[0].childNodes.length)
+	  stuff = stuff + '<td style="text-align: right;">'+counts[0].childNodes[i].getAttribute('label')+': </td><td style="text-align: left;">'+counts[0].childNodes[i].firstChild.nodeValue+'</td>';
+	else
+	  stuff = stuff + '<td>&nbsp;</td><td>&nbsp;</td>';
+	if (i < info[0].childNodes.length)
+	  stuff = stuff + '<td style="text-align: right;">'+info[0].childNodes[i].getAttribute('label')+': </td><td style="text-align: left;">'+info[0].childNodes[i].firstChild.nodeValue+'</td>';
+	else
+	  stuff = stuff + '<td>&nbsp;</td><td>&nbsp;</td>';
+	stuff = stuff + '</tr>';
+      }
+      var statnetbody = document.getElementById('statnetbody');
+      statnetbody.innerHTML = stuff;
+      var node = xml.getElementsByTagName('node');
+      var stuff = '';
+      var oldnode = null;
+      if (curclassstat != null)
+	oldnode = curclassstat.id;
+      for (var i = 0; i < node.length; i++) {
+	stuff = stuff+'<tr id="statnode'+i+'" onclick="return DisplayStatClass(this,'+i+');"><td>'+node[i].getAttribute('id')+'</td>';
+	var nstat = node[i].getElementsByTagName('nstat');
+	for (var j = 0; j < nstat.length; j++) {
+	    stuff = stuff+'<td>'+nstat[j].firstChild.nodeValue+'</td>';
+	}
+	stuff = stuff+'</tr>';
+	var cstuff = '';
+	var cclass = node[i].getElementsByTagName('commandclass');
+	for (var j = 0; j < cclass.length; j++) {
+	  cstuff = cstuff+'<tr><td>'+cclass[j].getAttribute('name')+'</td>';
+	  var cstat = cclass[j].getElementsByTagName('cstat');
+	  for (var k = 0; k < cstat.length; k++) {
+	    cstuff = cstuff+'<td>'+cstat[k].firstChild.nodeValue+'</td>';
+	  }
+	  cstuff = cstuff+'</tr>';
+	}
+	classstats[i] = cstuff;
+      }
+      var statnodebody = document.getElementById('statnodebody');
+      statnodebody.innerHTML = stuff;
+    }
+    if (oldnode != null) {
+      var scb = document.getElementById('statclassbody');
+      scb.innerHTML = classstats[oldnode.substr(8)];
+      curclassstat = document.getElementById(oldnode);
+      curclassstat.className = 'highlight';
+    }
+  }
+}
+function TestLoad(fun)
+{
+  var params='fun='+fun;
+  var cnt = document.getElementById('testmcnt');
+  if (cnt.value.length == 0) {
+    alert('Missing count value');
+    return false;
+  }
+  params = params+'&cnt='+cnt.value;
+  atsthttp.open('POST','testpost.html', true);
+  atsthttp.onreadystatechange = TestReply;
+  atsthttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  atsthttp.send(params);
+
+  return false;
+}
+function TestReply()
+{
+  var xml;
+  var elem;
+
+  if (atsthttp.readyState == 4 && atsthttp.status == 200) {
+    xml = atsthttp.responseXML;
+    elem = xml.getElementsByTagName('test');
+    if (elem.length > 0) {
+      var testreport = document.getElementById('testreport');
+      testreport.innerHTML = '';
     }
   }
 }
