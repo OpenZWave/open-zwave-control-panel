@@ -76,8 +76,7 @@
 	</div>
       </div>
       <div style="padding: 0pt; width: 34%; float: left;">
-	<div
-	   style="margin-left: auto; margin-right: auto; width: 280px; height: 100px;">
+	<div style="margin-left: auto; margin-right: auto; width: 280px; height: 100px;">
 	  <fieldset> <legend> Controller Status </legend>
 	    <form>
 	      <div style="float: left; width: 50%;">
@@ -139,7 +138,12 @@
 	      <option value="choice" selected="true">Select an operation:</option>
 	      <option value="scen">Scenes</option>
 	      <option value="topo">Topology</option>
+	      <option value="stat">Statistics</option>
+	      <option value="test">Test Network</option>
 	    </select>
+	  </div>
+	  <div class="rsb" style="margin-left: 10px;">
+	    <span id="netinfo" name="netinfo" class="admmsg" style="display: none;"></span>
 	  </div>
 	  <div id="scencntl" name="scencntl" class="rsb" style="display: none; margin-right: 10px;">
 	    <div class="rsb" style="margin-left: 10px;">
@@ -230,12 +234,7 @@
 	      <button id="refreshtopo" name="refreshtopo" onclick="return TopoLoad('load');" type="submit">Refresh</button>
 	    </div>
 	  </div>
-	  <div class="rsb" style="margin-left: 10px;">
-	    <span id="netinfo" name="netinfo" class="admmsg" style="display: none;"></span>
-	  </div>
-	  <br>
-	  <br>
-	  <div id="topo" style="float: left; margin-left: 5px; width: 98%; display: none; overflow="scroll";">
+	  <div id="topo" style="float: left; margin-left: 5px; width: 98%; display: none; overflow: scroll;">
 	    <table border="0" cellpadding="1" cellspacing="0" style="text-align: center;">
 	      <thead id="topohead">
 		<tr>
@@ -254,6 +253,106 @@
 		</tr>
 	      </tbody>
 	    </table>
+	  </div>
+	  <div id="statcntl" name="statcntl" class="rsb" style="display: none; margin-right: 5px;">
+	    <div class="rsb" style="margin-left: 5px;">
+	      <button id="refreshstat" name="refreshstat" onclick="return StatLoad('load');" type="submit">Refresh</button>
+	    </div>
+	  </div>
+	  <div id="statnet" style="float: left; margin-left: 5px; width: 98%; display: none;">
+	    <table border="0" cellpadding="1" cellspacing="0" style="text-align: center;">
+	      <thead id="statnethead">
+		<tr>
+		  <th style="text-align: right;">Network Errors</th>
+		  <th style="text-decoration: none;">&nbsp;</th>
+		  <th style="text-align: right;">Message Counts</th>
+		  <th style="text-decoration: none;">&nbsp;</th>
+		  <th style="text-align: right;">Network Info</th>
+		  <th style="text-decoration: none;">&nbsp;</th>
+		</tr>
+	      </thead>
+	      <tbody id="statnetbody">
+		<tr>
+		  <td>&nbsp;</td>
+		  <td>&nbsp;</td>
+		</tr>
+		<tr>
+		  <td>&nbsp;</td>
+		  <td>&nbsp;</td>
+		</tr>
+		<tr>
+		  <td>&nbsp;</td>
+		  <td>&nbsp;</td>
+		</tr>
+	      </tbody>
+	    </table>
+	  </div>
+	  <div id="allstats" style="margin-left: auto; margin-right: auto; width: 100%;">
+	    <div id="statnode" style="float: left; margin-left: 5px; width: 100%; display: none;">
+	      <table border="0" cellpadding="1" cellspacing="0" style="text-align: center;">
+		<thead id="statnodehead">
+		  <tr>
+		    <th style="text-align: center;">Node</th>
+		    <th style="text-align: center;">Sent</th>
+		    <th style="text-align: center;">Failed</th>
+		    <th style="text-align: center;">Retries</th>
+		    <th style="text-align: center;">Received</th>
+		    <th style="text-align: center;">Duplicates</th>
+		    <th style="text-align: center;">Last Sent</th>
+		    <th style="text-align: center;">Last Received</th>
+		    <th style="text-align: center;">Last RTT</th>
+		    <th style="text-align: center;">Average RTT</th>
+		    <th style="text-align: center;">Quality</th>
+		  </tr>
+		</thead>
+		<tbody id="statnodebody" style="cursor: help;">
+		  <tr>
+		    <td>&nbsp;</td>
+		    <td>&nbsp;</td>
+		  </tr>
+		  <tr>
+		    <td>&nbsp;</td>
+		    <td>&nbsp;</td>
+		  </tr>
+		  <tr>
+		    <td>&nbsp;</td>
+		    <td>&nbsp;</td>
+		  </tr>
+		</tbody>
+	      </table>
+	    </div>
+	    <div id="statclass" style="float: left; margin-left: 5px; width: 25%; display: none;">
+	      <table border="0" cellpadding="1" cellspacing="0" style="text-align: center;">
+		<thead id="statclasshead">
+		  <tr>
+		    <th style="text-align: center;">Class</th>
+		    <th style="text-align: center;">Sent</th>
+		    <th style="text-align: center;">Received</th>
+		  </tr>
+		</thead>
+		<tbody id="statclassbody">
+		  <tr>
+		    <td>&nbsp;</td>
+		    <td>&nbsp;</td>
+		    <td>&nbsp;</td>
+		  </tr>
+		  <tr>
+		    <td>&nbsp;</td>
+		    <td>&nbsp;</td>
+		    <td>&nbsp;</td>
+		  </tr>
+		</tbody>
+	      </table>
+	    </div>
+	  </div>
+	  <div id="testcntl" name="testcntl" class="rsb" style="display: none; margin-right: 5px;">
+	    <div class="rsb" style="margin-left: 5px;">
+	      <button id="testbutton" name="testbutton" onclick="return TestLoad('load');" type="submit">Run</button>
+	      <label><span class="legend" style="font-size: 12px;">Message count:</span></label>
+	      <input id="testmcnt" type="text" size="5" class="legend">
+	    </div>
+	  </div>
+	  <div id="testreport" class="log" style="float: left; margin-left: 5px; width: 98%; text-align: left; display: none;">
 	  </div>
 	</form>
       </fieldset>

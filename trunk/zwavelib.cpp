@@ -301,6 +301,7 @@ const char *cclassStr (uint8 cc)
   case 0xF0:
     return "NON INTEROPERABLE";
   }
+  return "UNKNOWN";
 }
 
 uint8 cclassNum (char const *str)

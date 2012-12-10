@@ -60,6 +60,8 @@ private:
   int SendPollResponse(struct MHD_Connection *conn);
   const char *SendSceneResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
   const char *SendTopoResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
+  const char *SendStatResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
+  const char *SendTestResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
 
   static bool usb;
   static char *devname;

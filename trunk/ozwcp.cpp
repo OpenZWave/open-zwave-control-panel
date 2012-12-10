@@ -64,6 +64,7 @@ int32 MyNode::nodecount = 0;
 pthread_mutex_t glock = PTHREAD_MUTEX_INITIALIZER;
 bool done = false;
 bool needsave = false;
+bool noop = false;
 uint32 homeId = 0;
 uint8 nodeId = 0;
 const char *cmode = "";
@@ -564,6 +565,12 @@ void OnNotification (Notification const* _notification, void* _context)
     //nodes[_notification->GetNodeId()]->setPolled(true);
     //pthread_mutex_unlock(&nlock);
     break;
+  case Notification::Type_SceneEvent:
+    Log::Write(LogLevel_Info, "Notification: Scene Event Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s Scene Id %d",
+	       _notification->GetHomeId(), _notification->GetNodeId(),
+	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
+	       id.GetIndex(), valueTypeStr(id.GetType()), _notification->GetSceneId());
+    break;
   case Notification::Type_CreateButton:
     Log::Write(LogLevel_Info, "Notification: Create button Home %08x Node %d Button %d",
 	       _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetButtonId());
@@ -625,9 +632,6 @@ void OnNotification (Notification const* _notification, void* _context)
       MyNode::remove(i);
     pthread_mutex_unlock(&nlock);
     break;
-  case Notification::Type_MsgComplete:
-    Log::Write(LogLevel_Info, "Notification: Message Complete");
-    break;
   case Notification::Type_EssentialNodeQueriesComplete:
     Log::Write(LogLevel_Info, "Notification: Essential Node %d Queries Complete", _notification->GetNodeId());
     break;
@@ -642,6 +646,29 @@ void OnNotification (Notification const* _notification, void* _context)
     break;
   case Notification::Type_AllNodesQueried:
     Log::Write(LogLevel_Info, "Notification: All Nodes Queried");
+    break;
+  case Notification::Type_Notification:
+    switch (_notification->GetNotification()) {
+    case Notification::Code_MsgComplete:
+      Log::Write(LogLevel_Info, "Notification: Notification home %08x node %d Message Complete",
+		 _notification->GetHomeId(), _notification->GetNodeId());
+      break;
+    case Notification::Code_Timeout:
+      Log::Write(LogLevel_Info, "Notification: Notification home %08x node %d Timeout",
+		 _notification->GetHomeId(), _notification->GetNodeId());
+      break;
+    case Notification::Code_NoOperation:
+      Log::Write(LogLevel_Info, "Notification: Notification home %08x node %d No Operation Message Complete",
+		 _notification->GetHomeId(), _notification->GetNodeId());
+      pthread_mutex_lock(&glock);
+      noop = true;
+      pthread_mutex_unlock(&glock);
+      break;
+    default:
+      Log::Write(LogLevel_Info, "Notification: Notification home %08x node %d Unknown %d",
+		 _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetNotification());
+      break;
+    }
     break;
   default:
     Log::Write(LogLevel_Info, "Notification: type %d home %08x node %d genre %d class %d instance %d index %d type %d",
