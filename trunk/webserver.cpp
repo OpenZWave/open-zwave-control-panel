@@ -432,8 +432,8 @@ const char *Webserver::SendStatResponse (struct MHD_Connection *conn, const char
 	nodeElement->LinkEndChild(newstat("nstat", "Received duplicates", ndata.m_receivedDups));
 	nodeElement->LinkEndChild(newstat("nstat", "Last sent message", ndata.m_sentTS.c_str()));
 	nodeElement->LinkEndChild(newstat("nstat", "Last received message", ndata.m_receivedTS.c_str()));
-	nodeElement->LinkEndChild(newstat("nstat", "Last RTT", ndata.m_averageRTT));
-	nodeElement->LinkEndChild(newstat("nstat", "Average RTT", ndata.m_averageRTT));
+	nodeElement->LinkEndChild(newstat("nstat", "Last RTT", ndata.m_averageRequestRTT));
+	nodeElement->LinkEndChild(newstat("nstat", "Average RTT", ndata.m_averageRequestRTT));
 	nodeElement->LinkEndChild(newstat("nstat", "Quality", ndata.m_quality));
 	while (!ndata.m_ccData.empty()) {
 	  Node::CommandClassData ccd = ndata.m_ccData.front();
@@ -746,7 +746,7 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
  * Handle controller function feedback from library.
  */
 
-void web_controller_update (Driver::ControllerState cs, void *ct)
+void web_controller_update (Driver::ControllerState cs, Driver::ControllerError err, void *ct)
 {
   Webserver *cp = (Webserver *)ct;
  
