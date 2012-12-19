@@ -36,6 +36,7 @@
 
 #include <list>
 #include <algorithm>
+#include "Driver.h"
 #include "Notification.h"
 #include "ValueStore.h"
 #include "Value.h"
@@ -55,9 +56,10 @@ extern const char *valueGenreStr(ValueID::ValueGenre);
 extern ValueID::ValueGenre valueGenreNum(char const *);
 extern const char *valueTypeStr(ValueID::ValueType);
 extern ValueID::ValueType valueTypeNum(char const *);
-extern const char *nodeBasicStr (uint8);
+extern const char *nodeBasicStr(uint8);
 extern const char *cclassStr(uint8);
 extern uint8 cclassNum(char const *str);
+extern const char *controllerErrorStr(Driver::ControllerError err);
 
 class MyValue {
   friend class MyNode;

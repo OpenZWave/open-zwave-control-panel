@@ -147,8 +147,8 @@ function PollReply()
 	}
       }
       if (elem[0].getAttribute('noop') == '1') {
-	var testreport = document.getElementById('testreport');
-	testreport.innerHTML = testreport.innerHTML + 'No Operation message completed.<br>';  
+	var testhealreport = document.getElementById('testhealreport');
+	testhealreport.innerHTML = testhealreport.innerHTML + 'No Operation message completed.<br>';  
       }	  
       elem = xml.getElementsByTagName('admin');
       if (elem[0].getAttribute('active') == 'true') {
@@ -564,8 +564,8 @@ function DoNetHelp()
   var statnet = document.getElementById('statnet');
   var statnode = document.getElementById('statnode');
   var statclass = document.getElementById('statclass');
-  var testcntl = document.getElementById('testcntl');
-  var testreport = document.getElementById('testreport');
+  var thcntl = document.getElementById('thcntl');
+  var testhealreport = document.getElementById('testhealreport');
   if (document.NetPost.netops.value == 'scen') {
     ninfo.innerHTML = 'Scene management and execution.';
     ninfo.style.display = 'block';
@@ -576,8 +576,8 @@ function DoNetHelp()
     statnet.style.display = 'none';
     statnode.style.display = 'none';
     statclass.style.display = 'none';
-    testcntl.style.display = 'none';
-    testreport.style.display = 'none';
+    thcntl.style.display = 'none';
+    testhealreport.style.display = 'none';
     SceneLoad('load');
   } else if (document.NetPost.netops.value == 'topo') {
     ninfo.innerHTML = 'Topology views';
@@ -589,8 +589,8 @@ function DoNetHelp()
     statnet.style.display = 'none';
     statnode.style.display = 'none';
     statclass.style.display = 'none';
-    testcntl.style.display = 'none';
-    testreport.style.display = 'none';
+    thcntl.style.display = 'none';
+    testhealreport.style.display = 'none';
     curscene = null;
     TopoLoad('load');
   } else if (document.NetPost.netops.value == 'stat') {
@@ -602,12 +602,12 @@ function DoNetHelp()
     statcntl.style.display = 'block';
     statnet.style.display = 'block';
     statnode.style.display = 'block';
-    testcntl.style.display = 'none';
-    testreport.style.display = 'none';
+    thcntl.style.display = 'none';
+    testhealreport.style.display = 'none';
     curscene = null;
     StatLoad('load');
   } else if (document.NetPost.netops.value == 'test') {
-    ninfo.innerHTML = 'Test Network';
+    ninfo.innerHTML = 'Test & Heal Network';
     ninfo.style.display = 'block';
     scencntl.style.display = 'none';
     topocntl.style.display = 'none';
@@ -616,8 +616,8 @@ function DoNetHelp()
     statnet.style.display = 'none';
     statnode.style.display = 'none';
     statclass.style.display = 'none';
-    testcntl.style.display = 'block';
-    testreport.style.display = 'block';
+    thcntl.style.display = 'block';
+    testhealreport.style.display = 'block';
     curscene = null;
   } else {
     ninfo.style.display = 'none';
@@ -628,8 +628,8 @@ function DoNetHelp()
     statnet.style.display = 'none';
     statnode.style.display = 'none';
     statclass.style.display = 'none';
-    testcntl.style.display = 'none';
-    testreport.style.display = 'none';
+    thcntl.style.display = 'none';
+    testhealreport.style.display = 'none';
     curscene = null;
   }
   return true;
@@ -697,11 +697,8 @@ function DoAdmHelp()
   var acntl = document.getElementById('admcntl');
   acntl.innerHTML = '';
   document.AdmPost.admgo.style.display = 'inline';
-  if (document.AdmPost.adminops.value == 'addc') {
-    ainfo.innerHTML = 'Add a new secondary controller to the Z-Wave network.';
-    ainfo.style.display = 'block';
-  } else if (document.AdmPost.adminops.value == 'addd') {
-    ainfo.innerHTML = 'Add a new device (but not a controller) to the Z-Wave network.';
+  if (document.AdmPost.adminops.value == 'addd') {
+    ainfo.innerHTML = 'Add a new device or controller to the Z-Wave network.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'cprim') {
     ainfo.innerHTML = 'Add a new primary controller in place of dead old controller.';
@@ -709,11 +706,8 @@ function DoAdmHelp()
   } else if (document.AdmPost.adminops.value == 'rconf') {
     ainfo.innerHTML = 'Receive configuration from another controller.';   
     ainfo.style.display = 'block';
-  } else if (document.AdmPost.adminops.value == 'remc') {
-    ainfo.innerHTML = 'Remove a controller from the Z-Wave network.';
-    ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'remd') {
-    ainfo.innerHTML = 'Remove a device (but not a controller) from the Z-Wave network.';
+    ainfo.innerHTML = 'Remove a device or controller from the Z-Wave network.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'remfn') {
     ainfo.innerHTML = 'Move a node to the controller\'s list of failed nodes.';
@@ -1371,33 +1365,49 @@ function StatReply()
     }
   }
 }
-function TestLoad(fun)
+function TestHealLoad(fun)
 {
   var params='fun='+fun;
-  var cnt = document.getElementById('testmcnt');
-  if (cnt.value.length == 0) {
-    alert('Missing count value');
-    return false;
+  if (fun == 'test') {
+    var cnt = document.getElementById('testmcnt');
+    if (cnt.value.length == 0) {
+      alert('Missing count value');
+      return false;
+    }
+    params = params+'&num='+cnt.value;
+  } else if (fun == 'heal') {
+    var cnt = document.getElementById('healnode');
+    if (cnt.value.length == 0) {
+      params = params+'&num=0';
+    } else {
+      params = params+'&num='+cnt.value;
+    }
+    var check = document.getElementById('healrrs');
+    if (check.checked)
+      params = params+'&healrrs=1';
   }
-  params = params+'&cnt='+cnt.value;
-  atsthttp.open('POST','testpost.html', true);
-  atsthttp.onreadystatechange = TestReply;
+  atsthttp.open('POST','thpost.html', true);
+  atsthttp.onreadystatechange = TestHealReply;
   atsthttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
   atsthttp.send(params);
 
   return false;
 }
-function TestReply()
+function TestHealReply()
 {
   var xml;
   var elem;
 
   if (atsthttp.readyState == 4 && atsthttp.status == 200) {
     xml = atsthttp.responseXML;
+    var threport = document.getElementById('testhealreport');
     elem = xml.getElementsByTagName('test');
     if (elem.length > 0) {
-      var testreport = document.getElementById('testreport');
-      testreport.innerHTML = '';
+      threport.innerHTML = '';
+    }
+    elem = xml.getElementsByTagName('heal');
+    if (elem.length > 0) {
+      threport.innerHTML = '';
     }
   }
 }

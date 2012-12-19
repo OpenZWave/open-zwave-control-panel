@@ -178,8 +178,8 @@ void MyNode::removeValue (ValueID id)
 	    cclassStr(id.GetCommandClassId()), id.GetInstance(), id.GetIndex(),
 	    valueTypeStr(id.GetType()));
 
-  setChanged(true);
   setTime(time(NULL));
+  setChanged(true);
 }
 
 /*
@@ -472,6 +472,7 @@ void OnNotification (Notification const* _notification, void* _context)
 	       valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
 	       id.GetIndex(), valueTypeStr(id.GetType()));
     pthread_mutex_lock(&nlock);
+    nodes[_notification->GetNodeId()]->setTime(time(NULL));
     nodes[_notification->GetNodeId()]->setChanged(true);
     pthread_mutex_unlock(&nlock);
     break;
@@ -663,6 +664,14 @@ void OnNotification (Notification const* _notification, void* _context)
       pthread_mutex_lock(&glock);
       noop = true;
       pthread_mutex_unlock(&glock);
+      break;
+    case Notification::Code_Awake:
+      Log::Write(LogLevel_Info, "Notification: Notification home %08x node %d Awake",
+		 _notification->GetHomeId(), _notification->GetNodeId());
+      pthread_mutex_lock(&nlock);
+      nodes[_notification->GetNodeId()]->setTime(time(NULL));
+      nodes[_notification->GetNodeId()]->setChanged(true);
+      pthread_mutex_unlock(&nlock);
       break;
     default:
       Log::Write(LogLevel_Info, "Notification: Notification home %08x node %d Unknown %d",
