@@ -410,6 +410,7 @@ const char *Webserver::SendStatResponse (struct MHD_Connection *conn, const char
     infoElement->LinkEndChild(newstat("stat", "Bad Routes", data.m_badroutes));
     infoElement->LinkEndChild(newstat("stat", "No ACK", data.m_noack));
     infoElement->LinkEndChild(newstat("stat", "Network Busy", data.m_netbusy));
+    infoElement->LinkEndChild(newstat("stat", "Not Idle", data.m_notidle));
     infoElement->LinkEndChild(newstat("stat", "Non Delivery", data.m_nondelivery));
     infoElement->LinkEndChild(newstat("stat", "Routes Busy", data.m_routedbusy));
     statElement->LinkEndChild(infoElement);
@@ -464,28 +465,42 @@ const char *Webserver::SendStatResponse (struct MHD_Connection *conn, const char
 }
 
 /*
- * SendTestResponse
- * Process network test request
+ * SendTestHealResponse
+ * Process network test and heal requests
  */
 
-const char *Webserver::SendTestResponse (struct MHD_Connection *conn, const char *fun,
-					 const char *arg1, const char *arg2, const char *arg3)
+const char *Webserver::SendTestHealResponse (struct MHD_Connection *conn, const char *fun,
+					     const char *arg1, const char *arg2, const char *arg3)
 {
   TiXmlDocument doc;
   int cnt;
+  bool healrrs = false;
   static char fntemp[32];
   char *fn;
 
   TiXmlDeclaration* decl = new TiXmlDeclaration( "1.0", "utf-8", "" );
   doc.LinkEndChild(decl);
-  TiXmlElement* testElement = new TiXmlElement("test");
+  TiXmlElement* testElement = new TiXmlElement("testheal");
   doc.LinkEndChild(testElement);
 
-  if (strcmp(fun, "load") == 0 && arg1 != NULL) {
+  if (strcmp(fun, "test") == 0 && arg1 != NULL) {
     cnt = atoi((char *)arg1);
     Manager::Get()->TestNetwork(homeId, cnt);
+  } else if (strcmp(fun, "heal") == 0 && arg1 != NULL) {
+    testElement = new TiXmlElement("heal");
+    cnt = atoi((char *)arg1);
+    if (arg2 != NULL) {
+      int i = atoi((char *)arg2);
+      if (i != 0)
+	healrrs = true;
+    }
+    if (cnt == 0)
+      Manager::Get()->HealNetwork(homeId, healrrs);
+    else
+      Manager::Get()->HealNetworkNode(homeId, cnt, healrrs);
   }
-  strncpy(fntemp, "/tmp/ozwcp.test.XXXXXX", sizeof(fntemp));
+
+  strncpy(fntemp, "/tmp/ozwcp.testheal.XXXXXX", sizeof(fntemp));
   fn = mktemp(fntemp);
   if (fn == NULL)
     return EMPTY;
@@ -749,37 +764,54 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
 void web_controller_update (Driver::ControllerState cs, Driver::ControllerError err, void *ct)
 {
   Webserver *cp = (Webserver *)ct;
+  string s;
+  bool more = true;
  
   switch (cs) {
   case Driver::ControllerState_Normal:
-    cp->setAdminMessage(": no command in progress.");
+    s = ": no command in progress.";
+    break;
+  case Driver::ControllerState_Starting:
+    s = ": starting controller command.";
+    break;
+  case Driver::ControllerState_Cancel:
+    s = ": command was cancelled.";
+    more = false;
+    break;
+  case Driver::ControllerState_Error:
+    s = ": command returned an error: ";
+    more = false;
     break;
   case Driver::ControllerState_Waiting:
-    cp->setAdminMessage(": waiting for a user action.");
+    s = ": waiting for a user action.";
     break;
   case Driver::ControllerState_InProgress:
-    cp->setAdminMessage(": communicating with the other device.");
+    s = ": communicating with the other device.";
     break;
   case Driver::ControllerState_Completed:
-    cp->setAdminMessage(": command has completed successfully.");
-    cp->setAdminState(false);
+    s = ": command has completed successfully.";
+    more = false;
     break;
   case Driver::ControllerState_Failed:
-    cp->setAdminMessage(": command has failed.");
-    cp->setAdminState(false);
+    s = ": command has failed.";
+    more = false;
     break;
   case Driver::ControllerState_NodeOK:
-    cp->setAdminMessage(": the node is OK.");
-    cp->setAdminState(false);
+    s = ": the node is OK.";
+    more = false;
     break;
   case Driver::ControllerState_NodeFailed:
-    cp->setAdminMessage(": the node has failed.");
-    cp->setAdminState(false);
+    s = ": the node has failed.";
+    more = false;
     break;
   default:
-    cp->setAdminMessage(": unknown respose.");
+    s = ": unknown respose.";
     break;
   }
+  if (err != Driver::ControllerError_None)
+    s  = s + controllerErrorStr(err);
+  cp->setAdminMessage(s);
+  cp->setAdminState(more);
 }
 
 /*
@@ -859,11 +891,13 @@ int web_config_post (void *cls, enum MHD_ValueKind kind, const char *key, const 
   } else if (strcmp(cp->conn_url, "/statpost.html") == 0) {
     if (strcmp(key, "fun") == 0)
       cp->conn_arg1 = (void *)strdup(data);
-  } else if (strcmp(cp->conn_url, "/testpost.html") == 0) {
+  } else if (strcmp(cp->conn_url, "/thpost.html") == 0) {
     if (strcmp(key, "fun") == 0)
       cp->conn_arg1 = (void *)strdup(data);
-    if (strcmp(key, "cnt") == 0)
+    if (strcmp(key, "num") == 0)
       cp->conn_arg2 = (void *)strdup(data);
+    if (strcmp(key, "healrrs") == 0)
+      cp->conn_arg3 = (void *)strdup(data);
   } else if (strcmp(cp->conn_url, "/confparmpost.html") == 0) {
     if (strcmp(key, "fun") == 0)
       cp->conn_arg1 = (void *)strdup(data);
@@ -1046,12 +1080,12 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
       } else
 	ret = web_send_file(conn, (char *)cp->conn_res, MHD_HTTP_OK, true);
 	return MHD_YES;
-    } else if (strcmp(url, "/testpost.html") == 0) {
+    } else if (strcmp(url, "/thpost.html") == 0) {
       if (*up_data_size != 0) {
 	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
 	*up_data_size = 0;
 
-	cp->conn_res = (void *)SendTestResponse(conn, (char *)cp->conn_arg1, (char *)cp->conn_arg2, (char *)cp->conn_arg3, (char *)cp->conn_arg4);
+	cp->conn_res = (void *)SendTestHealResponse(conn, (char *)cp->conn_arg1, (char *)cp->conn_arg2, (char *)cp->conn_arg3, (char *)cp->conn_arg4);
 	return MHD_YES;
       } else
 	ret = web_send_file(conn, (char *)cp->conn_res, MHD_HTTP_OK, true);
@@ -1074,12 +1108,6 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	if (strcmp((char *)cp->conn_arg1, "cancel") == 0) { /* cancel controller function */
 	  Manager::Get()->CancelControllerCommand(homeId);
 	  setAdminState(false);
-	} else if (strcmp((char *)cp->conn_arg1, "addc") == 0) {
-	  setAdminFunction("Add Controller");
-	  setAdminState(
-			Manager::Get()->BeginControllerCommand(homeId,
-							       Driver::ControllerCommand_AddController,
-							       web_controller_update, this, true));
 	} else if (strcmp((char *)cp->conn_arg1, "addd") == 0) {
 	  setAdminFunction("Add Device");
 	  setAdminState(
@@ -1097,12 +1125,6 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	  setAdminState(
 			Manager::Get()->BeginControllerCommand(homeId,
 							       Driver::ControllerCommand_ReceiveConfiguration,
-							       web_controller_update, this, true));
-	} else if (strcmp((char *)cp->conn_arg1, "remc") == 0) {
-	  setAdminFunction("Remove Controller");
-	  setAdminState(
-			Manager::Get()->BeginControllerCommand(homeId,
-							       Driver::ControllerCommand_RemoveController,
 							       web_controller_update, this, true));
 	} else if (strcmp((char *)cp->conn_arg1, "remd") == 0) {
 	  setAdminFunction("Remove Device");
@@ -1233,7 +1255,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	*up_data_size = 0;
 
 	if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4 &&
-	    cp->conn_arg3 != NULL && strlen((char *)cp->conn_arg3) > 0 && cp->conn_arg4 != NULL) {
+	    cp->conn_arg3 != NULL && strlen((char *)cp->conn_arg3) > 0) {
 	  node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 	  grp = strtol((char *)cp->conn_arg3, NULL, 10);
 	  if (strcmp((char *)cp->conn_arg1, "group") == 0) { /* Group update */

@@ -33,8 +33,8 @@ INCLUDES := -I $(OPENZWAVE)/cpp/src -I $(OPENZWAVE)/cpp/src/command_classes/ \
 GNUTLS := #-lgnutls
 
 # for Linux uncomment out next two lines
-#LIBZWAVE := $(wildcard $(OPENZWAVE)/cpp/lib/linux/*.a)
-#LIBUSB := -ludev
+LIBZWAVE := $(wildcard $(OPENZWAVE)/cpp/lib/linux/*.a)
+LIBUSB := -ludev
 
 # for Mac OS X comment out above 2 lines and uncomment next 2 lines
 #LIBZWAVE := $(wildcard $(OPENZWAVE)/cpp/lib/mac/*.a)

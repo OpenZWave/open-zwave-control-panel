@@ -471,3 +471,35 @@ uint8 cclassNum (char const *str)
   else
     return 0xFF;
 }
+
+const char *controllerErrorStr (Driver::ControllerError err)
+{
+  switch (err) {
+  case Driver::ControllerError_None:
+    return "None";
+  case Driver::ControllerError_ButtonNotFound:
+    return "Button Not Found";
+  case Driver::ControllerError_NodeNotFound:
+    return "Node Not Found";
+  case Driver::ControllerError_NotBridge:
+    return "Not a Bridge";
+  case Driver::ControllerError_NotPrimary:
+    return "Not Primary Controller";
+  case Driver::ControllerError_NotSUC:
+    return "Not Static Update Controller";
+  case Driver::ControllerError_NotSecondary:
+    return "Not Secondary Controller";
+  case Driver::ControllerError_NotFound:
+    return "Not Found";
+  case Driver::ControllerError_Busy:
+    return "Controller Busy";
+  case Driver::ControllerError_Failed:
+    return "Failed";
+  case Driver::ControllerError_Disabled:
+    return "Disabled";
+  case Driver::ControllerError_Overflow:
+    return "Overflow";
+  default:
+    return "Unknown error";
+  }
+}

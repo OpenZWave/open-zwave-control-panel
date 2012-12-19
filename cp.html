@@ -139,7 +139,7 @@
 	      <option value="scen">Scenes</option>
 	      <option value="topo">Topology</option>
 	      <option value="stat">Statistics</option>
-	      <option value="test">Test Network</option>
+	      <option value="test">Test & Heal</option>
 	    </select>
 	  </div>
 	  <div class="rsb" style="margin-left: 10px;">
@@ -345,14 +345,21 @@
 	      </table>
 	    </div>
 	  </div>
-	  <div id="testcntl" name="testcntl" class="rsb" style="display: none; margin-right: 5px;">
+	  <div id="thcntl" name="thcntl" class="rsb" style="display: none; margin-right: 5px;">
 	    <div class="rsb" style="margin-left: 5px;">
-	      <button id="testbutton" name="testbutton" onclick="return TestLoad('load');" type="submit">Run</button>
+	      <button id="testbutton" name="testbutton" onclick="return TestHealLoad('test');" type="submit">Run</button>
 	      <label><span class="legend" style="font-size: 12px;">Message count:</span></label>
 	      <input id="testmcnt" type="text" size="5" class="legend">
 	    </div>
+	    <br>
+	    <div class="rsb" style="margin-left: 5px;">
+	      <button id="healbutton" name="healbutton" onclick="return TestHealLoad('heal');" type="submit">Run</button>
+	      <label><span class="legend" style="font-size: 12px;">Node:</span></label>
+	      <input id="healnode" type="text" size="5" class="legend">
+	      <input id="healrrs" type="checkbox" value="healrr">Heal Return Routes
+	    </div>
 	  </div>
-	  <div id="testreport" class="log" style="float: left; margin-left: 5px; width: 98%; text-align: left; display: none;">
+	  <div id="testhealreport" class="log" style="float: left; margin-left: 5px; width: 98%; text-align: left; display: none;">
 	  </div>
 	</form>
       </fieldset>
@@ -364,11 +371,9 @@
 	  <div class="esb" style="margin-left: 14px; width: 200px;">
 	    <select id="adminops" onchange="return DoAdmHelp();">
 	      <option value="choice" selected="true">Select an operation:</option>
-	      <option value="addc">Add Controller</option>
 	      <option value="addd">Add Device</option>
 	      <option value="cprim">Create Primary</option>
 	      <option value="rconf">Receive Configuration</option>
-	      <option value="remc">Remove Controller</option>
 	      <option value="remd">Remove Device</option>
 	      <option value="remfn">Remove Failed Node</option>
 	      <option value="hnf">Has Node Failed</option>
