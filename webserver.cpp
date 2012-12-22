@@ -90,6 +90,7 @@ extern bool done;
 extern bool needsave;
 extern uint32 homeId;
 extern uint8 nodeId;		// controller node id
+extern uint8 SUCnodeId;
 extern char *cmode;
 extern bool noop;
 extern int debug;
@@ -654,11 +655,13 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
   else
     str[0] = '\0';
   pollElement->SetAttribute("homeid", str);
-  if (nodeId != 0L)
+  if (nodeId != 0)
     snprintf(str, sizeof(str), "%d", nodeId);
   else
     str[0] = '\0';
   pollElement->SetAttribute("nodeid", str);
+  snprintf(str, sizeof(str), "%d", SUCnodeId);
+  pollElement->SetAttribute("sucnodeid", str);
   pollElement->SetAttribute("nodecount", MyNode::getNodeCount());
   pollElement->SetAttribute("cmode", cmode);
   pollElement->SetAttribute("save", needsave);
@@ -782,6 +785,10 @@ void web_controller_update (Driver::ControllerState cs, Driver::ControllerError 
     s = ": command returned an error: ";
     more = false;
     break;
+  case Driver::ControllerState_Sleeping:
+    s = ": device went to sleep.";
+    more = false;
+    break;
   case Driver::ControllerState_Waiting:
     s = ": waiting for a user action.";
     break;
@@ -899,6 +906,11 @@ int web_config_post (void *cls, enum MHD_ValueKind kind, const char *key, const 
     if (strcmp(key, "healrrs") == 0)
       cp->conn_arg3 = (void *)strdup(data);
   } else if (strcmp(cp->conn_url, "/confparmpost.html") == 0) {
+    if (strcmp(key, "fun") == 0)
+      cp->conn_arg1 = (void *)strdup(data);
+    else if (strcmp(key, "node") == 0)
+      cp->conn_arg2 = (void *)strdup(data);
+  } else if (strcmp(cp->conn_url, "/refreshpost.html") == 0) {
     if (strcmp(key, "fun") == 0)
       cp->conn_arg1 = (void *)strdup(data);
     else if (strcmp(key, "node") == 0)
@@ -1030,7 +1042,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	if (val != NULL) {
 	  string arg = (char *)cp->conn_arg2;
 	  if (!Manager::Get()->SetValue(val->getId(), arg))
-	    fprintf(stderr, "SetValue string failed\n");
+	    fprintf(stderr, "SetValue string failed type=%s\n", valueTypeStr(val->getId().GetType()));
 	}
 	return MHD_YES;
       } else
@@ -1096,6 +1108,17 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 0) {
 	  uint8 node = strtol((char *)cp->conn_arg2, NULL, 10);
 	  Manager::Get()->RequestAllConfigParams(homeId, node);
+	}
+	return MHD_YES;
+      } else
+	ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
+    } else if (strcmp(url, "/refreshpost.html") == 0) {
+      if (*up_data_size != 0) {
+	MHD_post_process(cp->conn_pp, up_data, *up_data_size);
+	*up_data_size = 0;
+	if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 0) {
+	  uint8 node = strtol((char *)cp->conn_arg2, NULL, 10);
+	  Manager::Get()->RequestNodeDynamic(homeId, node);
 	}
 	return MHD_YES;
       } else
@@ -1199,6 +1222,24 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	    setAdminState(
 			  Manager::Get()->BeginControllerCommand(homeId,
 								 Driver::ControllerCommand_DeleteAllReturnRoutes,
+								 web_controller_update, this, true, node));
+	  }
+	} else if (strcmp((char *)cp->conn_arg1, "snif") == 0) {
+	  if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
+	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
+	    setAdminFunction("Send Node Information");
+	    setAdminState(
+			  Manager::Get()->BeginControllerCommand(homeId,
+								 Driver::ControllerCommand_SendNodeInformation,
+								 web_controller_update, this, true, node));
+	  }
+	} else if (strcmp((char *)cp->conn_arg1, "reps") == 0) {
+	  if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
+	    uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
+	    setAdminFunction("Replication Send");
+	    setAdminState(
+			  Manager::Get()->BeginControllerCommand(homeId,
+								 Driver::ControllerCommand_ReplicationSend,
 								 web_controller_update, this, true, node));
 	  }
 	} else if (strcmp((char *)cp->conn_arg1, "addbtn") == 0) {
