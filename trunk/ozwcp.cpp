@@ -67,6 +67,7 @@ bool needsave = false;
 bool noop = false;
 uint32 homeId = 0;
 uint8 nodeId = 0;
+uint8 SUCnodeId = 0;
 const char *cmode = "";
 int32 debug = false;
 bool MyNode::nodechanged = false;
@@ -78,7 +79,7 @@ list<uint8> MyNode::removed;
  */
 MyNode::MyNode (int32 const ind) : type(0)
 {
-  if (ind < 1 || ind > MAX_NODES) {
+  if (ind < 1 || ind >= MAX_NODES) {
     Log::Write(LogLevel_Info, "new: bad node value %d, ignoring...", ind);
     delete this;
     return;
@@ -114,7 +115,7 @@ MyNode::~MyNode ()
  */
 void MyNode::remove (int32 const ind)
 {
-  if (ind < 1 || ind > MAX_NODES) {
+  if (ind < 1 || ind >= MAX_NODES) {
     Log::Write(LogLevel_Info, "remove: bad node value %d, ignoring...", ind);
     return;
   }
@@ -594,9 +595,10 @@ void OnNotification (Notification const* _notification, void* _context)
     pthread_mutex_lock(&glock);
     homeId = _notification->GetHomeId();
     nodeId = _notification->GetNodeId();
-    if (Manager::Get()->IsStaticUpdateController(homeId))
+    if (Manager::Get()->IsStaticUpdateController(homeId)) {
       cmode = "SUC";
-    else if (Manager::Get()->IsPrimaryController(homeId))
+      SUCnodeId = Manager::Get()->GetSUCNodeId(homeId);
+    } else if (Manager::Get()->IsPrimaryController(homeId))
       cmode = "Primary";
     else
       cmode = "Slave";
@@ -611,7 +613,7 @@ void OnNotification (Notification const* _notification, void* _context)
     cmode = "";
     pthread_mutex_unlock(&glock);
     pthread_mutex_lock(&nlock);
-    for (int i = 1; i <= MAX_NODES; i++)
+    for (int i = 1; i < MAX_NODES; i++)
       MyNode::remove(i);
     pthread_mutex_unlock(&nlock);
     break;
@@ -621,15 +623,16 @@ void OnNotification (Notification const* _notification, void* _context)
     done = false;
     needsave = false;
     homeId = _notification->GetHomeId();
-    if (Manager::Get()->IsStaticUpdateController(homeId))
+    if (Manager::Get()->IsStaticUpdateController(homeId)) {
       cmode = "SUC";
-    else if (Manager::Get()->IsPrimaryController(homeId))
+      SUCnodeId = Manager::Get()->GetSUCNodeId(homeId);
+    } else if (Manager::Get()->IsPrimaryController(homeId))
       cmode = "Primary";
     else
       cmode = "Slave";
     pthread_mutex_unlock(&glock);
     pthread_mutex_lock(&nlock);
-    for (int i = 1; i <= MAX_NODES; i++)
+    for (int i = 1; i < MAX_NODES; i++)
       MyNode::remove(i);
     pthread_mutex_unlock(&nlock);
     break;

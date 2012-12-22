@@ -20,6 +20,7 @@ var astate = false;
 var needsave=0;
 var nodecount;
 var nodeid;
+var sucnodeid;
 var tt_top=3;
 var tt_left=3;
 var tt_maxw=300;
@@ -92,6 +93,21 @@ function SaveNode(newid)
   document.getElementById(curnode).className='click';
   return true;
 }
+function ClearNode()
+{
+  if (curnode != null) {
+    document.getElementById(curnode).className='normal';
+    document.NodePost.nodeops.selectedIndex = 0;
+    document.getElementById('divconfigcur').innerHTML='';
+    document.getElementById('divconfigcon').innerHTML='';
+    document.getElementById('divconfiginfo').innerHTML='';
+    document.getElementById('nodeinfo').style.display = 'none';
+    document.getElementById('nodecntl').style.display = 'none';
+    UpdateSceneValues(-1);
+    curnode = null;
+  }
+  return true;
+}
 function DisplayNode(n)
 {
   return true;
@@ -136,6 +152,10 @@ function PollReply()
       if (elem[0].getAttribute('nodeid') != nodeid) {
 	nodeid = elem[0].getAttribute('nodeid');
       }
+      if (elem[0].getAttribute('sucnodeid') != sucnodeid) {
+	sucnodeid = elem[0].getAttribute('sucnodeid');
+	document.getElementById('sucnodeid').value = sucnodeid;
+      }
       if (elem[0].getAttribute('cmode') != document.getElementById('cmode').value)
 	document.getElementById('cmode').value = elem[0].getAttribute('cmode');
       if (elem[0].getAttribute('save') != needsave) {
@@ -178,7 +198,9 @@ function PollReply()
 	  var remnodes = remove.split(',');
 	  changed = true;
 	  for (var i = 0; i < remnodes.length; i++) {
-	      nodes[remnodes[i]] = null;
+	    nodes[remnodes[i]] = null;
+	    if (curnode == ('node'+remnodes[i]))
+	      ClearNode();
 	  }
 	}
       }
@@ -310,7 +332,7 @@ function PollReply()
 	  }
 	  if (exthelp.length > 0)
 	    exthelp = exthelp.substr(0, exthelp.length - 2);
-	  stuff=stuff+'<tr id="node'+i+'" onmouseover="this.className=\'highlight\';" onmouseout="if (this.id == curnode) this.className=\'click\'; else this.className=\'normal\';" onclick="return SaveNode(this.id);" ondblClick="SaveNode(this.id); return DisplayNode();"><td onmouseover="ShowToolTip(\''+exthelp+'\',0);" onmouseout="HideToolTip();">'+nodes[i].id+ext+'</td><td>'+nodes[i].btype+'</td><td>'+nodes[i].gtype+'</td><td>'+nodes[i].manufacturer+' '+nodes[i].product+'</td><td>'+nodes[i].name+'</td><td>'+nodes[i].location+'</td><td>'+val+'</td><td>'+ts+'</td></tr>';
+	  stuff=stuff+'<tr id="node'+i+'" onmouseover="this.className=\'highlight\';" onmouseout="if (this.id == curnode) this.className=\'click\'; else this.className=\'normal\';" onclick="return SaveNode(this.id);" ondblClick="ClearNode(); return DisplayNode();"><td onmouseover="ShowToolTip(\''+exthelp+'\',0);" onmouseout="HideToolTip();">'+nodes[i].id+ext+'</td><td>'+nodes[i].btype+'</td><td>'+nodes[i].gtype+'</td><td>'+nodes[i].manufacturer+' '+nodes[i].product+'</td><td>'+nodes[i].name+'</td><td>'+nodes[i].location+'</td><td>'+val+'</td><td>'+ts+'</td></tr>';
 	  CreateDivs('user', divcur, i);
 	  CreateDivs('config', divcon, i);
 	  CreateDivs('system', divinfo, i);
@@ -384,8 +406,9 @@ function BED()
   info.style.display = 'none';
   if (off) {
     document.getElementById('homeid').value = '';
-    document.getElementById('cmode').value = '';
+    document.getElementById('cmode').value = ''; 
     document.getElementById('nodecount').value = '';
+    document.getElementById('sucnode').value = '';
     document.getElementById('saveinfo').style.display = 'none';
     document.getElementById('tbody').innerHTML= '';
     document.getElementById('divconfigcur').innerHTML = '';
@@ -653,7 +676,7 @@ function DoAdmPost(can)
   params = 'fun='+fun;
 
   if (fun == 'hnf' || fun == 'remfn' || fun == 'repfn' || fun == 'reqnu' ||
-      fun == 'reqnnu' || fun == 'assrr' || fun == 'delarr' || 
+      fun == 'reqnnu' || fun == 'assrr' || fun == 'delarr' || fun == 'reps' ||
       fun == 'addbtn' || fun == 'delbtn') {
     if (curnode == null) {
       ainfo = document.getElementById('adminfo');
@@ -662,6 +685,11 @@ function DoAdmPost(can)
       return false;
     }
     params = params+'&node='+curnode;
+  } else if (fun == 'snif') {
+    if (curnode == null)
+      params = params+'&node=node255';
+    else
+      params = params+'&node='+curnode;
   }
 
   if (fun == 'addbtn' || fun == 'delbtn') {
@@ -701,7 +729,7 @@ function DoAdmHelp()
     ainfo.innerHTML = 'Add a new device or controller to the Z-Wave network.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'cprim') {
-    ainfo.innerHTML = 'Add a new primary controller in place of dead old controller.';
+    ainfo.innerHTML = 'Create new primary controller in place of dead old controller.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'rconf') {
     ainfo.innerHTML = 'Receive configuration from another controller.';   
@@ -710,22 +738,22 @@ function DoAdmHelp()
     ainfo.innerHTML = 'Remove a device or controller from the Z-Wave network.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'remfn') {
-    ainfo.innerHTML = 'Move a node to the controller\'s list of failed nodes.';
+    ainfo.innerHTML = 'Remove a failed node that is on the controller\'s list of failed nodes.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'hnf') {
     ainfo.innerHTML = 'Check whether a node is in the controller\'s failed nodes list.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'repfn') {
-    ainfo.innerHTML = 'Replace a failed device with another.';
+    ainfo.innerHTML = 'Replace a failed device with a working device.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'tranpr') {
-    ainfo.innerHTML = 'Add a new controller to the network and make it the primary.';
+    ainfo.innerHTML = 'Transfer primary to a new controller and make current secondary.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'reqnu') {
     ainfo.style.display = 'block';
     ainfo.innerHTML = 'Update the controller with network information from the SUC/SIS.';
   } else if (document.AdmPost.adminops.value == 'reqnnu') {
-    ainfo.innerHTML = 'Get a node to rebuild its neighbour list.';
+    ainfo.innerHTML = 'Get a node to rebuild its neighbor list.';
     ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'assrr') {
     ainfo.innerHTML = 'Assign a network return route to a device.';
@@ -733,10 +761,16 @@ function DoAdmHelp()
   } else if (document.AdmPost.adminops.value == 'delarr') {
     ainfo.innerHTML = 'Delete all network return routes from a device.';
     ainfo.style.display = 'block';
+  } else if (document.AdmPost.adminops.value == 'snif') {
+    ainfo.innerHTML = 'Send a node information frame.';
+    ainfo.style.display = 'block';
+  } else if (document.AdmPost.adminops.value == 'reps') {
+    ainfo.innerHTML = 'Send information from primary to secondary.';
+    ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'addbtn' ||
 	     document.AdmPost.adminops.value == 'delbtn') {
     if (curnode == null) {
-      ainfo.innerHTML = 'Must select a node below for this funcion.';
+      ainfo.innerHTML = 'Must select a node below for this function.';
       ainfo.style.display = 'block';
       document.AdmPost.adminops.selectedIndex = 0;
       document.AdmPost.admgo.style.display = 'none';
@@ -1421,6 +1455,16 @@ function RequestAllConfig(n)
 
   return false;
 }
+function RequestAll(n)
+{
+  var params='fun=racp&node='+n;
+  racphttp.open('POST','refreshpost.html', true);
+  racphttp.onreadystatechange = PollReply;
+  racphttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  racphttp.send(params);
+
+  return false;
+}
 function quotestring(s)
 {
   return s.replace(/\'/g, "");
@@ -1513,11 +1557,13 @@ function CreateDivs(genre,divto,ind)
 {
   divto[ind]='<table border="0" cellpadding="1" cellspacing="0"><tbody>';
   if (nodes[ind].values != null) {
+      var j = 0;
     for (var i = 0; i < nodes[ind].values.length; i++) {
       if (nodes[ind].values[i].genre != genre)
 	continue;
       var lastclass='';
       var vid=nodes[ind].id+'-'+nodes[ind].values[i].cclass+'-'+genre+'-'+nodes[ind].values[i].type+'-'+nodes[ind].values[i].instance+'-'+nodes[ind].values[i].index;
+      j++;
       if (nodes[ind].values[i].type == 'bool') {
 	divto[ind]=divto[ind]+CreateOnOff(ind,i,vid);
       } else if (nodes[ind].values[i].type == 'byte') {
@@ -1539,8 +1585,12 @@ function CreateDivs(genre,divto,ind)
 	divto[ind]=divto[ind]+CreateButton(ind,i,vid);
       }
     }
-    if (genre == 'config')
-      divto[ind]=divto[ind]+'<tr><td>&nbsp;</td><td><button type="submit" id="requestallconfig" name="requestallconfig" onclick="return RequestAllConfig('+ind+');">Refresh</button></td><td>&nbsp;</td></tr>';
+    if (j != 0) {
+      if (genre == 'config')
+        divto[ind]=divto[ind]+'<tr><td>&nbsp;</td><td><button type="submit" id="requestallconfig" name="requestallconfig" onclick="return RequestAllConfig('+ind+');">Refresh</button></td><td>&nbsp;</td></tr>';
+      else
+        divto[ind]=divto[ind]+'<tr><td>&nbsp;</td><td><button type="submit" id="requestall" name="requestall" onclick="return RequestAll('+ind+');">Refresh</button></td><td>&nbsp;</td></tr>';
+    }
   }
   divto[ind]=divto[ind]+'</tbody></table>';
 }

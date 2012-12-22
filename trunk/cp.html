@@ -39,7 +39,7 @@
       </big></big>
       <hr style="width: 100%; height: 2px;">
     </div>
-    <div style="width: 100%; height: 160px;">
+    <div style="width: 100%; height: 170px;">
       <div style="padding: 0pt; width: 42%; float: left;">
 	<div style="margin-left: auto; margin-right: auto; width: 350px; height: 100px;">
 	  <fieldset>
@@ -93,6 +93,11 @@
 		<div style="float: right;">
 		  <label><span style="font-family: Arial;">Node Count:&nbsp;</span></label>
 		</div>
+		<br>
+		<br>
+		<div style="float: right;">
+		  <label><span style="font-family: Arial;">SUC Node:&nbsp;</span></label>
+		</div>
 	      </div>
 	      <div style="float: left; width: 50%;">
 		<div style="float: left;">
@@ -107,6 +112,11 @@
 		<br>
 		<div style="float: left;">
 		  <input readonly="true" style="font-family: Arial; height: 15px;" size="6" name="nodecount" id="nodecount" value="" type="text">
+		</div>
+		<br>
+		<br>
+		<div style="float: left;">
+		  <input readonly="true" style="font-family: Arial; height: 15px;" size="6" name="sucnodeid" id="sucnodeid" value="" type="text">
 		</div>
 	      </div>
 	    </form>
@@ -383,6 +393,8 @@
 	      <option value="reqnnu">Request Node Neighbor Update</option>
 	      <option value="assrr">Assign Return Route</option>
 	      <option value="delarr">Delete All Return Routes</option>
+	      <option value="snif">Send Node Information</option>
+	      <option value="reps">Replication Send</option>
 	      <option value="addbtn">Add Button</option>
 	      <option value="delbtn">Delete Button</option>
 	    </select>

@@ -485,6 +485,8 @@ const char *controllerErrorStr (Driver::ControllerError err)
     return "Not a Bridge";
   case Driver::ControllerError_NotPrimary:
     return "Not Primary Controller";
+  case Driver::ControllerError_IsPrimary:
+    return "Is Primary Controller";
   case Driver::ControllerError_NotSUC:
     return "Not Static Update Controller";
   case Driver::ControllerError_NotSecondary:
