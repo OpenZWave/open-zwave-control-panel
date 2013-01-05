@@ -307,11 +307,14 @@
 		    <th style="text-align: center;">Failed</th>
 		    <th style="text-align: center;">Retries</th>
 		    <th style="text-align: center;">Received</th>
+		    <th style="text-align: center;">Unsolicited</th>
 		    <th style="text-align: center;">Duplicates</th>
 		    <th style="text-align: center;">Last Sent</th>
 		    <th style="text-align: center;">Last Received</th>
-		    <th style="text-align: center;">Last RTT</th>
-		    <th style="text-align: center;">Average RTT</th>
+		    <th style="text-align: center;">Last Request RTT</th>
+		    <th style="text-align: center;">Average Request RTT</th>
+		    <th style="text-align: center;">Last Response RTT</th>
+		    <th style="text-align: center;">Average Response RTT</th>
 		    <th style="text-align: center;">Quality</th>
 		  </tr>
 		</thead>
@@ -358,6 +361,8 @@
 	  <div id="thcntl" name="thcntl" class="rsb" style="display: none; margin-right: 5px;">
 	    <div class="rsb" style="margin-left: 5px;">
 	      <button id="testbutton" name="testbutton" onclick="return TestHealLoad('test');" type="submit">Run</button>
+	      <label><span class="legend" style="font-size: 12px;">Node:</span></label>
+	      <input id="testnode" type="text" size="5" class="legend">
 	      <label><span class="legend" style="font-size: 12px;">Message count:</span></label>
 	      <input id="testmcnt" type="text" size="5" class="legend">
 	    </div>
@@ -444,79 +449,52 @@
 		<th>Location</th>
 		<th>Value</th>
 		<th>Last Heard</th>
+		<th>Status</th>
 	      </tr>
 	    </thead> <tbody id="tbody">
 	      <tr>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
 	      </tr>
 	      <tr>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
 	      </tr>
 	      <tr>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
 	      </tr>
 	      <tr>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
-		<td> <br>
-		</td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
+		<td> <br> </td>
 	      </tr>
 	    </tbody>
 	  </table>

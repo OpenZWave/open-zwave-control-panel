@@ -214,7 +214,7 @@ function PollReply()
 		     name: elem[i].getAttribute('name'), location: elem[i].getAttribute('location'),
 		     listening: elem[i].getAttribute('listening') == 'true', frequent: elem[i].getAttribute('frequent') == 'true',
 		     beam: elem[i].getAttribute('beam') == 'true', routing: elem[i].getAttribute('routing') == 'true',
-		     security: elem[i].getAttribute('security') == 'true',
+		     security: elem[i].getAttribute('security') == 'true', status: elem[i].getAttribute('status'),
 		     values: null, groups: null};
 	var k = 0;
 	var values = elem[i].getElementsByTagName('value');
@@ -332,7 +332,7 @@ function PollReply()
 	  }
 	  if (exthelp.length > 0)
 	    exthelp = exthelp.substr(0, exthelp.length - 2);
-	  stuff=stuff+'<tr id="node'+i+'" onmouseover="this.className=\'highlight\';" onmouseout="if (this.id == curnode) this.className=\'click\'; else this.className=\'normal\';" onclick="return SaveNode(this.id);" ondblClick="ClearNode(); return DisplayNode();"><td onmouseover="ShowToolTip(\''+exthelp+'\',0);" onmouseout="HideToolTip();">'+nodes[i].id+ext+'</td><td>'+nodes[i].btype+'</td><td>'+nodes[i].gtype+'</td><td>'+nodes[i].manufacturer+' '+nodes[i].product+'</td><td>'+nodes[i].name+'</td><td>'+nodes[i].location+'</td><td>'+val+'</td><td>'+ts+'</td></tr>';
+	  stuff=stuff+'<tr id="node'+i+'" onmouseover="this.className=\'highlight\';" onmouseout="if (this.id == curnode) this.className=\'click\'; else this.className=\'normal\';" onclick="return SaveNode(this.id);" ondblClick="ClearNode(); return DisplayNode();"><td onmouseover="ShowToolTip(\''+exthelp+'\',0);" onmouseout="HideToolTip();">'+nodes[i].id+ext+'</td><td>'+nodes[i].btype+'</td><td>'+nodes[i].gtype+'</td><td>'+nodes[i].manufacturer+' '+nodes[i].product+'</td><td>'+nodes[i].name+'</td><td>'+nodes[i].location+'</td><td>'+val+'</td><td>'+ts+'</td><td>'+nodes[i].status+'</td></tr>';
 	  CreateDivs('user', divcur, i);
 	  CreateDivs('config', divcon, i);
 	  CreateDivs('system', divinfo, i);
@@ -1403,12 +1403,18 @@ function TestHealLoad(fun)
 {
   var params='fun='+fun;
   if (fun == 'test') {
+    var cnt = document.getElementById('testnode');
+    if (cnt.value.length == 0) {
+      params = params+'&num=0';
+    } else {
+      params = params+'&num='+cnt.value;
+    }
     var cnt = document.getElementById('testmcnt');
     if (cnt.value.length == 0) {
       alert('Missing count value');
       return false;
     }
-    params = params+'&num='+cnt.value;
+    params = params+'&cnt='+cnt.value;
   } else if (fun == 'heal') {
     var cnt = document.getElementById('healnode');
     if (cnt.value.length == 0) {
@@ -1559,17 +1565,18 @@ function CreateDivs(genre,divto,ind)
   if (nodes[ind].values != null) {
       var j = 0;
     for (var i = 0; i < nodes[ind].values.length; i++) {
-      if (nodes[ind].values[i].genre != genre)
+      var match;
+      if (genre == 'user')
+	match = (nodes[ind].values[i].genre == genre || nodes[ind].values[i].genre == 'basic');
+      else
+	match = (nodes[ind].values[i].genre == genre);
+      if (!match)
 	continue;
-      var lastclass='';
-      var vid=nodes[ind].id+'-'+nodes[ind].values[i].cclass+'-'+genre+'-'+nodes[ind].values[i].type+'-'+nodes[ind].values[i].instance+'-'+nodes[ind].values[i].index;
+      var vid=nodes[ind].id+'-'+nodes[ind].values[i].cclass+'-'+nodes[ind].values[i].genre+'-'+nodes[ind].values[i].type+'-'+nodes[ind].values[i].instance+'-'+nodes[ind].values[i].index;
       j++;
       if (nodes[ind].values[i].type == 'bool') {
 	divto[ind]=divto[ind]+CreateOnOff(ind,i,vid);
       } else if (nodes[ind].values[i].type == 'byte') {
-	if (lastclass == 'BASIC' && cls == 'SWITCH MULTILEVEL')
-	  divto[ind]='';
-	lastclass=nodes[ind].values[i].cclass;
 	divto[ind]=divto[ind]+CreateTextBox(ind,i,vid);
       } else if (nodes[ind].values[i].type == 'int') {
 	divto[ind]=divto[ind]+CreateTextBox(ind,i,vid);
