@@ -219,7 +219,7 @@ void Webserver::web_get_groups (int n, TiXmlElement *ep)
 }
 
 /*
- * web_get_genre
+ * web_get_values
  * Retreive class values based on genres
  */
 void Webserver::web_get_values (int i, TiXmlElement *ep)
@@ -432,10 +432,13 @@ const char *Webserver::SendStatResponse (struct MHD_Connection *conn, const char
 	nodeElement->LinkEndChild(newstat("nstat", "Retried sent messages", ndata.m_retries));
 	nodeElement->LinkEndChild(newstat("nstat", "Received messages", ndata.m_receivedCnt));
 	nodeElement->LinkEndChild(newstat("nstat", "Received duplicates", ndata.m_receivedDups));
-	nodeElement->LinkEndChild(newstat("nstat", "Last sent message", ndata.m_sentTS.c_str()));
-	nodeElement->LinkEndChild(newstat("nstat", "Last received message", ndata.m_receivedTS.c_str()));
-	nodeElement->LinkEndChild(newstat("nstat", "Last RTT", ndata.m_averageRequestRTT));
-	nodeElement->LinkEndChild(newstat("nstat", "Average RTT", ndata.m_averageRequestRTT));
+	nodeElement->LinkEndChild(newstat("nstat", "Received unsolicited", ndata.m_receivedUnsolicited));
+	nodeElement->LinkEndChild(newstat("nstat", "Last sent message", ndata.m_sentTS.substr(5).c_str()));
+	nodeElement->LinkEndChild(newstat("nstat", "Last received message", ndata.m_receivedTS.substr(5).c_str()));
+	nodeElement->LinkEndChild(newstat("nstat", "Last Request RTT", ndata.m_averageRequestRTT));
+	nodeElement->LinkEndChild(newstat("nstat", "Average Request RTT", ndata.m_averageRequestRTT));
+	nodeElement->LinkEndChild(newstat("nstat", "Last Response RTT", ndata.m_averageResponseRTT));
+	nodeElement->LinkEndChild(newstat("nstat", "Average Response RTT", ndata.m_averageResponseRTT));
 	nodeElement->LinkEndChild(newstat("nstat", "Quality", ndata.m_quality));
 	while (!ndata.m_ccData.empty()) {
 	  Node::CommandClassData ccd = ndata.m_ccData.front();
@@ -474,7 +477,8 @@ const char *Webserver::SendTestHealResponse (struct MHD_Connection *conn, const 
 					     const char *arg1, const char *arg2, const char *arg3)
 {
   TiXmlDocument doc;
-  int cnt;
+  int node;
+  int arg;
   bool healrrs = false;
   static char fntemp[32];
   char *fn;
@@ -485,20 +489,24 @@ const char *Webserver::SendTestHealResponse (struct MHD_Connection *conn, const 
   doc.LinkEndChild(testElement);
 
   if (strcmp(fun, "test") == 0 && arg1 != NULL) {
-    cnt = atoi((char *)arg1);
-    Manager::Get()->TestNetwork(homeId, cnt);
+    node = atoi((char *)arg1);
+    arg = atoi((char *)arg2);
+    if (node == 0)
+      Manager::Get()->TestNetwork(homeId, arg);
+    else
+      Manager::Get()->TestNetworkNode(homeId, node, arg);
   } else if (strcmp(fun, "heal") == 0 && arg1 != NULL) {
     testElement = new TiXmlElement("heal");
-    cnt = atoi((char *)arg1);
+    node = atoi((char *)arg1);
     if (arg2 != NULL) {
-      int i = atoi((char *)arg2);
-      if (i != 0)
+      arg = atoi((char *)arg2);
+      if (arg != 0)
 	healrrs = true;
     }
-    if (cnt == 0)
+    if (node == 0)
       Manager::Get()->HealNetwork(homeId, healrrs);
     else
-      Manager::Get()->HealNetworkNode(homeId, cnt, healrrs);
+      Manager::Get()->HealNetworkNode(homeId, node, healrrs);
   }
 
   strncpy(fntemp, "/tmp/ozwcp.testheal.XXXXXX", sizeof(fntemp));
@@ -627,7 +635,7 @@ const char *Webserver::SendSceneResponse (struct MHD_Connection *conn, const cha
 }
 
 /*
- * SendPollRespose
+ * SendPollResponse
  * Process poll request from client and return
  * data as xml.
  */
@@ -721,6 +729,8 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
     j = 1;
     while (j <= MyNode::getNodeCount() && i < MAX_NODES) {
       if (nodes[i] != NULL && nodes[i]->getChanged()) {
+	bool listening;
+	bool flirs;
 	TiXmlElement* nodeElement = new TiXmlElement("node");
 	pollElement->LinkEndChild(nodeElement);
 	nodeElement->SetAttribute("id", i);
@@ -730,12 +740,33 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
 	nodeElement->SetAttribute("location", Manager::Get()->GetNodeLocation(homeId, i).c_str());
 	nodeElement->SetAttribute("manufacturer", Manager::Get()->GetNodeManufacturerName(homeId, i).c_str());
 	nodeElement->SetAttribute("product", Manager::Get()->GetNodeProductName(homeId, i).c_str());
-	nodeElement->SetAttribute("listening", Manager::Get()->IsNodeListeningDevice(homeId, i) ? "true" : "false");
-	nodeElement->SetAttribute("frequent", Manager::Get()->IsNodeFrequentListeningDevice(homeId, i) ? "true" : "false");
+	listening = Manager::Get()->IsNodeListeningDevice(homeId, i);
+	nodeElement->SetAttribute("listening", listening ? "true" : "false");
+	flirs = Manager::Get()->IsNodeFrequentListeningDevice(homeId, i);
+	nodeElement->SetAttribute("frequent", flirs ? "true" : "false");
 	nodeElement->SetAttribute("beam", Manager::Get()->IsNodeBeamingDevice(homeId, i) ? "true" : "false");
 	nodeElement->SetAttribute("routing", Manager::Get()->IsNodeRoutingDevice(homeId, i) ? "true" : "false");
 	nodeElement->SetAttribute("security", Manager::Get()->IsNodeSecurityDevice(homeId, i) ? "true" : "false");
 	nodeElement->SetAttribute("time", nodes[i]->getTime());
+	fprintf(stderr, "i=%d failed=%d\n", i, Manager::Get()->IsNodeFailed(homeId, i));
+	fprintf(stderr, "i=%d awake=%d\n", i, Manager::Get()->IsNodeAwake(homeId, i));
+	fprintf(stderr, "i=%d state=%s\n", i, Manager::Get()->GetNodeQueryStage(homeId, i).c_str());
+	fprintf(stderr, "i=%d listening=%d flirs=%d\n", i, listening, flirs);
+	if (Manager::Get()->IsNodeFailed(homeId, i))
+	  nodeElement->SetAttribute("status", "Dead");
+	else {
+	  string s = Manager::Get()->GetNodeQueryStage(homeId, i);
+	  if (s == "Complete") {
+	    if (i != nodeId && !listening && !flirs)
+	      nodeElement->SetAttribute("status", Manager::Get()->IsNodeAwake(homeId, i) ? "Awake" : "Sleeping" );
+	    else
+	      nodeElement->SetAttribute("status", "Ready");
+	  } else {
+	    if (i != nodeId && !listening && !flirs)
+	      s = s + (Manager::Get()->IsNodeAwake(homeId, i) ? " (awake)" : " (sleeping)");
+	    nodeElement->SetAttribute("status", s.c_str());
+	  }
+	}
 	web_get_groups(i, nodeElement);
 	// Don't think the UI needs these
 	//web_get_genre(ValueID::ValueGenre_Basic, i, nodeElement);
@@ -903,6 +934,8 @@ int web_config_post (void *cls, enum MHD_ValueKind kind, const char *key, const 
       cp->conn_arg1 = (void *)strdup(data);
     if (strcmp(key, "num") == 0)
       cp->conn_arg2 = (void *)strdup(data);
+    if (strcmp(key, "cnt") == 0)
+      cp->conn_arg3 = (void *)strdup(data);
     if (strcmp(key, "healrrs") == 0)
       cp->conn_arg3 = (void *)strdup(data);
   } else if (strcmp(cp->conn_url, "/confparmpost.html") == 0) {

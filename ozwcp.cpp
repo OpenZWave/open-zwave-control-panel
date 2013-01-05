@@ -447,6 +447,8 @@ void OnNotification (Notification const* _notification, void* _context)
 	       id.GetIndex(), valueTypeStr(id.GetType()));
     pthread_mutex_lock(&nlock);
     nodes[_notification->GetNodeId()]->addValue(id);
+    nodes[_notification->GetNodeId()]->setTime(time(NULL));
+    nodes[_notification->GetNodeId()]->setChanged(true);
     pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_ValueRemoved:
@@ -456,6 +458,8 @@ void OnNotification (Notification const* _notification, void* _context)
 	       id.GetIndex(), valueTypeStr(id.GetType()));
     pthread_mutex_lock(&nlock);
     nodes[_notification->GetNodeId()]->removeValue(id);
+    nodes[_notification->GetNodeId()]->setTime(time(NULL));
+    nodes[_notification->GetNodeId()]->setChanged(true);
     pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_ValueChanged:
@@ -481,12 +485,13 @@ void OnNotification (Notification const* _notification, void* _context)
     {
       Log::Write(LogLevel_Info, "Notification: Group Home 0x%08x Node %d Group %d",
 		 _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetGroupIdx());
-      uint8 *v;
+      uint8 *v = NULL;
       int8 n = Manager::Get()->GetAssociations(homeId, _notification->GetNodeId(), _notification->GetGroupIdx(), &v);
       pthread_mutex_lock(&nlock);
       nodes[_notification->GetNodeId()]->addGroup(_notification->GetNodeId(), _notification->GetGroupIdx(), n, v);
       pthread_mutex_unlock(&nlock);
-      delete [] v;
+      if (v != NULL)
+	delete [] v;
     }
     break;
   case Notification::Type_NodeNew:
@@ -530,6 +535,9 @@ void OnNotification (Notification const* _notification, void* _context)
     pthread_mutex_lock(&nlock);
     nodes[_notification->GetNodeId()]->saveValue(id);
     pthread_mutex_unlock(&nlock);
+    pthread_mutex_lock(&glock);
+    needsave = true;
+    pthread_mutex_unlock(&glock);
     break;
   case Notification::Type_NodeNaming:
     Log::Write(LogLevel_Info, "Notification: Node Naming Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
@@ -621,7 +629,7 @@ void OnNotification (Notification const* _notification, void* _context)
     Log::Write(LogLevel_Info, "Notification: Driver Reset, homeId %08x", _notification->GetHomeId());
     pthread_mutex_lock(&glock);
     done = false;
-    needsave = false;
+    needsave = true;
     homeId = _notification->GetHomeId();
     if (Manager::Get()->IsStaticUpdateController(homeId)) {
       cmode = "SUC";
@@ -638,12 +646,21 @@ void OnNotification (Notification const* _notification, void* _context)
     break;
   case Notification::Type_EssentialNodeQueriesComplete:
     Log::Write(LogLevel_Info, "Notification: Essential Node %d Queries Complete", _notification->GetNodeId());
+    pthread_mutex_lock(&nlock);
+    nodes[_notification->GetNodeId()]->setTime(time(NULL));
+    nodes[_notification->GetNodeId()]->setChanged(true);
+    pthread_mutex_unlock(&nlock);
     break;
   case Notification::Type_NodeQueriesComplete:
     Log::Write(LogLevel_Info, "Notification: Node %d Queries Complete", _notification->GetNodeId());
     pthread_mutex_lock(&nlock);
     nodes[_notification->GetNodeId()]->sortValues();
+    nodes[_notification->GetNodeId()]->setTime(time(NULL));
+    nodes[_notification->GetNodeId()]->setChanged(true);
     pthread_mutex_unlock(&nlock);
+    pthread_mutex_lock(&glock);
+    needsave = true;
+    pthread_mutex_unlock(&glock);
     break;
   case Notification::Type_AwakeNodesQueried:
     Log::Write(LogLevel_Info, "Notification: Awake Nodes Queried");
@@ -670,6 +687,22 @@ void OnNotification (Notification const* _notification, void* _context)
       break;
     case Notification::Code_Awake:
       Log::Write(LogLevel_Info, "Notification: Notification home %08x node %d Awake",
+		 _notification->GetHomeId(), _notification->GetNodeId());
+      pthread_mutex_lock(&nlock);
+      nodes[_notification->GetNodeId()]->setTime(time(NULL));
+      nodes[_notification->GetNodeId()]->setChanged(true);
+      pthread_mutex_unlock(&nlock);
+      break;
+    case Notification::Code_Sleep:
+      Log::Write(LogLevel_Info, "Notification: Notification home %08x node %d Sleep",
+		 _notification->GetHomeId(), _notification->GetNodeId());
+      pthread_mutex_lock(&nlock);
+      nodes[_notification->GetNodeId()]->setTime(time(NULL));
+      nodes[_notification->GetNodeId()]->setChanged(true);
+      pthread_mutex_unlock(&nlock);
+      break;
+    case Notification::Code_Dead:
+      Log::Write(LogLevel_Info, "Notification: Notification home %08x node %d Dead",
 		 _notification->GetHomeId(), _notification->GetNodeId());
       pthread_mutex_lock(&nlock);
       nodes[_notification->GetNodeId()]->setTime(time(NULL));
