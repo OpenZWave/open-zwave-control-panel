@@ -12,8 +12,8 @@ LD     := g++
 AR     := ar rc
 RANLIB := ranlib
 
-DEBUG_CFLAGS    := -Wall -Wno-inline -Wno-format -g -DDEBUG -Werror
-RELEASE_CFLAGS  := -Wall -Wno-unknown-pragmas -Wno-format -O3 -DNDEBUG
+DEBUG_CFLAGS    := -Wall -Wno-unknown-pragmas -Wno-inline -Werror -Wno-format -g -DDEBUG
+RELEASE_CFLAGS  := -Wall -Wno-unknown-pragmas -Werror -Wno-format -O3 -DNDEBUG
 
 DEBUG_LDFLAGS	:= -g
 
@@ -33,14 +33,15 @@ INCLUDES := -I $(OPENZWAVE)/cpp/src -I $(OPENZWAVE)/cpp/src/command_classes/ \
 GNUTLS := #-lgnutls
 
 # for Linux uncomment out next two lines
-LIBZWAVE := $(wildcard $(OPENZWAVE)/cpp/lib/linux/*.a)
-LIBUSB := -ludev
+#LIBZWAVE := $(wildcard $(OPENZWAVE)/cpp/lib/linux/*.a)
+#LIBUSB := -ludev
 
-# for Mac OS X comment out above 2 lines and uncomment next 2 lines
+# for Mac OS X comment out above 2 lines and uncomment next 5 lines
+#ARCH := -arch i386 -arch x86_64
+#CFLAGS += $(ARCH)
 #LIBZWAVE := $(wildcard $(OPENZWAVE)/cpp/lib/mac/*.a)
 #LIBUSB := -framework IOKit -framework CoreFoundation
-
-LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB)
+#LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB) $(ARCH)
 
 %.o : %.cpp
 	$(CXX) $(CFLAGS) $(INCLUDES) -o $@ $<
