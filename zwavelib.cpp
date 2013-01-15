@@ -91,6 +91,8 @@ const char *valueTypeStr (ValueID::ValueType vt)
     return "short";
   case ValueID::ValueType_Button:
     return "button";
+  case ValueID::ValueType_Raw:
+    return "raw";
   }
   return "unknown";
 }
@@ -115,6 +117,8 @@ ValueID::ValueType valueTypeNum (char const *str)
     return ValueID::ValueType_String;
   else if (strcmp(str, "button") == 0)
     return ValueID::ValueType_Button;
+  else if (strcmp(str, "raw") == 0)
+    return ValueID::ValueType_Raw;
   else
     return (ValueID::ValueType)255;
 }
