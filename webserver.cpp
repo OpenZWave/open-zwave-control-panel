@@ -50,6 +50,7 @@
 #include "ValueDecimal.h"
 #include "ValueInt.h"
 #include "ValueList.h"
+#include "ValueRaw.h"
 #include "ValueShort.h"
 #include "ValueString.h"
 #include "tinyxml.h"
