@@ -6,11 +6,11 @@
 
 .SUFFIXES:	.cpp .o .a .s
 
-CC     := gcc
-CXX    := g++
-LD     := g++
-AR     := ar rc
-RANLIB := ranlib
+CC     := $(CROSS_COMPILE)gcc
+CXX    := $(CROSS_COMPILE)g++
+LD     := $(CROSS_COMPILE)g++
+AR     := $(CROSS_COMPILE)ar rc
+RANLIB := $(CROSS_COMPILE)ranlib
 
 DEBUG_CFLAGS    := -Wall -Wno-unknown-pragmas -Wno-inline -Werror -Wno-format -g -DDEBUG
 RELEASE_CFLAGS  := -Wall -Wno-unknown-pragmas -Werror -Wno-format -O3 -DNDEBUG
@@ -33,9 +33,9 @@ INCLUDES := -I $(OPENZWAVE)/cpp/src -I $(OPENZWAVE)/cpp/src/command_classes/ \
 GNUTLS := #-lgnutls
 
 # for Linux uncomment out next three lines
-LIBZWAVE := $(wildcard $(OPENZWAVE)/cpp/lib/linux/*.a)
-LIBUSB := -ludev
-LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB)
+#LIBZWAVE := $(wildcard $(OPENZWAVE)/cpp/lib/linux/*.a)
+#LIBUSB := -ludev
+#LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB)
 
 # for Mac OS X comment out above 2 lines and uncomment next 5 lines
 #ARCH := -arch i386 -arch x86_64
