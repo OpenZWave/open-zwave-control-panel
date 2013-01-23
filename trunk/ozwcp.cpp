@@ -419,6 +419,23 @@ MyValue *MyNode::getValue (uint8 n)
 }
 
 /*
+ * Mark all nodes as changed
+ */
+void MyNode::setAllChanged (bool ch)
+{
+  nodechanged = ch;
+  int i = 0;
+  int j = 1;
+  while (j <= nodecount && i < MAX_NODES) {
+    if (nodes[i] != NULL) {
+      nodes[i]->setChanged(true);
+      j++;
+    }
+    i++;
+  }
+}
+
+/*
  * Returns next item on the removed list.
  */
 
@@ -664,6 +681,9 @@ void OnNotification (Notification const* _notification, void* _context)
     break;
   case Notification::Type_AwakeNodesQueried:
     Log::Write(LogLevel_Info, "Notification: Awake Nodes Queried");
+    break;
+  case Notification::Type_AllNodesQueriedSomeDead:
+    Log::Write(LogLevel_Info, "Notification: Awake Nodes Queried Some Dead");
     break;
   case Notification::Type_AllNodesQueried:
     Log::Write(LogLevel_Info, "Notification: All Nodes Queried");

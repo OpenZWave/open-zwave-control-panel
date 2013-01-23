@@ -1024,7 +1024,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 
 	if (strcmp((char *)cp->conn_arg1, "open") == 0) { /* start connection */
 	  if (devname != NULL || usb) {
-	    MyNode::setAnyChanged(true);
+	    MyNode::setAllChanged(true);
 	  } else {
 	    if ((char *)cp->conn_arg3 != NULL && strcmp((char *)cp->conn_arg3, "true") == 0) {
 	      Manager::Get()->AddDriver("HID Controller", Driver::ControllerInterface_Hid );

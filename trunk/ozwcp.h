@@ -94,7 +94,7 @@ public:
   uint32 getTime() { return mtime; }
   void setTime(uint32 t) { mtime = t; }
   static bool getAnyChanged() { return nodechanged; }
-  static void setAnyChanged(bool ch) { nodechanged = ch; }
+  static void setAllChanged(bool ch);
   bool getChanged() { return changed; }
   void setChanged(bool ch) { changed = ch; nodechanged = ch; }
   static void addRemoved(uint8 node) { removed.push_back(node); }
