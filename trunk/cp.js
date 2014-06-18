@@ -1590,6 +1590,8 @@ function CreateDivs(genre,divto,ind)
 	divto[ind]=divto[ind]+CreateLabel(ind,i,vid);
       } else if (nodes[ind].values[i].type == 'button') {
 	divto[ind]=divto[ind]+CreateButton(ind,i,vid);
+      } else if (nodes[ind].values[i].type == 'raw') {
+        divto[ind]=divto[ind]+CreateTextBox(ind,i,vid);
       }
     }
     if (j != 0) {
