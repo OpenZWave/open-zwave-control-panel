@@ -21,8 +21,8 @@ DEBUG_LDFLAGS	:= -g
 CFLAGS	:= -c $(DEBUG_CFLAGS)
 LDFLAGS	:= $(DEBUG_LDFLAGS)
 
-OPENZWAVE := ../open-zwave
-LIBMICROHTTPD := ../libmicrohttpd/src/daemon/.libs/libmicrohttpd.a
+OPENZWAVE := ../
+LIBMICROHTTPD := -lmicrohttpd
 
 INCLUDES := -I $(OPENZWAVE)/cpp/src -I $(OPENZWAVE)/cpp/src/command_classes/ \
 	-I $(OPENZWAVE)/cpp/src/value_classes/ -I $(OPENZWAVE)/cpp/src/platform/ \
@@ -30,12 +30,12 @@ INCLUDES := -I $(OPENZWAVE)/cpp/src -I $(OPENZWAVE)/cpp/src/command_classes/ \
 	-I ../libmicrohttpd/src/include
 
 # Remove comment below for gnutls support
-GNUTLS := #-lgnutls
+GNUTLS := -lgnutls
 
 # for Linux uncomment out next three lines
-#LIBZWAVE := $(wildcard $(OPENZWAVE)/cpp/lib/linux/*.a)
-#LIBUSB := -ludev
-#LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB)
+LIBZWAVE := $(wildcard $(OPENZWAVE)/*.a)
+LIBUSB := -ludev
+LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB)
 
 # for Mac OS X comment out above 2 lines and uncomment next 5 lines
 #ARCH := -arch i386 -arch x86_64
