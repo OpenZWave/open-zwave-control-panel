@@ -1226,37 +1226,25 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
 						uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 						setAdminFunction("Request Node Neighbor Update");
-						setAdminState(
-								Manager::Get()->BeginControllerCommand(homeId,
-										Driver::ControllerCommand_RequestNodeNeighborUpdate,
-										web_controller_update, this, true, node));
+						setAdminState(Manager::Get()->RequestNodeNeighborUpdate(homeId, node));
 					}
 				} else if (strcmp((char *)cp->conn_arg1, "assrr") == 0) {
 					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
 						uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 						setAdminFunction("Assign Return Route");
-						setAdminState(
-								Manager::Get()->BeginControllerCommand(homeId,
-										Driver::ControllerCommand_AssignReturnRoute,
-										web_controller_update, this, true, node));
+						setAdminState(Manager::Get()->AssignReturnRoute(homeId, node));
 					}
 				} else if (strcmp((char *)cp->conn_arg1, "delarr") == 0) {
 					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
 						uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 						setAdminFunction("Delete All Return Routes");
-						setAdminState(
-								Manager::Get()->BeginControllerCommand(homeId,
-										Driver::ControllerCommand_DeleteAllReturnRoutes,
-										web_controller_update, this, true, node));
+						setAdminState(Manager::Get()->DeleteAllReturnRoutes(homeId, node));
 					}
 				} else if (strcmp((char *)cp->conn_arg1, "snif") == 0) {
 					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
 						uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 						setAdminFunction("Send Node Information");
-						setAdminState(
-								Manager::Get()->BeginControllerCommand(homeId,
-										Driver::ControllerCommand_SendNodeInformation,
-										web_controller_update, this, true, node));
+						setAdminState(Manager::Get()->SendNodeInformation(homeId, node));
 					}
 				} else if (strcmp((char *)cp->conn_arg1, "reps") == 0) {
 					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
