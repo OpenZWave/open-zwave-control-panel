@@ -1173,16 +1173,10 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 					setAdminState(Manager::Get()->AddNode(homeId, true));
 				} else if (strcmp((char *)cp->conn_arg1, "cprim") == 0) {
 					setAdminFunction("Create Primary");
-					setAdminState(
-							Manager::Get()->BeginControllerCommand(homeId,
-									Driver::ControllerCommand_CreateNewPrimary,
-									web_controller_update, this, true));
+					setAdminState(Manager::Get()->CreateNewPrimary(homeId));
 				} else if (strcmp((char *)cp->conn_arg1, "rconf") == 0) {
 					setAdminFunction("Receive Configuration");
-					setAdminState(
-							Manager::Get()->BeginControllerCommand(homeId,
-									Driver::ControllerCommand_ReceiveConfiguration,
-									web_controller_update, this, true));
+					setAdminState(Manager::Get()->ReceiveConfiguration(homeId));
 				} else if (strcmp((char *)cp->conn_arg1, "remd") == 0) {
 					setAdminFunction("Remove Device");
 					setAdminState(Manager::Get()->RemoveNode(homeId));
@@ -1202,25 +1196,16 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
 						uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 						setAdminFunction("Replace Failed Node");
-						setAdminState(
-								Manager::Get()->BeginControllerCommand(homeId,
-										Driver::ControllerCommand_ReplaceFailedNode,
-										web_controller_update, this, true, node));
+						setAdminState(Manager::Get()->ReplaceFailedNode(homeId, node));
 					}
 				} else if (strcmp((char *)cp->conn_arg1, "tranpr") == 0) {
 					setAdminFunction("Transfer Primary Role");
-					setAdminState(
-							Manager::Get()->BeginControllerCommand(homeId,
-									Driver::ControllerCommand_TransferPrimaryRole,
-									web_controller_update, this, true));
+					setAdminState(Manager::Get()->TransferPrimaryRole(homeId));
 				} else if (strcmp((char *)cp->conn_arg1, "reqnu") == 0) {
 					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
 						uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 						setAdminFunction("Request Network Update");
-						setAdminState(
-								Manager::Get()->BeginControllerCommand(homeId,
-										Driver::ControllerCommand_RequestNetworkUpdate,
-										web_controller_update, this, true, node));
+						setAdminState(Manager::Get()->RequestNetworkUpdate(homeId, node));
 					}
 				} else if (strcmp((char *)cp->conn_arg1, "reqnnu") == 0) {
 					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
@@ -1250,10 +1235,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
 						uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 						setAdminFunction("Replication Send");
-						setAdminState(
-								Manager::Get()->BeginControllerCommand(homeId,
-										Driver::ControllerCommand_ReplicationSend,
-										web_controller_update, this, true, node));
+						setAdminState(Manager::Get()->ReplicationSend(homeId, node));
 					}
 				} else if (strcmp((char *)cp->conn_arg1, "addbtn") == 0) {
 					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4 &&
@@ -1261,10 +1243,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 						uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 						uint8 button = strtol(((char *)cp->conn_arg3), NULL, 10);
 						setAdminFunction("Add Button");
-						setAdminState(
-								Manager::Get()->BeginControllerCommand(homeId,
-										Driver::ControllerCommand_CreateButton,
-										web_controller_update, this, true, node, button));
+						setAdminState(Manager::Get()->CreateButton(homeId, node, button));
 					}
 				} else if (strcmp((char *)cp->conn_arg1, "delbtn") == 0) {
 					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4 &&
@@ -1272,10 +1251,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 						uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 						uint8 button = strtol(((char *)cp->conn_arg3), NULL, 10);
 						setAdminFunction("Delete Button");
-						setAdminState(
-								Manager::Get()->BeginControllerCommand(homeId,
-										Driver::ControllerCommand_DeleteButton,
-										web_controller_update, this, true, node, button));
+						setAdminState(Manager::Get()->DeleteButton(homeId, node, button));
 					}
 				}
 				return MHD_YES;
