@@ -183,7 +183,7 @@ const char *cclassStr (uint8 cc)
   case 0x32:
     return "METER";
   case 0x33:
-    return "ZIP ADV SERVER";
+    return "COLOR";
   case 0x34:
     return "ZIP ADV CLIENT";
   case 0x35:
