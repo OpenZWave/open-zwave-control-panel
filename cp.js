@@ -728,6 +728,9 @@ function DoAdmHelp()
   if (document.AdmPost.adminops.value == 'addd') {
     ainfo.innerHTML = 'Add a new device or controller to the Z-Wave network.';
     ainfo.style.display = 'block';
+  } else if (document.AdmPost.adminops.value == 'addds') {
+    ainfo.innerHTML = 'Add a new device or controller to the Z-Wave Network (Secure Option).';
+    ainfo.style.display = 'block';
   } else if (document.AdmPost.adminops.value == 'cprim') {
     ainfo.innerHTML = 'Create new primary controller in place of dead old controller.';
     ainfo.style.display = 'block';
