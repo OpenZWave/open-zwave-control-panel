@@ -1587,7 +1587,7 @@ function CreateDivs(genre,divto,ind)
       } else if (nodes[ind].values[i].type == 'list') {
 	divto[ind]=divto[ind]+CreateList(ind,i,vid);
       } else if (nodes[ind].values[i].type == 'string') {
-	divto[ind]=divto[ind]+CreateLabel(ind,i,vid);
+	divto[ind]=divto[ind]+CreateTextBox(ind,i,vid);
       } else if (nodes[ind].values[i].type == 'button') {
 	divto[ind]=divto[ind]+CreateButton(ind,i,vid);
       } else if (nodes[ind].values[i].type == 'raw') {

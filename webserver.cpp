@@ -5,29 +5,29 @@
 //	All rights reserved.
 //
 // SOFTWARE NOTICE AND LICENSE
-// This work (including software, documents, or other related items) is being 
+// This work (including software, documents, or other related items) is being
 // provided by the copyright holders under the following license. By obtaining,
 // using and/or copying this work, you (the licensee) agree that you have read,
 // understood, and will comply with the following terms and conditions:
 //
 // Permission to use, copy, and distribute this software and its documentation,
-// without modification, for any purpose and without fee or royalty is hereby 
+// without modification, for any purpose and without fee or royalty is hereby
 // granted, provided that you include the full text of this NOTICE on ALL
 // copies of the software and documentation or portions thereof.
 //
-// THIS SOFTWARE AND DOCUMENTATION IS PROVIDED "AS IS," AND COPYRIGHT HOLDERS 
+// THIS SOFTWARE AND DOCUMENTATION IS PROVIDED "AS IS," AND COPYRIGHT HOLDERS
 // MAKE NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-// LIMITED TO, WARRANTIES OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR 
-// PURPOSE OR THAT THE USE OF THE SOFTWARE OR DOCUMENTATION WILL NOT INFRINGE 
+// LIMITED TO, WARRANTIES OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR
+// PURPOSE OR THAT THE USE OF THE SOFTWARE OR DOCUMENTATION WILL NOT INFRINGE
 // ANY THIRD PARTY PATENTS, COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS.
 //
-// COPYRIGHT HOLDERS WILL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, SPECIAL OR 
-// CONSEQUENTIAL DAMAGES ARISING OUT OF ANY USE OF THE SOFTWARE OR 
+// COPYRIGHT HOLDERS WILL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, SPECIAL OR
+// CONSEQUENTIAL DAMAGES ARISING OUT OF ANY USE OF THE SOFTWARE OR
 // DOCUMENTATION.
 //
-// The name and trademarks of copyright holders may NOT be used in advertising 
-// or publicity pertaining to the software without specific, written prior 
-// permission.  Title to copyright in this software and any associated 
+// The name and trademarks of copyright holders may NOT be used in advertising
+// or publicity pertaining to the software without specific, written prior
+// permission.  Title to copyright in this software and any associated
 // documentation will at all times remain with copyright holders.
 //-----------------------------------------------------------------------------
 
@@ -749,10 +749,12 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
 	nodeElement->SetAttribute("routing", Manager::Get()->IsNodeRoutingDevice(homeId, i) ? "true" : "false");
 	nodeElement->SetAttribute("security", Manager::Get()->IsNodeSecurityDevice(homeId, i) ? "true" : "false");
 	nodeElement->SetAttribute("time", nodes[i]->getTime());
+#if 0
 	fprintf(stderr, "i=%d failed=%d\n", i, Manager::Get()->IsNodeFailed(homeId, i));
 	fprintf(stderr, "i=%d awake=%d\n", i, Manager::Get()->IsNodeAwake(homeId, i));
 	fprintf(stderr, "i=%d state=%s\n", i, Manager::Get()->GetNodeQueryStage(homeId, i).c_str());
 	fprintf(stderr, "i=%d listening=%d flirs=%d\n", i, listening, flirs);
+#endif
 	if (Manager::Get()->IsNodeFailed(homeId, i))
 	  nodeElement->SetAttribute("status", "Dead");
 	else {
@@ -801,7 +803,7 @@ void web_controller_update (Driver::ControllerState cs, Driver::ControllerError 
   Webserver *cp = (Webserver *)ct;
   string s;
   bool more = true;
- 
+
   switch (cs) {
   case Driver::ControllerState_Normal:
     s = ": no command in progress.";
@@ -1077,6 +1079,8 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 	  string arg = (char *)cp->conn_arg2;
 	  if (!Manager::Get()->SetValue(val->getId(), arg))
 	    fprintf(stderr, "SetValue string failed type=%s\n", valueTypeStr(val->getId().GetType()));
+	} else {
+		fprintf(stderr, "Can't Find ValueID for %s\n", (char *)cp->conn_arg1 );
 	}
 	return MHD_YES;
       } else
