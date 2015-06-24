@@ -213,6 +213,7 @@ function PollReply()
 		     manufacturer: elem[i].getAttribute('manufacturer'), product: elem[i].getAttribute('product'),
 		     name: elem[i].getAttribute('name'), location: elem[i].getAttribute('location'),
 		     listening: elem[i].getAttribute('listening') == 'true', frequent: elem[i].getAttribute('frequent') == 'true',
+		     zwaveplus: elem[i].getAttribute('zwaveplus') == 'true',
 		     beam: elem[i].getAttribute('beam') == 'true', routing: elem[i].getAttribute('routing') == 'true',
 		     security: elem[i].getAttribute('security') == 'true', status: elem[i].getAttribute('status'),
 		     values: null, groups: null};
@@ -329,6 +330,10 @@ function PollReply()
 	  if (nodes[i].security) {
 	    ext = ext + 'S';
 	    exthelp = exthelp + 'security, ';
+	  }
+	  if (nodes[i].zwaveplus) {
+	    ext = ext + "+";
+	    exthelp = exthelp + 'ZwavePlus, ';
 	  }
 	  if (exthelp.length > 0)
 	    exthelp = exthelp.substr(0, exthelp.length - 2);
