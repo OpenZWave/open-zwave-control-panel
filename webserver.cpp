@@ -1267,7 +1267,13 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 						setAdminFunction("Delete Button");
 						setAdminState(Manager::Get()->DeleteButton(homeId, node, button));
 					}
+				} else if (strcmp((char *)cp->conn_arg1, "refreshnode") == 0) {
+					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4) {
+						uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
+						Manager::Get()->RefreshNodeInfo(homeId, node);
+					}
 				}
+
 				return MHD_YES;
 			} else
 				ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
