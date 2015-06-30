@@ -677,7 +677,7 @@ function DoAdmPost(can)
 
   if (fun == 'hnf' || fun == 'remfn' || fun == 'repfn' || fun == 'reqnu' ||
       fun == 'reqnnu' || fun == 'assrr' || fun == 'delarr' || fun == 'reps' ||
-      fun == 'addbtn' || fun == 'delbtn') {
+      fun == 'addbtn' || fun == 'delbtn' || fun == 'refreshnode' ) {
     if (curnode == null) {
       ainfo = document.getElementById('adminfo');
       ainfo.innerHTML = 'Must select a node below for this function.';
@@ -786,6 +786,9 @@ function DoAdmHelp()
       ainfo.innerHTML = 'Add a button from a handheld.';
     else
       ainfo.innerHTML = 'Remove a button from a handheld.';
+    ainfo.style.display = 'block';
+  } else if (document.AdmPost.adminops.value == 'refreshnode') {
+    ainfo.innerHTML = 'Refresh Node Info';
     ainfo.style.display = 'block';
   } else {
     ainfo.style.display = 'none';
