@@ -508,17 +508,19 @@ function DoConfig(id)
     return false;
   }
 }
-function DoValue(id)
+function DoValue(id, convert = true)
 {
   if (curnode != null) {
     var posthttp;
     var params;
     var arg=document.getElementById(id).value;
 
-    if (arg.toLowerCase() == 'off')
-      arg = 'false';
-    else if (arg.toLowerCase() == 'on')
-      arg = 'true';
+    if (convert) {
+	    if (arg.toLowerCase() == 'off')
+	      arg = 'false';
+    	else if (arg.toLowerCase() == 'on')
+      	arg = 'true';
+    }
     params=id+'='+arg;
     if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
       posthttp=new XMLHttpRequest();
@@ -1538,7 +1540,7 @@ function CreateList(i,j,vid)
   var data='<tr><td style="float: right;"';
   if (nodes[i].values[j].help.length > 0)
     data=data+' onmouseover="ShowToolTip(\''+quotestring(nodes[i].values[j].help)+'\',0);" onmouseout="HideToolTip();"';
-  data=data+'><label><span class="legend">'+nodes[i].values[j].label+':&nbsp;</span></label></td><td><select id="'+vid+'" onchange="return DoValue(\''+vid+'\');"';
+  data=data+'><label><span class="legend">'+nodes[i].values[j].label+':&nbsp;</span></label></td><td><select id="'+vid+'" onchange="return DoValue(\''+vid+'\', false);"';
   if (nodes[i].values[j].help.length > 0)
     data=data+' onmouseover="ShowToolTip(\''+quotestring(nodes[i].values[j].help)+'\',0);" onmouseout="HideToolTip();"';
   if (nodes[i].values[j].readonly)
