@@ -141,7 +141,6 @@ const char *nodeBasicStr (uint8 basic)
 const char *cclassStr (uint8 cc)
 {
   switch (cc) {
-  default:
   case 0x00:
     return "NO OPERATION";
   case 0x20:
@@ -507,7 +506,6 @@ const char *controllerErrorStr (Driver::ControllerError err)
     return "Disabled";
   case Driver::ControllerError_Overflow:
     return "Overflow";
-  default:
-    return "Unknown error";
   }
+  return "Unknown";
 }

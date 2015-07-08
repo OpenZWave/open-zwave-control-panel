@@ -732,11 +732,20 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
 			if (nodes[i] != NULL && nodes[i]->getChanged()) {
 				bool listening;
 				bool flirs;
+				bool zwaveplus;
 				TiXmlElement* nodeElement = new TiXmlElement("node");
 				pollElement->LinkEndChild(nodeElement);
 				nodeElement->SetAttribute("id", i);
-				nodeElement->SetAttribute("btype", nodeBasicStr(Manager::Get()->GetNodeBasic(homeId, i)));
-				nodeElement->SetAttribute("gtype", Manager::Get()->GetNodeType(homeId, i).c_str());
+				zwaveplus = Manager::Get()->IsNodeZWavePlus(homeId, i);
+				if (zwaveplus) {
+					string value = Manager::Get()->GetNodePlusTypeString(homeId, i);
+					value += " " + Manager::Get()->GetNodeRoleString(homeId, i);
+					nodeElement->SetAttribute("btype", value.c_str());
+					nodeElement->SetAttribute("gtype", Manager::Get()->GetNodeDeviceTypeString(homeId, i).c_str());
+				} else {
+					nodeElement->SetAttribute("btype", nodeBasicStr(Manager::Get()->GetNodeBasic(homeId, i)));
+					nodeElement->SetAttribute("gtype", Manager::Get()->GetNodeType(homeId, i).c_str());
+				}
 				nodeElement->SetAttribute("name", Manager::Get()->GetNodeName(homeId, i).c_str());
 				nodeElement->SetAttribute("location", Manager::Get()->GetNodeLocation(homeId, i).c_str());
 				nodeElement->SetAttribute("manufacturer", Manager::Get()->GetNodeManufacturerName(homeId, i).c_str());
@@ -745,6 +754,7 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
 				nodeElement->SetAttribute("listening", listening ? "true" : "false");
 				flirs = Manager::Get()->IsNodeFrequentListeningDevice(homeId, i);
 				nodeElement->SetAttribute("frequent", flirs ? "true" : "false");
+				nodeElement->SetAttribute("zwaveplus", zwaveplus ? "true" : "false");
 				nodeElement->SetAttribute("beam", Manager::Get()->IsNodeBeamingDevice(homeId, i) ? "true" : "false");
 				nodeElement->SetAttribute("routing", Manager::Get()->IsNodeRoutingDevice(homeId, i) ? "true" : "false");
 				nodeElement->SetAttribute("security", Manager::Get()->IsNodeSecurityDevice(homeId, i) ? "true" : "false");
