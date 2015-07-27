@@ -76,7 +76,7 @@ typedef struct {
   uint8 groupid;
   uint8 max;
   string label;
-  vector<uint8> grouplist;
+  vector<string> grouplist;
 } MyGroup;
 
 class MyNode {
@@ -100,7 +100,7 @@ public:
   static void addRemoved(uint8 node) { removed.push_back(node); }
   static uint32 getRemovedCount() { return removed.size(); }
   static uint8 getRemoved();
-  void addGroup(uint8 node, uint8 g, uint8 n, uint8 *v);
+  void addGroup(uint8 node, uint8 g, uint8 n, InstanceAssociation *v);
   MyGroup *getGroup(uint8 i);
   void updateGroup(uint8 node, uint8 grp, char *glist);
   uint8 numGroups() { return groups.size(); }

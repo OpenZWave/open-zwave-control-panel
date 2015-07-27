@@ -214,7 +214,7 @@ void MyNode::newGroup (uint8 node)
  * MyNode::addGroup
  * Add group membership based on notification updates.
  */
-void MyNode::addGroup (uint8 node, uint8 g, uint8 n, uint8 *v)
+void MyNode::addGroup (uint8 node, uint8 g, uint8 n, InstanceAssociation *v)
 {
 	fprintf(stderr, "addGroup: node %d group %d n %d\n", node, g, n);
 	if (groups.size() == 0)
@@ -222,8 +222,14 @@ void MyNode::addGroup (uint8 node, uint8 g, uint8 n, uint8 *v)
 	for (vector<MyGroup*>::iterator it = groups.begin(); it != groups.end(); ++it)
 		if ((*it)->groupid == g) {
 			(*it)->grouplist.clear();
-			for (int i = 0; i < n; i++)
-				(*it)->grouplist.push_back(v[i]);
+			for (int i = 0; i < n; i++) {
+				char str[32];
+				if (v[i].m_instance == 0)
+					snprintf( str, 32, "%d", v[i].m_nodeId );
+				else
+					snprintf( str, 32, "%d.%d", v[i].m_nodeId, v[i].m_instance );
+				(*it)->grouplist.push_back(str);
+			}
 			setTime(time(NULL));
 			setChanged(true);
 			return;
@@ -252,7 +258,7 @@ void MyNode::updateGroup (uint8 node, uint8 grp, char *glist)
 	char *p = glist;
 	vector<MyGroup*>::iterator it;
 	char *np;
-	uint8 *v;
+	vector<string> v;
 	uint8 n;
 	uint8 j;
 
@@ -264,31 +270,36 @@ void MyNode::updateGroup (uint8 node, uint8 grp, char *glist)
 		fprintf(stderr, "updateGroup: node %d group %d not found\n", node, grp);
 		return;
 	}
-	v = new uint8((*it)->max);
 	n = 0;
 	while (p != NULL && *p && n < (*it)->max) {
 		np = strsep(&p, ",");
-		v[n++] = strtol(np, NULL, 10);
+		v.push_back( np );
+		n++;
 	}
 	/* Look for nodes in the passed-in argument list, if not present add them */
-	vector<uint8>::iterator nit;
+	vector<string>::iterator nit;
 	for (j = 0; j < n; j++) {
 		for (nit = (*it)->grouplist.begin(); nit != (*it)->grouplist.end(); ++nit)
-			if (*nit == v[j])
+			if (v[j].compare( *nit ) == 0 )
 				break;
-		if (nit == (*it)->grouplist.end()) // not found
-			Manager::Get()->AddAssociation(homeId, node, grp, v[j]);
+		if (nit == (*it)->grouplist.end()) { // not found
+			int nodeId = 0,  instance = 0;
+			sscanf(v[j].c_str(),"%d.%d", &nodeId, &instance);
+			Manager::Get()->AddAssociation(homeId, node, grp, nodeId, instance);
+		}
 	}
 	/* Look for nodes in the vector (current list) and those not found in
      the passed-in list need to be removed */
 	for (nit = (*it)->grouplist.begin(); nit != (*it)->grouplist.end(); ++nit) {
 		for (j = 0; j < n; j++)
-			if (*nit == v[j])
+			if (v[j].compare( *nit ) == 0 )
 				break;
-		if (j >= n)
-			Manager::Get()->RemoveAssociation(homeId, node, grp, *nit);
+		if (j >= n) {
+			int nodeId = 0,  instance = 0;
+			sscanf(nit->c_str(),"%d.%d", &nodeId, &instance);
+			Manager::Get()->RemoveAssociation(homeId, node, grp, nodeId, instance);
+		}
 	}
-	delete [] v;
 }
 
 /*
@@ -502,7 +513,7 @@ void OnNotification (Notification const* _notification, void* _context)
 		{
 			Log::Write(LogLevel_Info, "Notification: Group Home 0x%08x Node %d Group %d",
 					_notification->GetHomeId(), _notification->GetNodeId(), _notification->GetGroupIdx());
-			uint8 *v = NULL;
+			InstanceAssociation *v = NULL;
 			int8 n = Manager::Get()->GetAssociations(homeId, _notification->GetNodeId(), _notification->GetGroupIdx(), &v);
 			pthread_mutex_lock(&nlock);
 			nodes[_notification->GetNodeId()]->addGroup(_notification->GetNodeId(), _notification->GetGroupIdx(), n, v);

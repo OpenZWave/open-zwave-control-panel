@@ -1640,18 +1640,37 @@ function CreateGroup(ind)
   grp = 1;
   for (i = 0; i < nodes[ind].groups.length; i++) {
     nodegrp[ind]=nodegrp[ind]+'<option value="'+nodes[ind].groups[i].id+'">'+nodes[ind].groups[i].label+' ('+nodes[ind].groups[i].id+')</option>';
-    nodegrpgrp[ind][grp] = '<td><div id="nodegrp" name="nodegrp" style="float: right;"><select id="groups" multiple size="4" style="vertical-align: top; margin-left: 5px;">';
+    nodegrpgrp[ind][grp] = '<td><div id="nodegrp" name="nodegrp" style="float: right;"><select id="groups" multiple size="8" style="vertical-align: top; margin-left: 5px;">';
     k = 0;
     for (j = 1; j < nodes.length; j++) {
       if (nodes[j] == null)
 	continue;
+
+	  // build a list of instances 
+      var instances = [ String(j) ];
+      for (var l = 0; l < nodes[j].values.length; l++) {
+	  	instances[ l + 1] =  j + '.' + nodes[j].values[l].instance;
+	  	instances.push( j + '.' + nodes[j].values[l].instance);
+      }	
+	
+		// make unique
+	  instances = instances.filter(function(item, i, ar){ return ar.indexOf(item) === i; });
+
+	  // only show when we have found multiple instances
+	  if ( instances.length <= 2 ) {
+		instances = [ String(j) ];
+	  }
+
       if (nodes[ind].groups[i].nodes != null)
 	while (k < nodes[ind].groups[i].nodes.length && nodes[ind].groups[i].nodes[k] < j)
 	  k++;
-      if (nodes[ind].groups[i].nodes[k] == j)
-	nodegrpgrp[ind][grp]=nodegrpgrp[ind][grp]+'<option selected="true">'+j+'</option>';
-      else
-	nodegrpgrp[ind][grp]=nodegrpgrp[ind][grp]+'<option>'+j+'</option>';
+	  
+	  for (var l=0; l< instances.length; l++) { 
+	      if (nodes[ind].groups[i].nodes.indexOf(instances[l]) != -1 )
+			nodegrpgrp[ind][grp]=nodegrpgrp[ind][grp]+'<option selected="true">'+instances[l]+'</option>';
+	      else
+			nodegrpgrp[ind][grp]=nodegrpgrp[ind][grp]+'<option>'+instances[l]+'</option>';
+	  }			
     }
     nodegrpgrp[ind][grp]=nodegrpgrp[ind][grp]+'</select></td><td><button type="submit" style="margin-left: 5px;" onclick="return DoGrpPost();">Submit</button></div></td></tr>';
     grp++;
