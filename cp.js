@@ -413,7 +413,7 @@ function BED()
     document.getElementById('homeid').value = '';
     document.getElementById('cmode').value = ''; 
     document.getElementById('nodecount').value = '';
-    document.getElementById('sucnode').value = '';
+    document.getElementById('sucnodeid').value = '';
     document.getElementById('saveinfo').style.display = 'none';
     document.getElementById('tbody').innerHTML= '';
     document.getElementById('divconfigcur').innerHTML = '';
@@ -508,12 +508,16 @@ function DoConfig(id)
     return false;
   }
 }
-function DoValue(id, convert = true)
+function DoValue(id, convert)
 {
   if (curnode != null) {
     var posthttp;
     var params;
     var arg=document.getElementById(id).value;
+
+    if (typeof convert == 'undefined') {
+        convert = true;
+    }
 
     if (convert) {
 	    if (arg.toLowerCase() == 'off')
