@@ -508,12 +508,16 @@ function DoConfig(id)
     return false;
   }
 }
-function DoValue(id, convert = true)
+function DoValue(id, convert)
 {
   if (curnode != null) {
     var posthttp;
     var params;
     var arg=document.getElementById(id).value;
+
+    if (typeof convert == 'undefined') {
+        convert = true;
+    }
 
     if (convert) {
 	    if (arg.toLowerCase() == 'off')
