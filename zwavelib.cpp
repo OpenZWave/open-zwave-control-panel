@@ -211,6 +211,14 @@ const char *cclassStr (uint8 cc)
     return "BASIC WINDOW COVERING";
   case 0x51:
     return "MTP WINDOW COVERING";
+  case 0x56:
+    return "CRC16 ENCAP";
+  case 0x5A:
+    return "DEVICE RESET LOCALLY";
+  case 0x5B:
+    return "CENTRAL SCENE";
+  case 0x5E:
+    return "ZWAVE PLUS INFO";
   case 0x60:
     return "MULTI INSTANCE";
   case 0x62:

@@ -207,9 +207,7 @@ void Webserver::web_get_groups (int n, TiXmlElement *ep)
 		groupElement->SetAttribute("label", p->label.c_str());
 		string str = "";
 		for (uint j = 0; j < p->grouplist.size(); j++) {
-			char s[12];
-			snprintf(s, sizeof(s), "%d", p->grouplist[j]);
-			str += s;
+			str += p->grouplist[j];
 			if (j + 1 < p->grouplist.size())
 				str += ",";
 		}
