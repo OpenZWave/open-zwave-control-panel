@@ -413,7 +413,7 @@ function BED()
     document.getElementById('homeid').value = '';
     document.getElementById('cmode').value = ''; 
     document.getElementById('nodecount').value = '';
-    document.getElementById('sucnode').value = '';
+    document.getElementById('sucnodeid').value = '';
     document.getElementById('saveinfo').style.display = 'none';
     document.getElementById('tbody').innerHTML= '';
     document.getElementById('divconfigcur').innerHTML = '';
