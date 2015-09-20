@@ -9,6 +9,7 @@
 
         <title>OpenZWave Control Panel</title>
         <style>
+            /*
             body {text-align: center; min-width: 830px; padding: 0}
             div.esb {width: 25%; float: left; padding: 0; margin-left: auto; margin-right: auto; text-align: left}
             div.rsb {float: left; padding: 0; margin-left: auto; margin-right: auto; text-align: left}
@@ -28,6 +29,7 @@
             #tttop {display:block; height:5px; margin-left:5px; overflow:hidden}
             #ttcont {display:block; padding:2px 12px 3px 7px; margin-left:5px; background:#666; color:#FFF}
             #ttbot {display:block; height:5px; margin-left:5px; overflow:hidden}
+            */
         </style>
         <link rel="icon" href="favicon.png" type="image/x-icon">
         <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
@@ -42,7 +44,7 @@
     <body onload="return BED();" onmousemove="PosToolTip(event);">
         <h1 id="title">OpenZWave Control Panel</h1>
         <div class="container-fluid">
-            <div class="col-md-4">
+            <div class="col-xs-6 col-sm-4">
                 <h2>Controller <small>Interface</small></h2>
 	            <form class="form-horizontal" name="DevPost" method="post">
 	                <input name="devhidden" class="hide" value="hidden">
@@ -73,7 +75,7 @@
 	                </div>
 	            </form>
             </div>
-            <div class="col-md-4">
+            <div class="col-xs-6 col-sm-4">
 	            <h2>Controller Status</h2>
 	            <form class="form-horizontal">
 		            <div class="form-group form-group-sm">
@@ -102,7 +104,7 @@
 		            </div>
 	            </form>
             </div>
-            <div class="col-md-4">
+            <div class="col-xs-6 col-sm-4">
 	            <h2>Backup Controller</h2>
 	            <form name="BackPost" method="post"> 
 	                <input name="devhidden" class="hide" value="hidden">
@@ -114,11 +116,20 @@
 	                </div>
 	            </form>
             </div>
-	        <div style="clear: both;"></div>
+	        <div class="clearfix visible-xs-block"></div>
         </div>
-        <div id="network" style="float: left; width: 100%;">
+        <div id="network" class="container-fluid">
             <fieldset> <legend> Network </legend>
 	            <form name="NetPost" method="post">
+	                <!--
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#scencntl" aria-controls="scencntl" role="tab" data-toggle="tab">Scenes</a></li>
+                        <li role="presentation"><a href="#topocntl" aria-controls="topocntl" role="tab" data-toggle="tab">Topology</a></li>
+                        <li role="presentation"><a href="#topo" aria-controls="topo" role="tab" data-toggle="tab">Statistics</a></li>
+                        <li role="presentation"><a href="#statcntl" aria-controls="statcntl" role="tab" data-toggle="tab">Test &amp; Heal</a></li>
+                    </ul>
+                    -->
+
 	                <input name="nethidden" class="hide" value="hidden">
 	                <div class="esb" style="margin-left: 14px; width: 180px;">
 	                    <select class="form-control" id="netops" onchange="return DoNetHelp();">
@@ -126,7 +137,7 @@
 	                        <option value="scen">Scenes</option>
 	                        <option value="topo">Topology</option>
 	                        <option value="stat">Statistics</option>
-	                        <option value="test">Test & Heal</option>
+	                        <option value="test">Test &amp; Heal</option>
 	                    </select>
 	                </div>
 	                <div class="rsb" style="margin-left: 10px;">
@@ -399,6 +410,26 @@
 	            <form name="NodePost" method="post">
 	                <input name="nodehidden" class="hide" value="hidden">
 	                <div class="esb" style="margin-left: 14px; width: 180px;">
+	                    <!--
+	                    <div class="btn-group-vertical" data-toggle="buttons">
+	                        <label class="btn btn-default">
+	                            <input type="radio" value="nam" autocomplete="off"> Name
+	                        </label>
+	                        <label class="btn btn-default">
+	                            <input type="radio" value="loc" autocomplete="off"> Location
+	                        </label>
+	                        <label class="btn btn-default">
+	                            <input type="radio" value="grp" autocomplete="off"> Group
+	                        </label>
+	                        <label class="btn btn-default">
+	                            <input type="radio" value="pol" autocomplete="off"> Polling
+	                        </label>
+	                    </div>
+	                    <script type="text/javascript">
+	                        $('.btn-group-vertical input').on('change', DoNodeHelp);
+	                    </script>
+	                    <br>
+	                    -->
 	                    <select class="form-control" id="nodeops" onchange="return DoNodeHelp();">
 	                        <option value="choice" selected="true">Select an operation:</option>
 	                        <option value="nam">Name</option>
@@ -414,91 +445,87 @@
 	            </form>
             </fieldset>
         </div>
-        <div id="devices" style="float: left; width: 100%;"> <br>
-            <br>
-            <fieldset> <legend> Devices </legend>
-	            <form>
-	                <table border="0" cellpadding="1" cellspacing="0">
-	                    <thead> <tr>
-		                        <th>Node Id</th>
-		                        <th>Basic Type</th>
-		                        <th>Generic Type</th>
-		                        <th>Product</th>
-		                        <th>Name</th>
-		                        <th>Location</th>
-		                        <th>Value</th>
-		                        <th>Last Heard</th>
-		                        <th>Status</th>
-	                        </tr>
-	                        </thead> <tbody id="tbody">
-	                        <tr>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-	                        </tr>
-	                        <tr>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-	                        </tr>
-	                        <tr>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-	                        </tr>
-	                        <tr>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-		                        <td> <br> </td>
-	                        </tr>
-	                    </tbody>
-	                </table>
-	            </form>
-            </fieldset>
+        <div id="devices">
+            <h2>Devices</h2>
+	        <form>
+	            <table class="table table-striped table-condensed table-hover">
+	                <thead> <tr>
+		                    <th>Node Id</th>
+		                    <th>Basic Type</th>
+		                    <th>Generic Type</th>
+		                    <th>Product</th>
+		                    <th>Name</th>
+		                    <th>Location</th>
+		                    <th>Value</th>
+		                    <th>Last Heard</th>
+		                    <th>Status</th>
+	                    </tr>
+	                    </thead> <tbody id="tbody">
+	                    <tr>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+	                    </tr>
+	                    <tr>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+	                    </tr>
+	                    <tr>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+	                    </tr>
+	                    <tr>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+		                    <td> <br> </td>
+	                    </tr>
+	                </tbody>
+	            </table>
+	        </form>
         </div>
-        <div id="controls" style="padding-left: 340px; padding-right: 340px; min-width: 550px;">
-            <div style="float: left; position: relative; width: 100%;">
-                <div class="btn-group" data-toggle="buttons">
-                    <label class="btn btn-default active">
-	                    <input name="config" value="status" checked="checked" onclick="return DoConfig(this.id);" id="configcur" style="text-align: left;" type="radio"> Current Values
-	                </label>
-                    <label class="btn btn-default">
-	                    <input name="config" id="configcon" value="config" style="text-align: left;" onclick="return DoConfig(this.id);" type="radio">Configuration
-	                </label>
-                    <label class="btn btn-default">
-	                    <input name="config" id="configinfo" value="info" style="text-align: left;" onclick="return DoConfig(this.id);" type="radio">Information
-	                </label>
-                </div>
+        <div id="controls">
+            <div class="col-xs-4 col-sm-3">
+                <ul class="nav nav-pills nav-stacked">
+                    <li role="presentation" class="active" id="configcur"><a href="#divconfigcur" aria-controls="divconfigcur" role="tab" data-toggle="tab">Current Values</a></li>
+                    <li role="presentation" id="configcon"><a href="#divconfigcon" aria-controls="divconfigcon" role="tab" data-toggle="tab">Configuration</a></li>
+                    <li role="presentation" id="configinfo"><a href="#divconfiginfo" aria-controls="divconfiginfo" role="tab" data-toggle="tab">Information</a></li>
+                </ul>
+            </div>
+            <div class="col-xs-8 col-sm-9">
 	            <form name="ValuePost" method="post">
-	                <div id="divconfigcur" class="" style="margin-left: auto; margin-right: auto; text-align: center; clear: both;">
-	                </div>
-	                <div id="divconfigcon" class="hide" style="margin-left: auto; margin-right: auto; text-align: center; clear: both;">
-	                </div>
-	                <div id="divconfiginfo" class="hide" style="margin-left: auto; margin-right: auto; text-align: center; clear: both;">
+	                <div class="tab-content">
+	                    <div id="divconfigcur" class="tab-pane active">
+	                    </div>
+	                    <div id="divconfigcon" class="tab-pane">
+	                    </div>
+	                    <div id="divconfiginfo" class="tab-pane">
+	                    </div>
 	                </div>
 	            </form>
             </div>
@@ -510,8 +537,8 @@
             <br>
             <fieldset> <legend> Log output </legend>
 	            <form>
-	                <div id="logdata" class="log"> <br>
-	                </div>
+	                <pre id="logdata" class="log">
+	                </pre>
 	            </form>
             </fieldset>
         </div>

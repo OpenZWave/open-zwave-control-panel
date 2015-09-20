@@ -90,7 +90,8 @@ function SaveNode(newid)
   curnode = newid;
   DoNodeHelp();
   UpdateSceneValues(i);
-  document.getElementById(curnode).className='click';
+  $('#devices tr.success').removeClass('success');
+  $('#' + curnode).addClass('success');
   return true;
 }
 function ClearNode()
@@ -337,7 +338,7 @@ function PollReply()
 	  }
 	  if (exthelp.length > 0)
 	    exthelp = exthelp.substr(0, exthelp.length - 2);
-	  stuff=stuff+'<tr id="node'+i+'" onmouseover="this.className=\'highlight\';" onmouseout="if (this.id == curnode) this.className=\'click\'; else this.className=\'normal\';" onclick="return SaveNode(this.id);" ondblClick="ClearNode(); return DisplayNode();"><td onmouseover="ShowToolTip(\''+exthelp+'\',0);" onmouseout="HideToolTip();">'+nodes[i].id+ext+'</td><td>'+nodes[i].btype+'</td><td>'+nodes[i].gtype+'</td><td>'+nodes[i].manufacturer+' '+nodes[i].product+'</td><td>'+nodes[i].name+'</td><td>'+nodes[i].location+'</td><td>'+val+'</td><td>'+ts+'</td><td>'+nodes[i].status+'</td></tr>';
+	  stuff=stuff+'<tr id="node'+i+'"onclick="return SaveNode(this.id);" ondblClick="ClearNode(); return DisplayNode();"><td onmouseover="ShowToolTip(\''+exthelp+'\',0);" onmouseout="HideToolTip();">'+nodes[i].id+ext+'</td><td>'+nodes[i].btype+'</td><td>'+nodes[i].gtype+'</td><td>'+nodes[i].manufacturer+' '+nodes[i].product+'</td><td>'+nodes[i].name+'</td><td>'+nodes[i].location+'</td><td>'+val+'</td><td>'+ts+'</td><td>'+nodes[i].status+'</td></tr>';
 	  CreateDivs('user', divcur, i);
 	  CreateDivs('config', divcon, i);
 	  CreateDivs('system', divinfo, i);
@@ -357,7 +358,7 @@ function PollReply()
 function BED()
 {
   var forms = document.forms;
-  var off = (document.DevPost.devname.value.length == 0) && !document.DevPost.usbb.checked;
+  var off = false;(document.DevPost.devname.value.length == 0) && !document.DevPost.usbb.checked;
   var info;
 
   tt.setAttribute('id','tt');
@@ -393,8 +394,8 @@ function BED()
   document.getElementById('configcon').checked = false;
   document.getElementById('configinfo').disabled = off;
   document.getElementById('configinfo').checked = false;
-  document.NetPost.netops.selectedIndex = 0;
-  document.NetPost.netops.disabled = off;
+  // document.NetPost.netops.selectedIndex = 0;
+  // document.NetPost.netops.disabled = off;
   info = document.getElementById('netinfo');
   info.style.display = 'none';
   document.AdmPost.adminops.selectedIndex = 0;
