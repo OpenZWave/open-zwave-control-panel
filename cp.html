@@ -543,14 +543,5 @@
                 </form>
             </fieldset>
         </div>
-        <script>
-            window.setTimeout(function(){
-                $('#devname').val('/dev/ttyACM0');
-                DoDevPost('open');
-                window.setTimeout(function(){
-                    $('#netops').val('test').change();
-                }, 200);
-            }, 100);
-        </script>
     </body>
 </html>
