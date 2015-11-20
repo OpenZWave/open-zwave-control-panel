@@ -9,6 +9,12 @@
 
         <title>OpenZWave Control Panel</title>
         <style>
+            #statnodehead th{
+                transform: rotate(45deg);
+                text-align: center;
+                padding-top: 20px;
+                padding-bottom: 40px;
+            }
             /*
             body {text-align: center; min-width: 830px; padding: 0}
             div.esb {width: 25%; float: left; padding: 0; margin-left: auto; margin-right: auto; text-align: left}
@@ -143,7 +149,6 @@
                         <span id="netinfo" name="netinfo" class="admmsg" style="display: none;"></span>
                     </div>
                     <div id="scencntl" name="scencntl" class="rsb" style="display: none;">
-                    <!--<div id="scencntl" name="scencntl" class="rsb" style="display: none; margin-right: 10px;">-->
                         <div class="rsb">
                             <div class="col-md-4 col-xs-4">
                                 <label><span class="legend" style="font-size: 12px;">Scenes</span></label>
@@ -202,13 +207,11 @@
                             </div>
                         </div>
                     </div>
-                    <div id="topocntl" name="topocntl" class="rsb" style="display: none; margin-right: 5px;">
-                        <div class="rsb" style="margin-left: 5px;">
-                            <button id="refreshtopo" name="refreshtopo" onclick="return TopoLoad('load');" type="submit">Refresh</button>
-                        </div>
+                    <div id="topocntl" name="topocntl" class="col-md-1" style="display: none;">
+                        <button id="refreshtopo" class="btn btn-default" name="refreshtopo" onclick="return TopoLoad('load');" type="submit">Refresh</button>
                     </div>
-                    <div id="topo" style="float: left; margin-left: 5px; width: 98%; display: none; overflow: scroll;">
-                        <table border="0" cellpadding="1" cellspacing="0" style="text-align: center;">
+                    <div id="topo" class="col-md-10" style="display: none;">
+                        <table border="0" cellpadding="1" cellspacing="0" class="table table-condensed">
                             <thead id="topohead">
                                 <tr>
                                     <th>&nbsp;</th>
@@ -227,13 +230,11 @@
                             </tbody>
                         </table>
                     </div>
-                    <div id="statcntl" name="statcntl" class="rsb" style="display: none; margin-right: 5px;">
-                        <div class="rsb" style="margin-left: 5px;">
-                            <button id="refreshstat" name="refreshstat" onclick="return StatLoad('load');" type="submit">Refresh</button>
-                        </div>
+                    <div id="statcntl" name="statcntl" style="display: none;">
+                        <button id="refreshstat" class="btn btn-default" name="refreshstat" onclick="return StatLoad('load');" type="submit">Refresh</button>
                     </div>
-                    <div id="statnet" style="float: left; margin-left: 5px; width: 98%; display: none;">
-                        <table border="0" cellpadding="1" cellspacing="0" style="text-align: center;">
+                    <div id="statnet" style="display: none;">
+                        <table border="0" cellpadding="1" cellspacing="0" class="table table-condensed">
                             <thead id="statnethead">
                                 <tr>
                                     <th style="text-align: right;">Network Errors</th>
@@ -265,20 +266,20 @@
                             <table border="0" cellpadding="1" cellspacing="0" style="text-align: center;">
                                 <thead id="statnodehead">
                                     <tr>
-                                        <th style="text-align: center;">Node</th>
-                                        <th style="text-align: center;">Sent</th>
-                                        <th style="text-align: center;">Failed</th>
-                                        <th style="text-align: center;">Retries</th>
-                                        <th style="text-align: center;">Received</th>
-                                        <th style="text-align: center;">Unsolicited</th>
-                                        <th style="text-align: center;">Duplicates</th>
-                                        <th style="text-align: center;">Last Sent</th>
-                                        <th style="text-align: center;">Last Received</th>
-                                        <th style="text-align: center;">Last Request RTT</th>
-                                        <th style="text-align: center;">Average Request RTT</th>
-                                        <th style="text-align: center;">Last Response RTT</th>
-                                        <th style="text-align: center;">Average Response RTT</th>
-                                        <th style="text-align: center;">Quality</th>
+                                        <th>Node</th>
+                                        <th>Sent</th>
+                                        <th>Failed</th>
+                                        <th>Retries</th>
+                                        <th>Received</th>
+                                        <th>Unsolicited</th>
+                                        <th>Duplicates</th>
+                                        <th>Last Sent</th>
+                                        <th>Last Received</th>
+                                        <th>Last Request RTT</th>
+                                        <th>Average Request RTT</th>
+                                        <th>Last Response RTT</th>
+                                        <th>Average Response RTT</th>
+                                        <th>Quality</th>
                                     </tr>
                                 </thead>
                                 <tbody id="statnodebody" style="cursor: help;">
@@ -322,19 +323,43 @@
                         </div>
                     </div>
                     <div id="thcntl" name="thcntl" class="rsb" style="display: none; margin-right: 5px;">
-                        <div class="rsb" style="margin-left: 5px;">
-                            <button id="testbutton" name="testbutton" onclick="return TestHealLoad('test');" type="submit">Run</button>
-                            <label><span class="legend" style="font-size: 12px;">Node:</span></label>
-                            <input id="testnode" type="text" size="5" class="legend">
-                            <label><span class="legend" style="font-size: 12px;">Message count:</span></label>
-                            <input id="testmcnt" type="text" size="5" class="legend">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="testnode" class="col-sm-2 control-label">Node:</label>
+                                <div class="col-sm-10">
+                                    <input class="form-control" id="testnode" type="text" size="5" class="legend">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="testmcnt" class="col-sm-2 control-label">Message count:</label>
+                                <div class="col-sm-10">
+                                    <input class="form-control" id="testmcnt" type="text" size="5" class="legend">
+                                </div>
+                            </div>
+                            <div class="col-sm-10 col-sm-offset-2">
+                                <button id="testbutton" name="testbutton" onclick="return TestHealLoad('test');" type="submit" class="btn btn-default">Run</button>
+                            </div>
                         </div>
-                        <br>
-                        <div class="rsb" style="margin-left: 5px;">
-                            <button id="healbutton" name="healbutton" onclick="return TestHealLoad('heal');" type="submit">Run</button>
-                            <label><span class="legend" style="font-size: 12px;">Node:</span></label>
-                            <input id="healnode" type="text" size="5" class="legend">
-                            <input id="healrrs" type="checkbox" value="healrr">Heal Return Routes
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="healnode" class="col-sm-2 control-label">Node:</label>
+                                <div class="col-sm-10">
+                                    <input class="form-control" id="healnode" type="text" size="5">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-10 col-sm-offset-2">
+                                    <label for="healrrs">
+                                        <input id="healrrs" type="checkbox" value="healrr">
+                                        Heal Return Routes
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-10 col-sm-offset-2">
+                                    <button id="healbutton" name="healbutton" onclick="return TestHealLoad('heal');" type="submit" class="btn btn-default">Run</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div id="testhealreport" class="log" style="float: left; margin-left: 5px; width: 98%; text-align: left; display: none;">
@@ -342,7 +367,7 @@
                 </form>
             </fieldset>
         </div>
-        <div id="admin" style="float: left; width: 100%;">
+        <div id="admin" class="container-fluid">
             <fieldset> <legend> Controller </legend>
                 <form name="AdmPost" method="post">
                     <input name="admhidden" class="hide" value="hidden">
@@ -370,9 +395,9 @@
                         </select>
                     </div>
                     <div id="admcntl" name="admcntl" class="rsb" style="display: none;"></div>
-                    <button id="admgo" name="go" style="float: left; text-align: center; display: none; margin-left: 10px;"
+                    <button id="admgo" name="go" class="btn btn-success" style="display: none;"
                         onclick="return DoAdmPost(0);" type="submit">Go</button> 
-                    <button id="admcan" name="cancel" style="float: left; text-align: center; display: none;"
+                    <button id="admcan" name="cancel" class="btn btn-warning" style="display: none;"
                         onclick="return DoAdmPost(1);" type="submit">Cancel</button>
                     <div class="rsb" style="margin-left: 10px;">
                         <span id="adminfo" name="adminfo" class="admmsg"></span>
@@ -380,7 +405,7 @@
                 </form>
             </fieldset>
         </div>
-        <div id="funcs" style="float: left; width: 100%;">
+        <div id="funcs" class="container-fluid">
             <fieldset><legend> Functions </legend>
                 <form name="NodePost" method="post">
                     <input name="nodehidden" class="hide" value="hidden">
@@ -420,8 +445,8 @@
                 </form>
             </fieldset>
         </div>
-        <div id="devices">
-            <h2>Devices</h2>
+        <div id="devices" class="container-fluid">
+            <fieldset><legend>Devices</legend>
             <form>
                 <table class="table table-striped table-condensed table-hover">
                     <thead> <tr>
@@ -483,6 +508,7 @@
                     </tbody>
                 </table>
             </form>
+            </fieldset>
         </div>
         <div id="controls">
             <div class="col-xs-4 col-sm-3">
@@ -517,5 +543,14 @@
                 </form>
             </fieldset>
         </div>
+        <script>
+            window.setTimeout(function(){
+                $('#devname').val('/dev/ttyACM0');
+                DoDevPost('open');
+                window.setTimeout(function(){
+                    $('#netops').val('test').change();
+                }, 200);
+            }, 100);
+        </script>
     </body>
 </html>

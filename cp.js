@@ -821,7 +821,7 @@ function DoAdmHelp() {
             document.AdmPost.admgo.style.display = 'none';
             return false;
         }
-        acntl.innerHTML = '<label style="margin-left: 10px;"><span class="legend">Button number:&nbsp;</span></label><input type="text" class="legend" size="3" id="button" value="">';
+        acntl.innerHTML = '<label style="margin-left: 10px;"><span class="legend">Button number:&nbsp;</span></label><input type="text" class="legend form-control" size="3" id="button" value="">';
         acntl.style.display = 'block';
         document.AdmPost.button.select();
         if (document.AdmPost.adminops.value == 'addbtn')
@@ -1584,7 +1584,7 @@ function CreateTextBox(i, j, vid) {
     if (nodes[i].values[j].help.length > 0)
         data = data + ' onmouseover="ShowToolTip(\'' + quotestring(nodes[i].values[j].help) + '\',0);" onmouseout="HideToolTip();"';
     var value = nodes[i].values[j].value.replace(/(\n\s*$)/, "");
-    data = data + '><label><span class="legend">' + nodes[i].values[j].label + ':&nbsp;</span></label></td><td><input type="text" class="legend" size="' + boxsize(value) + '" id="' + vid + '" value="' + value + '"';
+    data = data + '><label><span class="legend">' + nodes[i].values[j].label + ':&nbsp;</span></label></td><td><input type="text" class="legend form-control" size="' + boxsize(value) + '" id="' + vid + '" value="' + value + '"';
     if (nodes[i].values[j].help.length > 0)
         data = data + ' onmouseover="ShowToolTip(\'' + quotestring(nodes[i].values[j].help) + '\',0);" onmouseout="HideToolTip();"';
     if (nodes[i].values[j].readonly)
@@ -1621,7 +1621,7 @@ function CreateList(i, j, vid) {
 }
 
 function CreateLabel(i, j, vid) {
-    return '<tr><td style="float: right;"><label><span class="legend">' + nodes[i].values[j].label + ':&nbsp;</span></label></td><td><input type="text" class="legend" disabled="true" size="' + boxsize(nodes[i].values[j].value) + '" id="' + vid + '" value="' + nodes[i].values[j].value + '"><span class="legend">' + nodes[i].values[j].units + '</span></td></tr>';
+    return '<tr><td style="float: right;"><label><span class="legend">' + nodes[i].values[j].label + ':&nbsp;</span></label></td><td><input type="text" class="legend form-control" disabled="true" size="' + boxsize(nodes[i].values[j].value) + '" id="' + vid + '" value="' + nodes[i].values[j].value + '"><span class="legend">' + nodes[i].values[j].units + '</span></td></tr>';
 }
 
 function CreateButton(i, j, vid) {
@@ -1680,11 +1680,11 @@ function CreateDivs(genre, divto, ind) {
 }
 
 function CreateName(val, ind) {
-    nodename[ind] = '<tr><td style="float: right;"><label><span class="legend">Name:&nbsp;</span></label></td><td><input type="text" class="legend" size="' + boxsize(val) + '" id="name" value="' + val + '"><button type="submit" style="margin-left: 5px;" onclick="return DoNodePost(document.NodePost.name.value);">Submit</button></td></tr>';
+    nodename[ind] = '<tr><td style="float: right;"><label><span class="legend">Name:&nbsp;</span></label></td><td><input type="text" class="legend form-control" size="' + boxsize(val) + '" id="name" value="' + val + '"><button type="submit" style="margin-left: 5px;" onclick="return DoNodePost(document.NodePost.name.value);">Submit</button></td></tr>';
 }
 
 function CreateLocation(val, ind) {
-    nodeloc[ind] = '<tr><td style="float: right;"><label><span class="legend">Location:&nbsp;</span></label></td><td><input type="text" class="legend" size="' + boxsize(val) + '" id="location" value="' + val + '"><button type="submit" style="margin-left: 5px;" onclick="return DoNodePost(document.NodePost.location.value);">Submit</button></td></tr>';
+    nodeloc[ind] = '<tr><td style="float: right;"><label><span class="legend">Location:&nbsp;</span></label></td><td><input type="text" class="legend form-control" size="' + boxsize(val) + '" id="location" value="' + val + '"><button type="submit" style="margin-left: 5px;" onclick="return DoNodePost(document.NodePost.location.value);">Submit</button></td></tr>';
 }
 
 function CreateGroup(ind) {
