@@ -141,52 +141,53 @@ function Poll() {
     }
 }
 
+
 function PollReply() {
     var xml;
-    var elem;
-
     if (pollhttp.readyState == 4 && pollhttp.status == 200) {
         clearTimeout(pollwait);
         xml = pollhttp.responseXML;
-        elem = xml.getElementsByTagName('poll');
-        if (elem.length > 0) {
+        var poll_elems = xml.getElementsByTagName('poll');
+        if (poll_elems.length > 0) {
             var changed = false;
-            if (elem[0].getAttribute('homeid') != document.getElementById('homeid').value)
-                document.getElementById('homeid').value = elem[0].getAttribute('homeid');
-            if (elem[0].getAttribute('nodecount') != nodecount) {
-                nodecount = elem[0].getAttribute('nodecount');
+            var poll_elem = poll_elems[0];
+            if (poll_elem.getAttribute('homeid') != document.getElementById('homeid').value)
+                document.getElementById('homeid').value = poll_elem.getAttribute('homeid');
+            if (poll_elem.getAttribute('nodecount') != nodecount) {
+                nodecount = poll_elem.getAttribute('nodecount');
                 document.getElementById('nodecount').value = nodecount;
             }
-            if (elem[0].getAttribute('nodeid') != nodeid) {
-                nodeid = elem[0].getAttribute('nodeid');
+            if (poll_elem.getAttribute('nodeid') != nodeid) {
+                nodeid = poll_elem.getAttribute('nodeid');
             }
-            if (elem[0].getAttribute('sucnodeid') != sucnodeid) {
-                sucnodeid = elem[0].getAttribute('sucnodeid');
+            if (poll_elem.getAttribute('sucnodeid') != sucnodeid) {
+                sucnodeid = poll_elem.getAttribute('sucnodeid');
                 document.getElementById('sucnodeid').value = sucnodeid;
             }
-            if (elem[0].getAttribute('cmode') != document.getElementById('cmode').value)
-                document.getElementById('cmode').value = elem[0].getAttribute('cmode');
-            if (elem[0].getAttribute('save') != needsave) {
-                needsave = elem[0].getAttribute('save');
+            if (poll_elem.getAttribute('cmode') != document.getElementById('cmode').value)
+                document.getElementById('cmode').value = poll_elem.getAttribute('cmode');
+            if (poll_elem.getAttribute('save') != needsave) {
+                needsave = poll_elem.getAttribute('save');
                 if (needsave == '1') {
                     document.getElementById('saveinfo').style.display = 'block';
                 } else {
                     document.getElementById('saveinfo').style.display = 'none';
                 }
             }
-            if (elem[0].getAttribute('noop') == '1') {
+            if (poll_elem.getAttribute('noop') == '1') {
                 var testhealreport = document.getElementById('testhealreport');
                 testhealreport.innerHTML = testhealreport.innerHTML + 'No Operation message completed.<br>';
             }
-            elem = xml.getElementsByTagName('admin');
-            if (elem[0].getAttribute('active') == 'true') {
+            var admin_elem = xml.getElementsByTagName('admin');
+            var admin_elem = admin_elem[0];
+            if (admin_elem.getAttribute('active') == 'true') {
                 if (!astate) {
                     document.AdmPost.admgo.style.display = 'none';
                     document.AdmPost.admcan.style.display = 'inline';
                     document.AdmPost.adminops.disabled = true;
                     astate = true;
                 }
-            } else if (elem[0].getAttribute('active') == 'false') {
+            } else if (admin_elem.getAttribute('active') == 'false') {
                 if (astate) {
                     document.AdmPost.admgo.style.display = 'inline';
                     document.AdmPost.admcan.style.display = 'none';
@@ -194,14 +195,14 @@ function PollReply() {
                     astate = false;
                 }
             }
-            if (elem[0].firstChild != null) {
+            if (admin_elem.firstChild != null) {
                 ainfo = document.getElementById('adminfo');
-                ainfo.innerHTML = elem[0].firstChild.nodeValue;
+                ainfo.innerHTML = admin_elem.firstChild.nodeValue;
                 ainfo.style.display = 'block';
             }
-            elem = xml.getElementsByTagName('update');
-            if (elem.length > 0) {
-                var remove = elem[0].getAttribute('remove');
+            var update_elem = xml.getElementsByTagName('update');
+            if (update_elem.length > 0) {
+                var remove = update_elem[0].getAttribute('remove');
                 if (remove != undefined) {
                     var remnodes = remove.split(',');
                     changed = true;
@@ -212,97 +213,104 @@ function PollReply() {
                     }
                 }
             }
-            elem = xml.getElementsByTagName('node');
-            changed |= elem.length > 0;
-            for (var i = 0; i < elem.length; i++) {
-                var id = elem[i].getAttribute('id');
+            var node_elems = xml.getElementsByTagName('node');
+            changed |= node_elems.length > 0;
+            for (var i = 0; i < node_elems.length; i++) {
+                var node_elem = node_elems[i];
+                var id = node_elem.getAttribute('id');
                 nodes[id] = {
-                    time: elem[i].getAttribute('time'),
-                    btype: elem[i].getAttribute('btype'),
-                    id: elem[i].getAttribute('id'),
-                    gtype: elem[i].getAttribute('gtype'),
-                    manufacturer: elem[i].getAttribute('manufacturer'),
-                    product: elem[i].getAttribute('product'),
-                    name: elem[i].getAttribute('name'),
-                    location: elem[i].getAttribute('location'),
-                    listening: elem[i].getAttribute('listening') == 'true',
-                    frequent: elem[i].getAttribute('frequent') == 'true',
-                    zwaveplus: elem[i].getAttribute('zwaveplus') == 'true',
-                    beam: elem[i].getAttribute('beam') == 'true',
-                    routing: elem[i].getAttribute('routing') == 'true',
-                    security: elem[i].getAttribute('security') == 'true',
-                    status: elem[i].getAttribute('status'),
+                    time: node_elem.getAttribute('time'),
+                    btype: node_elem.getAttribute('btype'),
+                    id: node_elem.getAttribute('id'),
+                    gtype: node_elem.getAttribute('gtype'),
+                    manufacturer: node_elem.getAttribute('manufacturer'),
+                    product: node_elem.getAttribute('product'),
+                    name: node_elem.getAttribute('name'),
+                    location: node_elem.getAttribute('location'),
+                    listening: node_elem.getAttribute('listening') == 'true',
+                    frequent: node_elem.getAttribute('frequent') == 'true',
+                    zwaveplus: node_elem.getAttribute('zwaveplus') == 'true',
+                    beam: node_elem.getAttribute('beam') == 'true',
+                    routing: node_elem.getAttribute('routing') == 'true',
+                    security: node_elem.getAttribute('security') == 'true',
+                    status: node_elem.getAttribute('status'),
                     values: null,
                     groups: null
                 };
                 var k = 0;
-                var values = elem[i].getElementsByTagName('value');
-                nodes[id].values = new Array();
-                for (var j = 0; j < values.length; j++) {
-                    nodes[id].values[k] = {
-                        readonly: values[j].getAttribute('readonly') == 'true',
-                        genre: values[j].getAttribute('genre'),
-                        cclass: values[j].getAttribute('class'),
-                        type: values[j].getAttribute('type'),
-                        instance: values[j].getAttribute('instance'),
-                        index: values[j].getAttribute('index'),
-                        label: values[j].getAttribute('label'),
-                        units: values[j].getAttribute('units'),
-                        polled: values[j].getAttribute('polled') == true,
+                var values_node = node_elem.getElementsByTagName('value');
+                var id_node = nodes[id];
+                id_node.values = new Array();
+                for (var j = 0; j < values_node.length; j++) {
+                    var  values = values_node[j];
+                    id_node.values[k] = {
+                        readonly: values.getAttribute('readonly') == 'true',
+                        genre:  values.getAttribute('genre'),
+                        cclass:  values.getAttribute('class'),
+                        type:  values.getAttribute('type'),
+                        instance:  values.getAttribute('instance'),
+                        index:  values.getAttribute('index'),
+                        label:  values.getAttribute('label'),
+                        units:  values.getAttribute('units'),
+                        polled:  values.getAttribute('polled') == true,
                         help: null,
                         value: null
                     };
-                    var help = values[j].getElementsByTagName('help');
+                    var help =  values.getElementsByTagName('help');
+                    var node_values = id_node.values[k];
                     if (help.length > 0)
-                        nodes[id].values[k].help = help[0].firstChild.nodeValue;
+                        node_values.help = help[0].firstChild.nodeValue;
                     else
-                        nodes[id].values[k].help = '';
-                    if (nodes[id].values[k].type == 'list') {
-                        var items = values[j].getElementsByTagName('item');
-                        var current = values[j].getAttribute('current');
-                        nodes[id].values[k].value = new Array();
+                        node_values.help = '';
+                    if (node_values.type == 'list') {
+                        var items =  values.getElementsByTagName('item');
+                        var current =  values.getAttribute('current');
+                        node_values.value = new Array();
                         for (var l = 0; l < items.length; l++) {
-                            nodes[id].values[k].value[l] = {
+                            node_values.value[l] = {
                                 item: items[l].firstChild.nodeValue,
                                 selected: (current == items[l].firstChild.nodeValue)
                             };
                         }
-                    } else if (values[j].firstChild != null)
-                        nodes[id].values[k].value = values[j].firstChild.nodeValue;
+                    } else if ( values.firstChild != null)
+                        node_values.value =  values.firstChild.nodeValue;
                     else
-                        nodes[id].values[k].value = '0';
+                        node_values.value = '0';
                     k++;
                 }
-                var groups = elem[i].getElementsByTagName('groups');
-                nodes[id].groups = new Array();
+                var groups = node_elem.getElementsByTagName('groups');
+                id_node.groups = new Array();
                 groups = groups[0].getElementsByTagName('group');
                 k = 0;
                 for (var j = 0; j < groups.length; j++) {
-                    nodes[id].groups[k] = {
-                        id: groups[j].getAttribute('ind'),
-                        max: groups[j].getAttribute('max'),
-                        label: groups[j].getAttribute('label'),
+                    var group = groups[j];
+                    id_node.groups[k] = {
+                        id: group.getAttribute('ind'),
+                        max: group.getAttribute('max'),
+                        label: group.getAttribute('label'),
                         nodes: null
                     };
-                    if (groups[j].firstChild != null)
-                        nodes[id].groups[k].nodes = groups[j].firstChild.nodeValue.split(',');
+                    if (group.firstChild != null)
+                        id_node.groups[k].nodes = group.firstChild.nodeValue.split(',');
                     else
-                        nodes[id].groups[k].nodes = new Array();
+                        id_node.groups[k].nodes = new Array();
                     k++;
                 }
             }
-            elem = xml.getElementsByTagName('log');
-            if (elem != null && elem[0].getAttribute('size') > 0) {
+            var log_elems = xml.getElementsByTagName('log');
+            var log_elem = log_elems[0];
+            if (log_elems != null && log_elem.getAttribute('size') > 0) {
                 var ta = document.getElementById('logdata');
-                ta.innerHTML = ta.innerHTML + return2br(elem[0].firstChild.nodeValue);
+                ta.innerHTML = ta.innerHTML + return2br(log_elem.firstChild.nodeValue);
                 ta.scrollTop = ta.scrollHeight;
             }
             if (changed) {
                 var stuff = '';
                 for (var i = 1; i < nodes.length; i++) {
-                    if (nodes[i] == null)
+                    var node = nodes[i];
+                    if (node == null)
                         continue;
-                    var dt = new Date(nodes[i].time * 1000);
+                    var dt = new Date(node.time * 1000);
                     var yd = new Date(dt.getDate() - 1);
                     var ts;
                     var ext;
@@ -312,18 +320,18 @@ function PollReply() {
                     else
                         ts = dt.toLocaleTimeString();
                     var val = '';
-                    if (nodes[i].values.length > 0)
-                        for (var j = 0; j < nodes[i].values.length; j++) {
-                            if (nodes[i].values[j].genre != 'user')
+                    if (node.values.length > 0)
+                        for (var j = 0; j < node.values.length; j++) {
+                            if (node.values[j].genre != 'user')
                                 continue;
-                            if (nodes[i].values[j].type == 'list') {
-                                for (var l = 0; l < nodes[i].values[j].value.length; l++)
-                                    if (!nodes[i].values[j].value[l].selected)
+                            if (node.values[j].type == 'list') {
+                                for (var l = 0; l < node.values[j].value.length; l++)
+                                    if (!node.values[j].value[l].selected)
                                         continue;
                                     else
-                                        val = nodes[i].values[j].value[l].item;
-                            } else if (nodes[i].values[j] != null) {
-                                val = nodes[i].values[j].value;
+                                        val = node.values[j].value[l].item;
+                            } else if (node.values[j] != null) {
+                                val = node.values[j].value;
                                 if (val == 'False')
                                     val = 'off';
                                 else if (val == 'True')
@@ -333,42 +341,42 @@ function PollReply() {
                         }
                     ext = ' ';
                     exthelp = '';
-                    if (nodes[i].id == nodeid) {
-                        ext = ext + '*';
-                        exthelp = exthelp + 'controller, ';
+                    if (node.id == nodeid) {
+                        ext += '*';
+                        exthelp += 'controller, ';
                     }
-                    if (nodes[i].listening) {
-                        ext = ext + 'L';
-                        exthelp = exthelp + 'listening, ';
+                    if (node.listening) {
+                        ext += 'L';
+                        exthelp += 'listening, ';
                     }
-                    if (nodes[i].frequent) {
-                        ext = ext + 'F';
-                        exthelp = exthelp + 'FLiRS, ';
+                    if (node.frequent) {
+                        ext += 'F';
+                        exthelp += 'FLiRS, ';
                     }
-                    if (nodes[i].beam) {
-                        ext = ext + 'B';
-                        exthelp = exthelp + 'beaming, ';
+                    if (node.beam) {
+                        ext += 'B';
+                        exthelp += 'beaming, ';
                     }
-                    if (nodes[i].routing) {
-                        ext = ext + 'R';
-                        exthelp = exthelp + 'routing, ';
+                    if (node.routing) {
+                        ext += 'R';
+                        exthelp += 'routing, ';
                     }
-                    if (nodes[i].security) {
-                        ext = ext + 'S';
-                        exthelp = exthelp + 'security, ';
+                    if (node.security) {
+                        ext += 'S';
+                        exthelp += 'security, ';
                     }
-                    if (nodes[i].zwaveplus) {
-                        ext = ext + "+";
-                        exthelp = exthelp + 'ZwavePlus, ';
+                    if (node.zwaveplus) {
+                        ext += "+";
+                        exthelp += 'ZwavePlus, ';
                     }
                     if (exthelp.length > 0)
                         exthelp = exthelp.substr(0, exthelp.length - 2);
-                    stuff = stuff + '<tr id="node' + i + '"onclick="return SaveNode(this.id);" ondblClick="ClearNode(); return DisplayNode();"><td onmouseover="ShowToolTip(\'' + exthelp + '\',0);" onmouseout="HideToolTip();">' + nodes[i].id + ext + '</td><td>' + nodes[i].btype + '</td><td>' + nodes[i].gtype + '</td><td>' + nodes[i].manufacturer + ' ' + nodes[i].product + '</td><td>' + nodes[i].name + '</td><td>' + nodes[i].location + '</td><td>' + val + '</td><td>' + ts + '</td><td>' + nodes[i].status + '</td></tr>';
+                    stuff += '<tr id="node' + i + '"onclick="return SaveNode(this.id);" ondblClick="ClearNode(); return DisplayNode();"><td onmouseover="ShowToolTip(\'' + exthelp + '\',0);" onmouseout="HideToolTip();">' + node.id + ext + '</td><td>' + node.btype + '</td><td>' + node.gtype + '</td><td>' + node.manufacturer + ' ' + node.product + '</td><td>' + node.name + '</td><td>' + node.location + '</td><td>' + val + '</td><td>' + ts + '</td><td>' + node.status + '</td></tr>';
                     CreateDivs('user', divcur, i);
                     CreateDivs('config', divcon, i);
                     CreateDivs('system', divinfo, i);
-                    CreateName(nodes[i].name, i);
-                    CreateLocation(nodes[i].location, i);
+                    CreateName(node.name, i);
+                    CreateLocation(node.location, i);
                     CreateGroup(i);
                     CreatePoll(i);
                 }
@@ -399,19 +407,21 @@ function BED() {
     tt.style.filter = 'alpha(opacity=0)';
     tt.style.display = 'none';
     for (var i = 0; i < forms.length; i++) {
-        if (forms[i].name == '')
+        var form = forms[i];
+        if (form.name == '')
             continue;
-        for (var j = 0; j < forms[i].elements.length; j++) {
-            if ((forms[i].elements[j].name == 'initialize') ||
-                (forms[i].elements[j].name == 'devname') ||
-                (forms[i].elements[j].name == 'usbb'))
+        for (var j = 0; j < form.elements.length; j++) {
+            var element = form.elements[j];
+            if ((element.name == 'initialize') ||
+                (element.name == 'devname') ||
+                (element.name == 'usbb'))
                 continue;
-            if ((forms[i].elements[j].tagName == 'BUTTON') ||
-                (forms[i].elements[j].tagName == 'SELECT') ||
-                (forms[i].elements[j].tagName == 'INPUT'))
-                forms[i].elements[j].disabled = off;
+            if ((element.tagName == 'BUTTON') ||
+                (element.tagName == 'SELECT') ||
+                (element.tagName == 'INPUT'))
+                element.disabled = off;
             else
-                forms[i].elements[j].disabled = !off;
+                element.disabled = !off;
         }
     }
     document.getElementById('configcur').disabled = off;
@@ -726,12 +736,12 @@ function DoAdmPost(can) {
             ainfo.style.display = 'block';
             return false;
         }
-        params = params + '&node=' + curnode;
+        params += '&node=' + curnode;
     } else if (fun == 'snif') {
         if (curnode == null)
-            params = params + '&node=node255';
+            params += '&node=node255';
         else
-            params = params + '&node=' + curnode;
+            params += '&node=' + curnode;
     }
 
     if (fun == 'addbtn' || fun == 'delbtn') {
@@ -742,7 +752,7 @@ function DoAdmPost(can) {
             document.AdmPost.button.select();
             return false;
         }
-        params = params + '&button=' + document.AdmPost.button.value;
+        params += '&button=' + document.AdmPost.button.value;
     }
 
     if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
@@ -916,7 +926,7 @@ function DoGrpPost() {
 
     for (i = 0; i < opts.length; i++)
         if (opts[i].selected) {
-            params = params + opts[i].text + ',';
+            params += opts[i].text + ',';
         }
 
     if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
@@ -948,13 +958,13 @@ function DoPollPost() {
     var i;
 
     for (i = 0; i < opts.length; i++)
-        params = params + opts[i].id + ',';
-    params = params + '&poll=';
+        params += opts[i].id + ',';
+    params += '&poll=';
     for (i = 0; i < opts.length; i++)
         if (opts[i].selected)
-            params = params + '1,';
+            params += '1,';
         else
-            params = params + '0,';
+            params += '0,';
 
 
     if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
@@ -999,7 +1009,7 @@ function SceneLoad(fun) {
             return false;
         }
         DisplaySceneSceneValue(null);
-        params = params + '&id=' + curscene;
+        params += '&id=' + curscene;
         var slt = document.getElementById('scenelabeltext');
         slt.value = '';
     } else if (fun == 'execute') {
@@ -1007,13 +1017,13 @@ function SceneLoad(fun) {
             alert("Scene not selected");
             return false;
         }
-        params = params + '&id=' + curscene;
+        params += '&id=' + curscene;
     } else if (fun == 'values') {
         if (curscene == null) {
             alert("Scene not selected");
             return false;
         }
-        params = params + '&id=' + curscene;
+        params += '&id=' + curscene;
         var slt = document.getElementById('scenelabeltext');
         slt.value = scenes[curscene].label;
         DisplaySceneSceneValue(null);
@@ -1027,7 +1037,7 @@ function SceneLoad(fun) {
             alert('Missing label text');
             return false;
         }
-        params = params + '&id=' + curscene + '&label=' + slt.value;
+        params += '&id=' + curscene + '&label=' + slt.value;
         slt.value = '';
     } else if (fun == 'addvalue') {
         if (curscene == null) {
@@ -1050,10 +1060,10 @@ function SceneLoad(fun) {
                 alert('Data not entered');
                 return false;
             }
-            params = params + '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5] + '&value=' + value.value;
+            params += '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5] + '&value=' + value.value;
         } else {
             var value = document.getElementById('valueselect');
-            params = params + '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5] + '&value=' + value.options[value.selectedIndex].value;
+            params += '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5] + '&value=' + value.options[value.selectedIndex].value;
         }
         DisplaySceneSceneValue(null);
     } else if (fun == 'update') {
@@ -1077,10 +1087,10 @@ function SceneLoad(fun) {
                 alert('Data not entered');
                 return false;
             }
-            params = params + '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5] + '&value=' + value.value;
+            params += '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5] + '&value=' + value.value;
         } else {
             var value = document.getElementById('valueselect');
-            params = params + '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5] + '&value=' + value.options[value.selectedIndex].value;
+            params += '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5] + '&value=' + value.options[value.selectedIndex].value;
         }
         DisplaySceneSceneValue(null);
     } else if (fun == 'remove') {
@@ -1094,7 +1104,7 @@ function SceneLoad(fun) {
             return false;
         }
         var vals = values.options[values.options.selectedIndex].value.split('-');
-        params = params + '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5];
+        params += '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5];
         DisplaySceneSceneValue(null);
     }
     scenehttp.open('POST', 'scenepost.html', true);
@@ -1221,19 +1231,20 @@ function DisplaySceneValue(opt) {
         return false;
     }
     var vals = opt.value.split('-');
-    var j;
-    for (j = 0; j < nodes[vals[0]].values.length; j++)
-        if (nodes[vals[0]].values[j].cclass == vals[1] &&
-            nodes[vals[0]].values[j].genre == 'user' &&
-            nodes[vals[0]].values[j].type == vals[3] &&
-            nodes[vals[0]].values[j].instance == vals[4] &&
-            nodes[vals[0]].values[j].index == vals[5])
+    for (var j = 0; j < nodes[vals[0]].values.length; j++) {
+        var value = nodes[vals[0]].values[j];
+        if (value.cclass == vals[1] &&
+            value.genre == 'user' &&
+            value.type == vals[3] &&
+            value.instance == vals[4] &&
+            value.index == vals[5])
             break;
+    }
     if (vals[3] == 'list') {
         vt.style.display = 'none';
         vs.style.display = 'inline';
     } else if (vals[3] == 'bool') {
-        if (nodes[vals[0]].values[j].value == 'True') {
+        if (value.value == 'True') {
             vs.add(new Option('On', 'true', true));
             vs.add(new Option('Off', 'false'));
         } else {
@@ -1243,11 +1254,11 @@ function DisplaySceneValue(opt) {
         vt.style.display = 'none';
         vs.style.display = 'inline';
     } else {
-        vt.value = nodes[vals[0]].values[j].value;
+        vt.value = value.value;
         vt.style.display = 'inline';
         vs.style.display = 'none';
     }
-    vu.innerHTML = nodes[vals[0]].values[j].units;
+    vu.innerHTML = value.units;
     return false;
 }
 
@@ -1265,20 +1276,20 @@ function DisplaySceneSceneValue(opt) {
         return false;
     }
     var vals = opt.value.split('-');
-    var j;
-    for (j = 0; j < scenes[curscene].values.length; j++) {
-        if (scenes[curscene].values[j].cclass == vals[1] &&
-            scenes[curscene].values[j].genre == 'user' &&
-            scenes[curscene].values[j].type == vals[3] &&
-            scenes[curscene].values[j].instance == vals[4] &&
-            scenes[curscene].values[j].index == vals[5])
+    for (var j = 0; j < scenes[curscene].values.length; j++) {
+        var value = scenes[curscene].values[j];
+        if (value.cclass == vals[1] &&
+            value.genre == 'user' &&
+            value.type == vals[3] &&
+            value.instance == vals[4] &&
+            value.index == vals[5])
             break;
     }
     if (vals[3] == 'list') {
         vt.style.display = 'none';
         vs.style.display = 'inline';
     } else if (vals[3] == 'bool') {
-        if (scenes[curscene].values[j].value == 'True') {
+        if (value.value == 'True') {
             vs.add(new Option('On', 'on', true));
             vs.add(new Option('Off', 'off'));
         } else {
@@ -1288,11 +1299,11 @@ function DisplaySceneSceneValue(opt) {
         vt.style.display = 'none';
         vs.style.display = 'inline';
     } else {
-        vt.value = scenes[curscene].values[j].value;
+        vt.value = value.value;
         vt.style.display = 'inline';
         vs.style.display = 'none';
     }
-    vu.innerHTML = scenes[curscene].values[j].units;
+    vu.innerHTML = value.units;
     return false;
 }
 
@@ -1308,50 +1319,52 @@ function TopoLoad(fun) {
 
 function TopoReply() {
     var xml;
-    var elem;
-
     if (topohttp.readyState == 4 && topohttp.status == 200) {
         xml = topohttp.responseXML;
-        elem = xml.getElementsByTagName('topo');
-        if (elem.length > 0) {
+        var elems = xml.getElementsByTagName('topo');
+        if (elems.length > 0) {
             var i;
             var id;
             var list;
-            for (i = 0; i < elem[0].childNodes.length; i++) {
-                if (elem[0].childNodes[i].nodeType != 1)
+            var elem = elems[0];
+            for (i = 0; i < elem.childNodes.length; i++) {
+                var child = elem.childNodes[i];
+                if (child.nodeType != 1)
                     continue;
-                if (elem[0].childNodes[i].tagName == 'node') {
-                    id = elem[0].childNodes[i].getAttribute('id');
-                    list = elem[0].childNodes[i].firstChild.nodeValue;
+                if (child.tagName == 'node') {
+                    id = child.getAttribute('id');
+                    list = child.firstChild.nodeValue;
                     routes[id] = list.split(',');
                 }
             }
             var stuff = '<tr><th>Nodes</th>';
             var topohead = document.getElementById('topohead');
+            var node = nodes[i];
             for (i = 1; i < nodes.length; i++) {
-                if (nodes[i] == null)
+                if (node == null)
                     continue;
-                stuff = stuff + '<th>' + i + '</th>';
+                stuff += '<th>' + i + '</th>';
             }
-            stuff = stuff + '</tr>'
+            stuff += '</tr>'
             topohead.innerHTML = stuff;
             stuff = '';
             for (i = 1; i < nodes.length; i++) {
-                if (nodes[i] == null)
+                if (node == null)
                     continue;
-                stuff = stuff + '<tr><td style="vertical-align: top; text-decoration: underline; background-color: #FFFFFF;">' + i + '</td>';
+                stuff += '<tr><td style="vertical-align: top; text-decoration: underline; background-color: #FFFFFF;">' + i + '</td>';
                 var j, k = 0;
                 for (j = 1; j < nodes.length; j++) {
                     if (nodes[j] == null)
                         continue;
-                    if (routes[i] != undefined && k < routes[i].length && j == routes[i][k]) {
-                        stuff = stuff + '<td>*</td>';
+                    var route = routes[i];
+                    if (route != undefined && k < route.length && j == route[k]) {
+                        stuff += '<td>*</td>';
                         k++;
                     } else {
-                        stuff = stuff + '<td>&nbsp;</td>';
+                        stuff += '<td>&nbsp;</td>';
                     }
                 }
-                stuff = stuff + '</tr>';
+                stuff += '</tr>';
             }
             var topobody = document.getElementById('topobody');
             topobody.innerHTML = stuff;
@@ -1404,62 +1417,66 @@ function StatReply() {
         if (elem.length > 0) {
             var errors = xml.getElementsByTagName('errors');
             var counts = xml.getElementsByTagName('counts');
-            var info = xml.getElementsByTagName('info');
-            var cnt = errors[0].childNodes.length;
-            if (counts[0].childNodes.length > cnt)
-                cnt = counts[0].childNodes.length;
-            if (info[0].childNodes.length > cnt)
-                cnt = info[0].childNodes.length;
+            var infos = xml.getElementsByTagName('info');
+            var error = errors[0];
+            var cnt = error.childNodes.length;
+            var count = counts[0];
+            if (count.childNodes.length > cnt)
+                cnt = count.childNodes.length;
+            var info = infos[0];
+            if (info.childNodes.length > cnt)
+                cnt = info.childNodes.length;
             var stuff = '';
             var i;
             for (i = 0; i < cnt; i++) {
-                if (i < errors[0].childNodes.length)
-                    if (errors[0].childNodes[i].nodeType != 1)
+                if (i < error.childNodes.length)
+                    if (error.childNodes[i].nodeType != 1)
                         continue;
-                if (i < counts[0].childNodes.length)
-                    if (counts[0].childNodes[i].nodeType != 1)
+                if (i < count.childNodes.length)
+                    if (count.childNodes[i].nodeType != 1)
                         continue;
-                if (i < info[0].childNodes.length)
-                    if (info[0].childNodes[i].nodeType != 1)
+                if (i < info.childNodes.length)
+                    if (info.childNodes[i].nodeType != 1)
                         continue;
-                stuff = stuff + '<tr>';
-                if (i < errors[0].childNodes.length)
-                    stuff = stuff + '<td style="text-align: right;">' + errors[0].childNodes[i].getAttribute('label') + ': </td><td style="text-align: left;">' + errors[0].childNodes[i].firstChild.nodeValue + '</td>';
+                stuff += '<tr>';
+                if (i < error.childNodes.length)
+                    stuff += '<td style="text-align: right;">' + error.childNodes[i].getAttribute('label') + ': </td><td style="text-align: left;">' + error.childNodes[i].firstChild.nodeValue + '</td>';
                 else
-                    stuff = stuff + '<td>&nbsp;</td><td>&nbsp;</td>';
-                if (i < counts[0].childNodes.length)
-                    stuff = stuff + '<td style="text-align: right;">' + counts[0].childNodes[i].getAttribute('label') + ': </td><td style="text-align: left;">' + counts[0].childNodes[i].firstChild.nodeValue + '</td>';
+                    stuff += '<td>&nbsp;</td><td>&nbsp;</td>';
+                if (i < count.childNodes.length)
+                    stuff += '<td style="text-align: right;">' + count.childNodes[i].getAttribute('label') + ': </td><td style="text-align: left;">' + count.childNodes[i].firstChild.nodeValue + '</td>';
                 else
-                    stuff = stuff + '<td>&nbsp;</td><td>&nbsp;</td>';
-                if (i < info[0].childNodes.length)
-                    stuff = stuff + '<td style="text-align: right;">' + info[0].childNodes[i].getAttribute('label') + ': </td><td style="text-align: left;">' + info[0].childNodes[i].firstChild.nodeValue + '</td>';
+                    stuff += '<td>&nbsp;</td><td>&nbsp;</td>';
+                if (i < info.childNodes.length)
+                    stuff += '<td style="text-align: right;">' + info.childNodes[i].getAttribute('label') + ': </td><td style="text-align: left;">' + info.childNodes[i].firstChild.nodeValue + '</td>';
                 else
-                    stuff = stuff + '<td>&nbsp;</td><td>&nbsp;</td>';
-                stuff = stuff + '</tr>';
+                    stuff += '<td>&nbsp;</td><td>&nbsp;</td>';
+                stuff += '</tr>';
             }
             var statnetbody = document.getElementById('statnetbody');
             statnetbody.innerHTML = stuff;
-            var node = xml.getElementsByTagName('node');
+            var nodes = xml.getElementsByTagName('node');
             var stuff = '';
             var oldnode = null;
             if (curclassstat != null)
                 oldnode = curclassstat.id;
-            for (var i = 0; i < node.length; i++) {
-                stuff = stuff + '<tr id="statnode' + i + '" onclick="return DisplayStatClass(this,' + i + ');"><td>' + node[i].getAttribute('id') + '</td>';
-                var nstat = node[i].getElementsByTagName('nstat');
+            for (var i = 0; i < nodes.length; i++) {
+                var node = nodes[i];
+                stuff += '<tr id="statnode' + i + '" onclick="return DisplayStatClass(this,' + i + ');"><td>' + node.getAttribute('id') + '</td>';
+                var nstat = node.getElementsByTagName('nstat');
                 for (var j = 0; j < nstat.length; j++) {
-                    stuff = stuff + '<td>' + nstat[j].firstChild.nodeValue + '</td>';
+                    stuff += '<td>' + nstat[j].firstChild.nodeValue + '</td>';
                 }
-                stuff = stuff + '</tr>';
+                stuff += '</tr>';
                 var cstuff = '';
-                var cclass = node[i].getElementsByTagName('commandclass');
+                var cclass = node.getElementsByTagName('commandclass');
                 for (var j = 0; j < cclass.length; j++) {
-                    cstuff = cstuff + '<tr><td>' + cclass[j].getAttribute('name') + '</td>';
+                    cstuff += '<tr><td>' + cclass[j].getAttribute('name') + '</td>';
                     var cstat = cclass[j].getElementsByTagName('cstat');
                     for (var k = 0; k < cstat.length; k++) {
-                        cstuff = cstuff + '<td>' + cstat[k].firstChild.nodeValue + '</td>';
+                        cstuff += '<td>' + cstat[k].firstChild.nodeValue + '</td>';
                     }
-                    cstuff = cstuff + '</tr>';
+                    cstuff += '</tr>';
                 }
                 classstats[i] = cstuff;
             }
@@ -1480,26 +1497,26 @@ function TestHealLoad(fun) {
     if (fun == 'test') {
         var cnt = document.getElementById('testnode');
         if (cnt.value.length == 0) {
-            params = params + '&num=0';
+            params += '&num=0';
         } else {
-            params = params + '&num=' + cnt.value;
+            params += '&num=' + cnt.value;
         }
         var cnt = document.getElementById('testmcnt');
         if (cnt.value.length == 0) {
             alert('Missing count value');
             return false;
         }
-        params = params + '&cnt=' + cnt.value;
+        params += '&cnt=' + cnt.value;
     } else if (fun == 'heal') {
         var cnt = document.getElementById('healnode');
         if (cnt.value.length == 0) {
-            params = params + '&num=0';
+            params += '&num=0';
         } else {
-            params = params + '&num=' + cnt.value;
+            params += '&num=' + cnt.value;
         }
         var check = document.getElementById('healrrs');
         if (check.checked)
-            params = params + '&healrrs=1';
+            params += '&healrrs=1';
     }
     atsthttp.open('POST', 'thpost.html', true);
     atsthttp.onreadystatechange = TestHealReply;
@@ -1563,60 +1580,66 @@ function boxsize(field) {
 
 function CreateOnOff(i, j, vid) {
     var data = '<tr><td style="float: right;"';
-    if (nodes[i].values[j].help.length > 0)
-        data = data + ' onmouseover="ShowToolTip(\'' + quotestring(nodes[i].values[j].help) + '\',0);" onmouseout="HideToolTip();"';
-    data = data + '><label><span class="legend">' + nodes[i].values[j].label + ':&nbsp;</span></label></td><td><select id="' + vid + '" onchange="return DoValue(\'' + vid + '\');"'
-    if (nodes[i].values[j].readonly)
-        data = data + ' disabled="true"';
-    if (nodes[i].values[j].help.length > 0)
-        data = data + ' onmouseover="ShowToolTip(\'' + quotestring(nodes[i].values[j].help) + '\',0);" onmouseout="HideToolTip();"';
-    data = data + '>';
-    if (nodes[i].values[j].value == 'True')
-        data = data + '<option value="off">Off</option><option value="on" selected="true">On</option>';
+    var node = nodes[i];
+    var value = node.values[j];
+    if (value.help.length > 0)
+        data += ' onmouseover="ShowToolTip(\'' + quotestring(value.help) + '\',0);" onmouseout="HideToolTip();"';
+    data += '><label><span class="legend">' + value.label + ':&nbsp;</span></label></td><td><select id="' + vid + '" onchange="return DoValue(\'' + vid + '\');"'
+    if (value.readonly)
+        data += ' disabled="true"';
+    if (value.help.length > 0)
+        data += ' onmouseover="ShowToolTip(\'' + quotestring(value.help) + '\',0);" onmouseout="HideToolTip();"';
+    data += '>';
+    if (value.value == 'True')
+        data += '<option value="off">Off</option><option value="on" selected="true">On</option>';
     else
-        data = data + '<option value="off" selected="true">Off</option><option value="on">On</option>';
-    data = data + '</select></td><td><span class="legend">' + nodes[i].values[j].units + '</span></td></tr>';
+        data += '<option value="off" selected="true">Off</option><option value="on">On</option>';
+    data += '</select></td><td><span class="legend">' + value.units + '</span></td></tr>';
     return data;
 }
 
 function CreateTextBox(i, j, vid) {
     var data = '<tr><td style="float: right;"';
-    if (nodes[i].values[j].help.length > 0)
-        data = data + ' onmouseover="ShowToolTip(\'' + quotestring(nodes[i].values[j].help) + '\',0);" onmouseout="HideToolTip();"';
-    var value = nodes[i].values[j].value.replace(/(\n\s*$)/, "");
-    data = data + '><label><span class="legend">' + nodes[i].values[j].label + ':&nbsp;</span></label></td><td><input type="text" class="legend form-control" size="' + boxsize(value) + '" id="' + vid + '" value="' + value + '"';
-    if (nodes[i].values[j].help.length > 0)
-        data = data + ' onmouseover="ShowToolTip(\'' + quotestring(nodes[i].values[j].help) + '\',0);" onmouseout="HideToolTip();"';
-    if (nodes[i].values[j].readonly)
-        data = data + ' disabled="true">';
+    var node = nodes[i];
+    var value = node.values[j];
+    if (value.help.length > 0)
+        data += ' onmouseover="ShowToolTip(\'' + quotestring(value.help) + '\',0);" onmouseout="HideToolTip();"';
+    var trimmed_value = value.value.replace(/(\n\s*$)/, "");
+    data += '><label><span class="legend">' + value.label + ':&nbsp;</span></label></td><td><input type="text" class="legend form-control" size="' + boxsize(trimmed_value) + '" id="' + vid + '" value="' + trimmed_value + '"';
+    if (value.help.length > 0)
+        data += ' onmouseover="ShowToolTip(\'' + quotestring(value.help) + '\',0);" onmouseout="HideToolTip();"';
+    if (value.readonly)
+        data += ' disabled="true">';
     else
-        data = data + '>';
-    data = data + '<span class="legend">' + nodes[i].values[j].units + '</span>';
-    if (!nodes[i].values[j].readonly)
-        data = data + '<button type="submit" onclick="return DoValue(\'' + vid + '\');">Submit</button>';
-    data = data + '</td></tr>';
+        data += '>';
+    data += '<span class="legend">' + value.units + '</span>';
+    if (!value.readonly)
+        data += '<button class="btn btn-default" type="submit" onclick="return DoValue(\'' + vid + '\');">Submit</button>';
+    data += '</td></tr>';
     return data;
 }
 
 function CreateList(i, j, vid) {
     var data = '<tr><td style="float: right;"';
-    if (nodes[i].values[j].help.length > 0)
-        data = data + ' onmouseover="ShowToolTip(\'' + quotestring(nodes[i].values[j].help) + '\',0);" onmouseout="HideToolTip();"';
-    data = data + '><label><span class="legend">' + nodes[i].values[j].label + ':&nbsp;</span></label></td><td><select id="' + vid + '" onchange="return DoValue(\'' + vid + '\', false);"';
-    if (nodes[i].values[j].help.length > 0)
-        data = data + ' onmouseover="ShowToolTip(\'' + quotestring(nodes[i].values[j].help) + '\',0);" onmouseout="HideToolTip();"';
-    if (nodes[i].values[j].readonly)
-        data = data + ' disabled="true">';
+    var node = nodes[i];
+    var values = node.values[j];
+    if (values.help.length > 0)
+        data += ' onmouseover="ShowToolTip(\'' + quotestring(values.help) + '\',0);" onmouseout="HideToolTip();"';
+    data += '><label><span class="legend">' + values.label + ':&nbsp;</span></label></td><td><select id="' + vid + '" onchange="return DoValue(\'' + vid + '\', false);"';
+    if (values.help.length > 0)
+        data += ' onmouseover="ShowToolTip(\'' + quotestring(values.help) + '\',0);" onmouseout="HideToolTip();"';
+    if (values.readonly)
+        data += ' disabled="true">';
     else
-        data = data + '>';
-    if (nodes[i].values[j].value != null)
-        for (k = 0; k < nodes[i].values[j].value.length; k++) {
-            data = data + '<option value="' + nodes[i].values[j].value[k].item + '"';
-            if (nodes[i].values[j].value[k].selected)
-                data = data + ' selected="true"';
-            data = data + '>' + nodes[i].values[j].value[k].item + '</option>';
+        data += '>';
+    if (values.value != null)
+        for (k = 0; k < values.value.length; k++) {
+            data += '<option value="' + values.value[k].item + '"';
+            if (values.value[k].selected)
+                data += ' selected="true"';
+            data += '>' + values.value[k].item + '</option>';
         }
-    data = data + '</select><span class="legend">' + nodes[i].values[j].units + '</span></td></tr>';
+    data += '</select><span class="legend">' + values.units + '</span></td></tr>';
     return data;
 }
 
@@ -1627,64 +1650,66 @@ function CreateLabel(i, j, vid) {
 function CreateButton(i, j, vid) {
     var data = '<tr><td style="float: right;"';
     if (nodes[i].values[j].help.length > 0)
-        data = data + ' onmouseover="ShowToolTip(\'' + quotestring(nodes[i].values[j].help) + '\',0);" onmouseout="HideToolTip();"';
-    data = data + '><label><span class="legend">' + nodes[i].values[j].label + ':&nbsp;</span></label></td><td><button type="submit" id="' + vid + '" onclick="return false;" onmousedown="return DoButton(\'' + vid + '\',true);" onmouseup="return DoButton(\'' + vid + '\',false);"'
+        data += ' onmouseover="ShowToolTip(\'' + quotestring(nodes[i].values[j].help) + '\',0);" onmouseout="HideToolTip();"';
+    data += '><label><span class="legend">' + nodes[i].values[j].label + ':&nbsp;</span></label></td><td><button class="btn btn-default" type="submit" id="' + vid + '" onclick="return false;" onmousedown="return DoButton(\'' + vid + '\',true);" onmouseup="return DoButton(\'' + vid + '\',false);"'
     if (nodes[i].values[j].readonly)
-        data = data + ' disabled="true"';
-    data = data + '>Submit</button></td><td><span class="legend">' + nodes[i].values[j].units + '</span></td></tr>';
+        data += ' disabled="true"';
+    data += '>Submit</button></td><td><span class="legend">' + nodes[i].values[j].units + '</span></td></tr>';
     return data;
 }
 
-function CreateDivs(genre, divto, ind) {
-    divto[ind] = '<table border="0" cellpadding="1" cellspacing="0"><tbody>';
-    if (nodes[ind].values != null) {
+function CreateDivs(genre, divtos, ind) {
+    divto = '<table border="0" cellpadding="1" cellspacing="0"><tbody>';
+    var node = nodes[ind];
+    if (node.values != null) {
         var j = 0;
-        for (var i = 0; i < nodes[ind].values.length; i++) {
+        for (var i = 0; i < node.values.length; i++) {
             var match;
+            var value = node.values[i];
             if (genre == 'user')
-                match = (nodes[ind].values[i].genre == genre || nodes[ind].values[i].genre == 'basic');
+                match = (value.genre == genre || value.genre == 'basic');
             else
-                match = (nodes[ind].values[i].genre == genre);
+                match = (value.genre == genre);
             if (!match)
                 continue;
-            var vid = nodes[ind].id + '-' + nodes[ind].values[i].cclass + '-' + nodes[ind].values[i].genre + '-' + nodes[ind].values[i].type + '-' + nodes[ind].values[i].instance + '-' + nodes[ind].values[i].index;
+            var vid = node.id + '-' + value.cclass + '-' + value.genre + '-' + value.type + '-' + value.instance + '-' + value.index;
             j++;
-            if (nodes[ind].values[i].type == 'bool') {
-                divto[ind] = divto[ind] + CreateOnOff(ind, i, vid);
-            } else if (nodes[ind].values[i].type == 'byte') {
-                divto[ind] = divto[ind] + CreateTextBox(ind, i, vid);
-            } else if (nodes[ind].values[i].type == 'int') {
-                divto[ind] = divto[ind] + CreateTextBox(ind, i, vid);
-            } else if (nodes[ind].values[i].type == 'short') {
-                divto[ind] = divto[ind] + CreateTextBox(ind, i, vid);
-            } else if (nodes[ind].values[i].type == 'decimal') {
-                divto[ind] = divto[ind] + CreateTextBox(ind, i, vid);
-            } else if (nodes[ind].values[i].type == 'list') {
-                divto[ind] = divto[ind] + CreateList(ind, i, vid);
-            } else if (nodes[ind].values[i].type == 'string') {
-                divto[ind] = divto[ind] + CreateTextBox(ind, i, vid);
-            } else if (nodes[ind].values[i].type == 'button') {
-                divto[ind] = divto[ind] + CreateButton(ind, i, vid);
-            } else if (nodes[ind].values[i].type == 'raw') {
-                divto[ind] = divto[ind] + CreateTextBox(ind, i, vid);
+            if (value.type == 'bool') {
+                divto += CreateOnOff(ind, i, vid);
+            } else if (value.type == 'byte') {
+                divto += CreateTextBox(ind, i, vid);
+            } else if (value.type == 'int') {
+                divto += CreateTextBox(ind, i, vid);
+            } else if (value.type == 'short') {
+                divto += CreateTextBox(ind, i, vid);
+            } else if (value.type == 'decimal') {
+                divto += CreateTextBox(ind, i, vid);
+            } else if (value.type == 'list') {
+                divto += CreateList(ind, i, vid);
+            } else if (value.type == 'string') {
+                divto += CreateTextBox(ind, i, vid);
+            } else if (value.type == 'button') {
+                divto += CreateButton(ind, i, vid);
+            } else if (value.type == 'raw') {
+                divto += CreateTextBox(ind, i, vid);
             }
         }
         if (j != 0) {
             if (genre == 'config')
-                divto[ind] = divto[ind] + '<tr><td>&nbsp;</td><td><button type="submit" id="requestallconfig" name="requestallconfig" onclick="return RequestAllConfig(' + ind + ');">Refresh</button></td><td>&nbsp;</td></tr>';
+                divto += '<tr><td>&nbsp;</td><td><button class="btn btn-default" type="submit" id="requestallconfig" name="requestallconfig" onclick="return RequestAllConfig(' + ind + ');">Refresh</button></td><td>&nbsp;</td></tr>';
             else
-                divto[ind] = divto[ind] + '<tr><td>&nbsp;</td><td><button type="submit" id="requestall" name="requestall" onclick="return RequestAll(' + ind + ');">Refresh</button></td><td>&nbsp;</td></tr>';
+                divto += '<tr><td>&nbsp;</td><td><button class="btn btn-default" type="submit" id="requestall" name="requestall" onclick="return RequestAll(' + ind + ');">Refresh</button></td><td>&nbsp;</td></tr>';
         }
     }
-    divto[ind] = divto[ind] + '</tbody></table>';
+    divtos[ind] = divto + '</tbody></table>';
 }
 
 function CreateName(val, ind) {
-    nodename[ind] = '<tr><td style="float: right;"><label><span class="legend">Name:&nbsp;</span></label></td><td><input type="text" class="legend form-control" size="' + boxsize(val) + '" id="name" value="' + val + '"><button type="submit" style="margin-left: 5px;" onclick="return DoNodePost(document.NodePost.name.value);">Submit</button></td></tr>';
+    nodename[ind] = '<tr><td style="float: right;"><label><span class="legend">Name:&nbsp;</span></label></td><td><input type="text" class="legend form-control" size="' + boxsize(val) + '" id="name" value="' + val + '"><button class="btn btn-default" type="submit" style="margin-left: 5px;" onclick="return DoNodePost(document.NodePost.name.value);">Submit</button></td></tr>';
 }
 
 function CreateLocation(val, ind) {
-    nodeloc[ind] = '<tr><td style="float: right;"><label><span class="legend">Location:&nbsp;</span></label></td><td><input type="text" class="legend form-control" size="' + boxsize(val) + '" id="location" value="' + val + '"><button type="submit" style="margin-left: 5px;" onclick="return DoNodePost(document.NodePost.location.value);">Submit</button></td></tr>';
+    nodeloc[ind] = '<tr><td style="float: right;"><label><span class="legend">Location:&nbsp;</span></label></td><td><input type="text" class="legend form-control" size="' + boxsize(val) + '" id="location" value="' + val + '"><button class="btn btn-default" type="submit" style="margin-left: 5px;" onclick="return DoNodePost(document.NodePost.location.value);">Submit</button></td></tr>';
 }
 
 function CreateGroup(ind) {
@@ -1701,18 +1726,19 @@ function CreateGroup(ind) {
     nodegrpgrp[ind] = new Array(nodes[ind].groups.length);
     grp = 1;
     for (i = 0; i < nodes[ind].groups.length; i++) {
-        nodegrp[ind] = nodegrp[ind] + '<option value="' + nodes[ind].groups[i].id + '">' + nodes[ind].groups[i].label + ' (' + nodes[ind].groups[i].id + ')</option>';
+        nodegrp[ind] += '<option value="' + nodes[ind].groups[i].id + '">' + nodes[ind].groups[i].label + ' (' + nodes[ind].groups[i].id + ')</option>';
         nodegrpgrp[ind][grp] = '<td><div id="nodegrp" name="nodegrp" style="float: right;"><select id="groups" multiple size="8" style="vertical-align: top; margin-left: 5px;">';
         k = 0;
         for (j = 1; j < nodes.length; j++) {
-            if (nodes[j] == null)
+            var node = nodes[j];
+            if (node == null)
                 continue;
 
             // build a list of instances 
             var instances = [String(j)];
-            for (var l = 0; l < nodes[j].values.length; l++) {
-                instances[l + 1] = j + '.' + nodes[j].values[l].instance;
-                instances.push(j + '.' + nodes[j].values[l].instance);
+            for (var l = 0; l < node.values.length; l++) {
+                instances[l + 1] = j + '.' + node.values[l].instance;
+                instances.push(j + '.' + node.values[l].instance);
             }
 
             // make unique
@@ -1731,29 +1757,30 @@ function CreateGroup(ind) {
 
             for (var l = 0; l < instances.length; l++) {
                 if (nodes[ind].groups[i].nodes.indexOf(instances[l]) != -1)
-                    nodegrpgrp[ind][grp] = nodegrpgrp[ind][grp] + '<option selected="true">' + instances[l] + '</option>';
+                    nodegrpgrp[ind][grp] += '<option selected="true">' + instances[l] + '</option>';
                 else
-                    nodegrpgrp[ind][grp] = nodegrpgrp[ind][grp] + '<option>' + instances[l] + '</option>';
+                    nodegrpgrp[ind][grp] += '<option>' + instances[l] + '</option>';
             }
         }
-        nodegrpgrp[ind][grp] = nodegrpgrp[ind][grp] + '</select></td><td><button type="submit" style="margin-left: 5px;" onclick="return DoGrpPost();">Submit</button></div></td></tr>';
+        nodegrpgrp[ind][grp] += '</select></td><td><button class="btn btn-default" type="submit" style="margin-left: 5px;" onclick="return DoGrpPost();">Submit</button></div></td></tr>';
         grp++;
     }
-    nodegrp[ind] = nodegrp[ind] + '</select></td>';
+    nodegrp[ind] += '</select></td>';
 }
 
 function CreatePoll(ind) {
     var uc = 0;
     var sc = 0;
-    if (nodes[ind].values != null)
-        for (var i = 0; i < nodes[ind].values.length; i++) {
-            if (nodes[ind].values[i].genre == 'user')
+    var node = nodes[ind];
+    if (node.values != null)
+        for (var i = 0; i < node.values.length; i++) {
+            if (node.values[i].genre == 'user')
                 uc++;
-            if (nodes[ind].values[i].genre == 'system')
+            if (node.values[i].genre == 'system')
                 sc++;
         }
     if (uc > 0 || sc > 0)
-        nodepoll[ind] = '<tr><td style="float: right;"><label><span class="legend">Polling&nbsp;</span></label></td><td><select id="polled" style="margin-left: 5px;" onchange="return DoPoll();"><option value="0">User</option><option value="1">System</option></select></td><td><div id="nodepoll" name="nodepoll" style="float: left;"></div></td><td><button type="submit" style="margin-left: 5px; vertical-align: top;" onclick="return DoPollPost();">Submit</button></td></tr>';
+        nodepoll[ind] = '<tr><td style="float: right;"><label><span class="legend">Polling&nbsp;</span></label></td><td><select id="polled" style="margin-left: 5px;" onchange="return DoPoll();"><option value="0">User</option><option value="1">System</option></select></td><td><div id="nodepoll" name="nodepoll" style="float: left;"></div></td><td><button class="btn btn-default" type="submit" style="margin-left: 5px; vertical-align: top;" onclick="return DoPollPost();">Submit</button></td></tr>';
     else
         nodepoll[ind] = '';
     nodepollpoll[ind] = new Array(2);
@@ -1767,20 +1794,23 @@ function CreatePollPoll(genre, ind, cnt) {
         ind1 = 0;
     else
         ind1 = 1;
-    nodepollpoll[ind][ind1] = '<select id="polls" multiple size="4" style="vertical-align: top; margin-left: 5px;">';
+    var nodepoll = nodepollpoll[ind];
+    nodepoll[ind1] = '<select id="polls" multiple size="4" style="vertical-align: top; margin-left: 5px;">';
     if (cnt > 0) {
-        for (var i = 0; i < nodes[ind].values.length; i++) {
-            if (nodes[ind].values[i].genre != genre)
+        var node = nodes[ind];
+        for (var i = 0; i < node.values.length; i++) {
+            var value = node.values[i];
+            if (value.genre != genre)
                 continue;
-            if (nodes[ind].values[i].type == 'button')
+            if (value.type == 'button')
                 continue;
-            var vid = nodes[ind].id + '-' + nodes[ind].values[i].cclass + '-' + genre + '-' + nodes[ind].values[i].type + '-' + nodes[ind].values[i].instance + '-' + nodes[ind].values[i].index;
-            nodepollpoll[ind][ind1] = nodepollpoll[ind][ind1] + '<option id="' + vid + '"';
-            if (nodes[ind].values[i].polled)
-                nodepollpoll[ind][ind1] = nodepollpoll[ind][ind1] + ' selected="true"';
-            nodepollpoll[ind][ind1] = nodepollpoll[ind][ind1] + '>' + nodes[ind].values[i].label + '</option>';
+            var vid = node.id + '-' + value.cclass + '-' + genre + '-' + value.type + '-' + value.instance + '-' + value.index;
+            nodepoll[ind1] += '<option id="' + vid + '"';
+            if (value.polled)
+                nodepoll[ind1] += ' selected="true"';
+            nodepoll[ind1] += '>' + value.label + '</option>';
         }
-        nodepollpoll[ind][ind1] = nodepollpoll[ind][ind1] + '</select>';
+        nodepoll[ind1] += '</select>';
     } else
-        nodepollpoll[ind][ind1] = '';
+        nodepoll[ind1] = '';
 }
