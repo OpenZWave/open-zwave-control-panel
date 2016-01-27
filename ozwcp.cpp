@@ -770,7 +770,7 @@ int32 main(int32 argc, char* argv[])
 {
 	int32 i;
 	extern char *optarg;
-	long webport;
+	long webport = DEFAULT_PORT;
 	char *ptr;
 
 	while ((i = getopt(argc, argv, "dp:")) != EOF)
