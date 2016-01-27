@@ -106,7 +106,7 @@ static int web_send_data (struct MHD_Connection *connection, const char *data,
 	struct MHD_Response *response;
 	int ret;
 
-	response = MHD_create_response_from_data(strlen(data), (void *)data, free ? MHD_YES : MHD_NO, copy ? MHD_YES : MHD_NO);
+	response = MHD_create_response_from_buffer(strlen(data), (void *)data, (copy ? MHD_RESPMEM_MUST_COPY : (free ? MHD_RESPMEM_MUST_FREE : MHD_RESPMEM_PERSISTENT)));
 	if (response == NULL)
 		return MHD_NO;
 	if (ct != NULL)
@@ -161,7 +161,7 @@ int web_send_file (struct MHD_Connection *conn, const char *filename, const int 
 	if (stat(filename, &buf) == -1 ||
 			((fp = fopen(filename, "r")) == NULL)) {
 		if (strcmp(p, "xml") == 0)
-			response = MHD_create_response_from_data(0, (void *)"", MHD_NO, MHD_NO);
+			response = MHD_create_response_from_buffer(0, (void *)"", MHD_RESPMEM_MUST_COPY);
 		else {
 			int len = strlen(FNF) + strlen(filename) - 1; // len(%s) + 1 for \0
 			char *s = (char *)malloc(len);
@@ -170,7 +170,7 @@ int web_send_file (struct MHD_Connection *conn, const char *filename, const int 
 				exit(1);
 			}
 			snprintf(s, len, FNF, filename);
-			response = MHD_create_response_from_data(len, (void *)s, MHD_YES, MHD_NO); // free
+			response = MHD_create_response_from_buffer(len, (void *)s, MHD_RESPMEM_MUST_FREE); // free
 		}
 	} else
 		response = MHD_create_response_from_callback(buf.st_size, 32 * 1024, &web_read_file, fp,
