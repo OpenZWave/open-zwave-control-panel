@@ -414,7 +414,7 @@ MyValue *MyNode::lookup (string data)
 /*
  * Returns a count of values
  */
-int32 MyNode::getValueCount ()
+uint16 MyNode::getValueCount ()
 {
 	return values.size();
 }
@@ -422,7 +422,7 @@ int32 MyNode::getValueCount ()
 /*
  * Returns an n'th value
  */
-MyValue *MyNode::getValue (uint8 n)
+MyValue *MyNode::getValue (uint16 n)
 {
 	if (n < values.size())
 		return values[n];

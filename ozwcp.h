@@ -88,9 +88,9 @@ public:
   void addValue(ValueID id);
   void removeValue(ValueID id);
   void saveValue(ValueID id);
-  int32 getValueCount();
+  uint16 getValueCount();
   static MyValue *lookup(string id);
-  MyValue *getValue(uint8 n);
+  MyValue *getValue(uint16 n);
   uint32 getTime() { return mtime; }
   void setTime(uint32 t) { mtime = t; }
   static bool getAnyChanged() { return nodechanged; }
