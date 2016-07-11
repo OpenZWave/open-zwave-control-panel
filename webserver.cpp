@@ -219,13 +219,13 @@ void Webserver::web_get_groups (int n, TiXmlElement *ep)
 
 /*
  * web_get_values
- * Retreive class values based on genres
+ * Retrieve class values based on genres
  */
 void Webserver::web_get_values (int i, TiXmlElement *ep)
 {
-	int32 idcnt = nodes[i]->getValueCount();
+	uint16 idcnt = nodes[i]->getValueCount();
 
-	for (int j = 0; j < idcnt; j++) {
+	for (uint16 j = 0; j < idcnt; j++) {
 		TiXmlElement* valueElement = new TiXmlElement("value");
 		MyValue *vals = nodes[i]->getValue(j);
 		ValueID id = vals->getId();
