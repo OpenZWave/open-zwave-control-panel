@@ -51,6 +51,7 @@
 using namespace OpenZWave;
 
 #define MAX_NODES 255
+#define DEFAULT_PORT 8090
 
 extern const char *valueGenreStr(ValueID::ValueGenre);
 extern ValueID::ValueGenre valueGenreNum(char const *);
