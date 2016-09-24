@@ -58,6 +58,7 @@ class Webserver {
 		void web_get_groups(int i, TiXmlElement *ep);
 		void web_get_values(int i, TiXmlElement *ep);
 		int SendPollResponse(struct MHD_Connection *conn);
+		int SendDeviceListResponse(struct MHD_Connection *conn);
 		const char *SendSceneResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
 		const char *SendTopoResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
 		const char *SendStatResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);

@@ -46,7 +46,7 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     </head>
-    <body onload="return BED();" onmousemove="PosToolTip(event);">
+    <body onload="GetDefaultDevice();" onmousemove="PosToolTip(event);">
         <h1 id="title">OpenZWave Control Panel</h1>
         <div class="container-fluid">
             <div class="col-xs-6 col-sm-4">
@@ -78,6 +78,7 @@
                     <div style="float: right; padding-right: 7px;">
                         <button class="btn btn-default" name="close" type="button" style="text-align: left;" onclick=" return DoDevPost('close');">Close</button>
                     </div>
+
                 </form>
             </div>
             <div class="col-xs-6 col-sm-4">
