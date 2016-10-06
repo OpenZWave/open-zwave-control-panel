@@ -71,6 +71,30 @@ if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
     racphttp = new ActiveXObject("Microsoft.XMLHTTP");
 }
 
+function GetDefaultDevice() {
+    var devhttp;
+    if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
+        devhttp = new XMLHttpRequest();
+    } else {
+        devhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    devhttp.onreadystatechange = function() {
+        if (devhttp.readyState==4 && devhttp.status==200){
+            if (devhttp.responseText == 'NULL')
+                document.DevPost.devname.value = '';
+            else
+                document.DevPost.devname.value = devhttp.responseText;
+        }
+        BED();
+    }
+    devhttp.open("GET", "currdev", true);
+    if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
+            devhttp.send(null);
+    } else { // code for IE6, IE5
+            devhttp.send();
+    }
+}
+
 function OptionGroup(label, disabled) {
     var element = document.createElement('optgroup');
     if (disabled !== undefined) element.disabled = disabled;
@@ -391,8 +415,7 @@ function PollReply() {
 
 function BED() {
     var forms = document.forms;
-    var off = false;
-    (document.DevPost.devname.value.length == 0) && !document.DevPost.usbb.checked;
+    var off = (document.DevPost.devname.value.length == 0) && !document.DevPost.usbb.checked;
     var info;
 
     tt.setAttribute('id', 'tt');

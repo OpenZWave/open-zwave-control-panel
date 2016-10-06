@@ -806,6 +806,113 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
 	ret = web_send_file(conn, fn, MHD_HTTP_OK, true);
 	return ret;
 }
+/*
+ * SendDeviceListResponse
+ * Process request for Device List from client and return
+ * data as xml.
+ */
+int Webserver::SendDeviceListResponse (struct MHD_Connection *conn)
+{
+	TiXmlDocument doc;
+	char str[16];
+	int32 i, j;
+	char fntemp[32];
+	char *fn;
+	int32 ret;
+
+	TiXmlDeclaration* decl = new TiXmlDeclaration( "1.0", "utf-8", "" );
+	doc.LinkEndChild(decl);
+	TiXmlElement* pollElement = new TiXmlElement("devices");
+	doc.LinkEndChild(pollElement);
+	if (homeId != 0L)
+		snprintf(str, sizeof(str), "%08x", homeId);
+	else
+		str[0] = '\0';
+	pollElement->SetAttribute("homeid", str);
+	if (nodeId != 0)
+		snprintf(str, sizeof(str), "%d", nodeId);
+	else
+		str[0] = '\0';
+	pollElement->SetAttribute("nodeid", str);
+	snprintf(str, sizeof(str), "%d", SUCnodeId);
+	pollElement->SetAttribute("sucnodeid", str);
+	pollElement->SetAttribute("nodecount", MyNode::getNodeCount());
+	pollElement->SetAttribute("cmode", cmode);
+	pollElement->SetAttribute("save", needsave);
+	pollElement->SetAttribute("noop", noop);
+
+	pthread_mutex_lock(&nlock);
+		i = 0;
+		j = 1;
+		while (j <= MyNode::getNodeCount() && i < MAX_NODES) {
+			if (nodes[i] != NULL) {
+				bool listening;
+				bool flirs;
+				bool zwaveplus;
+				TiXmlElement* nodeElement = new TiXmlElement("node");
+				pollElement->LinkEndChild(nodeElement);
+				nodeElement->SetAttribute("id", i);
+				zwaveplus = Manager::Get()->IsNodeZWavePlus(homeId, i);
+				if (zwaveplus) {
+					string value = Manager::Get()->GetNodePlusTypeString(homeId, i);
+					value += " " + Manager::Get()->GetNodeRoleString(homeId, i);
+					nodeElement->SetAttribute("btype", value.c_str());
+					nodeElement->SetAttribute("gtype", Manager::Get()->GetNodeDeviceTypeString(homeId, i).c_str());
+				} else {
+					nodeElement->SetAttribute("btype", nodeBasicStr(Manager::Get()->GetNodeBasic(homeId, i)));
+					nodeElement->SetAttribute("gtype", Manager::Get()->GetNodeType(homeId, i).c_str());
+				}
+				nodeElement->SetAttribute("name", Manager::Get()->GetNodeName(homeId, i).c_str());
+				nodeElement->SetAttribute("location", Manager::Get()->GetNodeLocation(homeId, i).c_str());
+				nodeElement->SetAttribute("manufacturer", Manager::Get()->GetNodeManufacturerName(homeId, i).c_str());
+				nodeElement->SetAttribute("product", Manager::Get()->GetNodeProductName(homeId, i).c_str());
+				listening = Manager::Get()->IsNodeListeningDevice(homeId, i);
+				nodeElement->SetAttribute("listening", listening ? "true" : "false");
+				flirs = Manager::Get()->IsNodeFrequentListeningDevice(homeId, i);
+				nodeElement->SetAttribute("frequent", flirs ? "true" : "false");
+				nodeElement->SetAttribute("zwaveplus", zwaveplus ? "true" : "false");
+				nodeElement->SetAttribute("beam", Manager::Get()->IsNodeBeamingDevice(homeId, i) ? "true" : "false");
+				nodeElement->SetAttribute("routing", Manager::Get()->IsNodeRoutingDevice(homeId, i) ? "true" : "false");
+				nodeElement->SetAttribute("security", Manager::Get()->IsNodeSecurityDevice(homeId, i) ? "true" : "false");
+#if 0
+				fprintf(stderr, "i=%d failed=%d\n", i, Manager::Get()->IsNodeFailed(homeId, i));
+				fprintf(stderr, "i=%d awake=%d\n", i, Manager::Get()->IsNodeAwake(homeId, i));
+				fprintf(stderr, "i=%d state=%s\n", i, Manager::Get()->GetNodeQueryStage(homeId, i).c_str());
+				fprintf(stderr, "i=%d listening=%d flirs=%d\n", i, listening, flirs);
+#endif
+				if (Manager::Get()->IsNodeFailed(homeId, i))
+					nodeElement->SetAttribute("status", "Dead");
+				else {
+					string s = Manager::Get()->GetNodeQueryStage(homeId, i);
+					if (s == "Complete") {
+						if (i != nodeId && !listening && !flirs)
+							nodeElement->SetAttribute("status", Manager::Get()->IsNodeAwake(homeId, i) ? "Awake" : "Sleeping" );
+						else
+							nodeElement->SetAttribute("status", "Ready");
+					} else {
+						if (i != nodeId && !listening && !flirs)
+							s = s + (Manager::Get()->IsNodeAwake(homeId, i) ? " (awake)" : " (sleeping)");
+						nodeElement->SetAttribute("status", s.c_str());
+					}
+				}
+				web_get_groups(i, nodeElement);
+				web_get_values(i, nodeElement);
+				j++;
+			}
+			i++;
+		}
+	pthread_mutex_unlock(&nlock);
+	strncpy(fntemp, "/tmp/ozwcp.devices.XXXXXX", sizeof(fntemp));
+	fn = mktemp(fntemp);
+	if (fn == NULL)
+		return MHD_YES;
+	strncat(fntemp, ".xml", sizeof(fntemp));
+	if (debug)
+		doc.Print(stdout, 0);
+	doc.SaveFile(fn);
+	ret = web_send_file(conn, fn, MHD_HTTP_OK, true);
+	return ret;
+}
 
 /*
  * web_controller_update
@@ -1028,6 +1135,10 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 			ret = web_send_file(conn, "openzwavetinyicon.png", MHD_HTTP_OK, false);
 		else if (strcmp(url, "/poll.xml") == 0 && (devname != NULL || usb))
 			ret = SendPollResponse(conn);
+		else if (strcmp(url, "/devices.xml") == 0 && (devname != NULL || usb))
+			ret = SendDeviceListResponse(conn);
+		else if (strcmp(url, "/currdev") == 0) 
+			ret = web_send_data(conn, devname ? devname : "NULL", MHD_HTTP_OK, false, false, "text/pain"); // no free, no copy
 		else
 			ret = web_send_data(conn, UNKNOWN, MHD_HTTP_NOT_FOUND, false, false, NULL); // no free, no copy
 		return ret;
@@ -1412,6 +1523,21 @@ Webserver::Webserver (int const wport) : sortcol(COL_NODE), logbytes(0), adminst
 	if (wdata != NULL) {
 		ready = true;
 	}
+	if (devname == NULL){
+		char* default_device;
+		default_device = getenv("OZW_DEFAULT_DEVICE");
+		if (	(default_device != NULL) &&
+			(strcmp(default_device, "") != 0)){
+			devname = (char *)malloc(strlen(default_device) + 1);
+			if (devname == NULL) {
+				fprintf(stderr, "Out of memory open devname\n");
+				exit(1);
+			}
+			usb=false;
+			strcpy(devname, default_device);
+			Manager::Get()->AddDriver(devname);
+		}
+	}
 }
 
 /*
@@ -1426,4 +1552,13 @@ Webserver::~Webserver ()
 		wdata = NULL;
 		ready = false;
 	}
+	pthread_mutex_lock(&glock);
+	if (devname != NULL || usb) {
+		Manager::Get()->RemoveDriver(devname ? devname : "HID Controller");
+		free(devname);
+		devname = NULL;
+		homeId = 0;
+		usb = false;
+	}
+	pthread_mutex_unlock(&glock);
 }
