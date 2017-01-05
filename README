@@ -68,7 +68,7 @@ run it as root depending on the port number you use.
 CAVEATS
 
 This is an alpha release at best. It has only ever worked in a single
-envionment. Please report bugs to the OpenZWave google groups mailing list:
+environment. Please report bugs to the OpenZWave google groups mailing list:
 http://groups.google.com/group/openzwave.
 
 See the file TODO for a list of things on the to do list.
