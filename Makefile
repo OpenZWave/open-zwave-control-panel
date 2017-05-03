@@ -34,14 +34,13 @@ INCLUDES := -I $(OPENZWAVE)/cpp/src -I $(OPENZWAVE)/cpp/src/command_classes/ \
 #GNUTLS := -lgnutls
 
 
+LIBZWAVE := $(wildcard $(OPENZWAVE)/*.a)
 ifeq ($(UNAME), Darwin)
-	LIBZWAVE := $(wildcard $(OPENZWAVE)/cpp/lib/mac/*.a)
 	LIBUSB := -framework IOKit -framework CoreFoundation
 	LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB) $(ARCH) -lresolv
 else
 	ARCH := -arch i386 -arch x86_64
 	CFLAGS += $(ARCH)
-	LIBZWAVE := $(wildcard $(OPENZWAVE)/*.a)
 	LIBUSB := -ludev
 	LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB) -lresolv
 endif
@@ -52,14 +51,7 @@ endif
 %.o : %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $<
 
-all: defs ozwcp
-
-
-defs:
-ifeq ($(LIBZWAVE),)
-	@echo Please edit the Makefile to avoid this error message.
-	@exit 1
-endif
+all: ozwcp
 
 ozwcp.o: ozwcp.h webserver.h $(OPENZWAVE)/cpp/src/Options.h $(OPENZWAVE)/cpp/src/Manager.h \
 	$(OPENZWAVE)/cpp/src/Node.h $(OPENZWAVE)/cpp/src/Group.h \
