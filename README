@@ -34,16 +34,6 @@ optional.
 All three of these installations should share live in the same directory
 (share a common parent). The ozwcp Makefile assumes this.
 
-See Makefile for comments about Mac OS X support. Note: Makefile is
-configured to build on Mac OS X; to build on Linux, you will need to
-comment out lines under
-
-  # for Mac OS X comment
-
-and uncomment lines under
-
-  # for Linux uncomment
-
 Currently Windows is not supported. It should be possible to port this
 to the Window's cygwin environment if anyone is interested in pursing that
 option.
