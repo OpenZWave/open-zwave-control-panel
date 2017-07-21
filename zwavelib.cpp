@@ -93,6 +93,8 @@ const char *valueTypeStr (ValueID::ValueType vt)
     return "button";
   case ValueID::ValueType_Raw:
     return "raw";
+  case ValueID::ValueType_BitSet:
+	return "bitset";
   }
   return "unknown";
 }
@@ -119,6 +121,8 @@ ValueID::ValueType valueTypeNum (char const *str)
     return ValueID::ValueType_Button;
   else if (strcmp(str, "raw") == 0)
     return ValueID::ValueType_Raw;
+  else if (strcmp(str, "bitset") == 0)
+	return ValueID::ValueType_BitSet;
   else
     return (ValueID::ValueType)255;
 }
