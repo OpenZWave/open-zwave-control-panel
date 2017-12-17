@@ -106,11 +106,11 @@ public:
   void updateGroup(uint8 node, uint8 grp, char *glist);
   uint8 numGroups() { return groups.size(); }
   void updatePoll(char *ilist, char *plist);
+  int32 type;
 private:
   ~MyNode();
   void newGroup(uint8 n);
   static int32 nodecount;
-  int32 type;
   uint32 mtime;
   bool changed;
   static bool nodechanged;

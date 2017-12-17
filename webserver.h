@@ -48,6 +48,7 @@ class Webserver {
 		void setAdminFunction (string msg) { adminfun = msg; }
 		string getAdminMessage() { return adminmsg; }
 		void setAdminMessage (string msg) { adminmsg = msg; }
+		coltype_t sortcol;
 	private:
 		static int HandlerEP(void *cls, struct MHD_Connection *conn, const char *url, const char *method,
 				const char *version, const char *up_data, size_t *up_data_size, void **ptr);
@@ -68,7 +69,6 @@ class Webserver {
 		static char *devname;
 		static unsigned short port;
 		static bool ready;
-		coltype_t sortcol;
 		unsigned long logbytes;
 		bool adminstate;
 		string adminmsg;
