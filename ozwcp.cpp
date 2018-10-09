@@ -772,8 +772,10 @@ int32 main(int32 argc, char* argv[])
 	extern char *optarg;
 	long webport = DEFAULT_PORT;
 	char *ptr;
+	std::string configpath = "./config/";
+	std::string userpath = "";
 
-	while ((i = getopt(argc, argv, "dp:")) != EOF)
+	while ((i = getopt(argc, argv, "dp:c:u:")) != EOF)
 		switch (i) {
 			case 'd':
 				debug = 1;
@@ -783,16 +785,26 @@ int32 main(int32 argc, char* argv[])
 				if (ptr == optarg)
 					goto bad;
 				break;
+			case 'c':
+				configpath = std::string(optarg);
+				if (ptr == optarg)
+					goto bad;
+				break;
+			case 'u':
+				userpath = std::string(optarg);
+				if (ptr == optarg)
+					goto bad;
+				break;
 			default:
 				bad:
-				fprintf(stderr, "usage: ozwcp [-d] -p <port>\n");
+				fprintf(stderr, "usage: ozwcp [-d] -p <port> [-u <user dir>] [-c <config dir>]\n");
 			exit(1);
 		}
 
 	for (i = 0; i < MAX_NODES; i++)
 		nodes[i] = NULL;
 
-	Options::Create("./config/", "", "--SaveConfiguration=true --DumpTriggerLevel=0");
+	Options::Create(configpath, userpath, "--SaveConfiguration=true --DumpTriggerLevel=0");
 	Options::Get()->Lock();
 
 	Manager::Create();
