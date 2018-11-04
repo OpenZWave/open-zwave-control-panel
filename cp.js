@@ -288,7 +288,7 @@ function PollReply() {
                         }
                     } else if (node_values.type == 'bitset') {
                     	var bits = values.getElementsByTagName('bitset');
-                    	alert(bits);
+                    	alert("BitSet ValueID Not Implemented in JavaScript. Please Help us out if you can!");
  //                   	for (var l = 0; l < bits.length; l++) {
  //                   		alert(bits[l].getAttribute('label');
  //                   	}

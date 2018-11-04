@@ -260,20 +260,26 @@ void Webserver::web_get_values (int i, TiXmlElement *ep)
 				itemElement->LinkEndChild(textElement);
 			}
 		} else if (id.GetType() == ValueID::ValueType_BitSet) {
+			std::cout << "BitSet is Todo Task - This is what is sent to the JavaScript:" << std::endl;
+			std::cout << "Label: " << Manager::Get()->GetValueLabel(id) << std::endl;
+			std::cout << "\t Help: " << Manager::Get()->GetValueHelp(id) << std::endl;
+			std::cout << "\t Items: " << std::endl;
 			int32 bitmask;
 			Manager::Get()->GetBitMask(id, &bitmask);
 			for (uint32 i = 1; i < sizeof(int32)*8; i++) {
 				if (bitmask & (1 << (i -1))) {
 					TiXmlElement* itemElement = new TiXmlElement("bitset");
 					valueElement->LinkEndChild(itemElement);
-					itemElement->SetAttribute("label",  Manager::Get()->GetValueLabel(id, i).c_str());
+					itemElement->SetAttribute("Label",  Manager::Get()->GetValueLabel(id, i).c_str());
 					itemElement->SetAttribute("help",  Manager::Get()->GetValueHelp(id, i).c_str());
 					itemElement->SetAttribute("id",  i);
 					bool val;
 					Manager::Get()->GetValueAsBitSet(id, i, &val);
 					itemElement->SetAttribute("value",  val ? "true" : "false");
 					string str;
-					std::cout << "Pos: " << i << " " << Manager::Get()->GetValueLabel(id, i) << std::endl;
+					std::cout << "\t\tPos: " << i << std::endl;
+					std::cout << "\t\tLabel" << Manager::Get()->GetValueLabel(id, i) << std::endl;
+					std::cout << "\t\tHelp" << Manager::Get()->GetValueHelp(id, i) << std::endl;
 				}
 			}
 
