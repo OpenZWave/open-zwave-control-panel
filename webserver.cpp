@@ -260,12 +260,16 @@ void Webserver::web_get_values (int i, TiXmlElement *ep)
 				itemElement->LinkEndChild(textElement);
 			}
 		} else if (id.GetType() == ValueID::ValueType_BitSet) {
+			int32 fval;
 			std::cout << "BitSet is Todo Task - This is what is sent to the JavaScript:" << std::endl;
 			std::cout << "Label: " << Manager::Get()->GetValueLabel(id) << std::endl;
 			std::cout << "\t Help: " << Manager::Get()->GetValueHelp(id) << std::endl;
-			std::cout << "\t Items: " << std::endl;
+			Manager::Get()->GetValueAsInt(id, &fval);
+			std::cout << "\t Value: " << fval << std::endl;
 			int32 bitmask;
 			Manager::Get()->GetBitMask(id, &bitmask);
+			std::cout << "\t Mask: " << bitmask << std::endl;
+			std::cout << "\t Items: " << std::endl;
 			for (uint32 i = 1; i < sizeof(int32)*8; i++) {
 				if (bitmask & (1 << (i -1))) {
 					TiXmlElement* itemElement = new TiXmlElement("bitset");
@@ -278,12 +282,26 @@ void Webserver::web_get_values (int i, TiXmlElement *ep)
 					itemElement->SetAttribute("value",  val ? "true" : "false");
 					string str;
 					std::cout << "\t\tPos: " << i << std::endl;
-					std::cout << "\t\tLabel" << Manager::Get()->GetValueLabel(id, i) << std::endl;
-					std::cout << "\t\tHelp" << Manager::Get()->GetValueHelp(id, i) << std::endl;
+					std::cout << "\t\tLabel: " << Manager::Get()->GetValueLabel(id, i) << std::endl;
+					std::cout << "\t\tHelp: " << Manager::Get()->GetValueHelp(id, i) << std::endl;
+					std::cout << "\t\tValue: " << string(val ? "true" : "false") << std::endl;
 				}
 			}
-
-
+#if 0
+			if (id.GetIndex() == 101) {
+				bool val;
+				Manager::Get()->GetValueAsBitSet(id, 1, &val);
+				if (val == false)
+					Manager::Get()->SetValue(id, 225);
+				else { 
+					Manager::Get()->SetValue(id, 1, true);
+					Manager::Get()->SetValue(id, 5, false);
+					Manager::Get()->SetValue(id, 6, true);
+					Manager::Get()->SetValue(id, 7, false);
+					Manager::Get()->SetValue(id, 8, true);
+				}
+			}
+#endif
 		} else {
 			string str;
 			TiXmlText *textElement;

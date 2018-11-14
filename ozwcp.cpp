@@ -297,7 +297,7 @@ void MyNode::updateGroup (uint8 node, uint8 grp, char *glist)
 		if (j >= n) {
 			int nodeId = 0,  instance = 0;
 			sscanf(nit->c_str(),"%d.%d", &nodeId, &instance);
-			Manager::Get()->RemoveAssociation(homeId, node, grp, nodeId, instance);
+//			Manager::Get()->RemoveAssociation(homeId, node, grp, nodeId, instance);
 		}
 	}
 }
@@ -495,6 +495,13 @@ void OnNotification (Notification const* _notification, void* _context)
 					_notification->GetHomeId(), _notification->GetNodeId(),
 					valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
 					id.GetIndex(), valueTypeStr(id.GetType()));
+			if (id.GetType() == OpenZWave::ValueID::ValueType_List) {
+				string selection;
+				int32 item;
+				Manager::Get()->GetValueListSelection(id, &selection);
+				Manager::Get()->GetValueListSelection(id, &item);
+				std::cout << "List Item: " << item << " Selection: " << selection << std::endl;
+			}
 			pthread_mutex_lock(&nlock);
 			nodes[_notification->GetNodeId()]->saveValue(id);
 			pthread_mutex_unlock(&nlock);
