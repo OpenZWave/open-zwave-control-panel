@@ -361,7 +361,7 @@ MyValue *MyNode::lookup (string data)
 	uint8 node = 0;
 	uint8 cls;
 	uint8 inst;
-	uint8 ind;
+	uint16 ind;
 	ValueID::ValueGenre vg;
 	ValueID::ValueType typ;
 	size_t pos1, pos2;
