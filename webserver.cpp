@@ -334,11 +334,11 @@ const char *Webserver::SendTopoResponse (struct MHD_Connection *conn, const char
 			i++;
 		}
 	}
-	strncpy(fntemp, "/tmp/ozwcp.topo.XXXXXX", sizeof(fntemp));
+	strncpy(fntemp, "/tmp/ozwcp.topo.XXXXXX", sizeof(fntemp) - 1);
 	fn = mktemp(fntemp);
 	if (fn == NULL)
 		return EMPTY;
-	strncat(fntemp, ".xml", sizeof(fntemp));
+	strncat(fntemp, ".xml", sizeof(fntemp) - strlen(fntemp) - 1);
 	if (debug)
 		doc.Print(stdout, 0);
 	doc.SaveFile(fn);
@@ -462,11 +462,11 @@ const char *Webserver::SendStatResponse (struct MHD_Connection *conn, const char
 			i++;
 		}
 	}
-	strncpy(fntemp, "/tmp/ozwcp.stat.XXXXXX", sizeof(fntemp));
+	strncpy(fntemp, "/tmp/ozwcp.stat.XXXXXX", sizeof(fntemp) - 1);
 	fn = mktemp(fntemp);
 	if (fn == NULL)
 		return EMPTY;
-	strncat(fntemp, ".xml", sizeof(fntemp));
+	strncat(fntemp, ".xml", sizeof(fntemp) - strlen(fntemp) - 1);
 	if (debug)
 		doc.Print(stdout, 0);
 	doc.SaveFile(fn);
@@ -514,11 +514,11 @@ const char *Webserver::SendTestHealResponse (struct MHD_Connection *conn, const 
 			Manager::Get()->HealNetworkNode(homeId, node, healrrs);
 	}
 
-	strncpy(fntemp, "/tmp/ozwcp.testheal.XXXXXX", sizeof(fntemp));
+	strncpy(fntemp, "/tmp/ozwcp.testheal.XXXXXX", sizeof(fntemp) - 1);
 	fn = mktemp(fntemp);
 	if (fn == NULL)
 		return EMPTY;
-	strncat(fntemp, ".xml", sizeof(fntemp));
+	strncat(fntemp, ".xml", sizeof(fntemp) - strlen(fntemp) - 1);
 	if (debug)
 		doc.Print(stdout, 0);
 	doc.SaveFile(fn);
@@ -628,11 +628,11 @@ const char *Webserver::SendSceneResponse (struct MHD_Connection *conn, const cha
 			scenesElement->LinkEndChild(valueElement);
 		}
 	}
-	strncpy(fntemp, "/tmp/ozwcp.scenes.XXXXXX", sizeof(fntemp));
+	strncpy(fntemp, "/tmp/ozwcp.scenes.XXXXXX", sizeof(fntemp) - 1);
 	fn = mktemp(fntemp);
 	if (fn == NULL)
 		return EMPTY;
-	strncat(fntemp, ".xml", sizeof(fntemp));
+	strncat(fntemp, ".xml", sizeof(fntemp) - strlen(fntemp) - 1);
 	if (debug)
 		doc.Print(stdout, 0);
 	doc.SaveFile(fn);
@@ -795,11 +795,11 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
 		}
 	}
 	pthread_mutex_unlock(&nlock);
-	strncpy(fntemp, "/tmp/ozwcp.poll.XXXXXX", sizeof(fntemp));
+	strncpy(fntemp, "/tmp/ozwcp.poll.XXXXXX", sizeof(fntemp) - 1);
 	fn = mktemp(fntemp);
 	if (fn == NULL)
 		return MHD_YES;
-	strncat(fntemp, ".xml", sizeof(fntemp));
+	strncat(fntemp, ".xml", sizeof(fntemp) - strlen(fntemp) - 1);
 	if (debug)
 		doc.Print(stdout, 0);
 	doc.SaveFile(fn);
@@ -906,7 +906,7 @@ int Webserver::SendDeviceListResponse (struct MHD_Connection *conn)
 	fn = mktemp(fntemp);
 	if (fn == NULL)
 		return MHD_YES;
-	strncat(fntemp, ".xml", sizeof(fntemp));
+	strncat(fntemp, ".xml", sizeof(fntemp) - strlen(fntemp) - 1);
 	if (debug)
 		doc.Print(stdout, 0);
 	doc.SaveFile(fn);
