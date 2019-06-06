@@ -1277,7 +1277,7 @@ function CreateOnOff(i, j, vid) {
     if (value.help.length > 0)
         data += ' onmouseover="ShowToolTip(\'' + quotestring(value.help) + '\',0);" onmouseout="HideToolTip();"';
     data += '>';
-    if (value.value == 'True')
+    if (value.value.substr(0,4) == 'True')
         data += '<option value="off">Off</option><option value="on" selected="true">On</option>';
     else
         data += '<option value="off" selected="true">Off</option><option value="on">On</option>';

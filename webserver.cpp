@@ -846,7 +846,11 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
 		return MHD_YES;
 	strncat(fntemp, ".xml", sizeof(fntemp));
 	if (debug)
-		doc.Print(stdout, 0);
+		// replaced TinyXML .print by SaveFile because the do not use the
+		// same formatting, and SaveFile is used to send data to the browser
+		// used to detect extra LF in value, fixed in cp.js CreateOnOff like this:
+		// value.value.substr(0,4) == 'True'
+		doc.SaveFile(stdout);
 	doc.SaveFile(fn);
 	ret = web_send_file(conn, fn, MHD_HTTP_OK, true);
 	return ret;
