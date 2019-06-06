@@ -240,13 +240,14 @@ void Webserver::web_get_values (int i, TiXmlElement *ep)
 		valueElement->SetAttribute("class", cclassStr(id.GetCommandClassId()));
 		valueElement->SetAttribute("instance", id.GetInstance());
 		valueElement->SetAttribute("index", id.GetIndex());
-		valueElement->SetAttribute("label", Manager::Get()->GetValueLabel(id).c_str());
 		valueElement->SetAttribute("units", Manager::Get()->GetValueUnits(id).c_str());
+		valueElement->SetAttribute("label", Manager::Get()->GetValueLabel(id).c_str());
 		valueElement->SetAttribute("readonly", Manager::Get()->IsValueReadOnly(id) ? "true" : "false");
 		if (id.GetGenre() != ValueID::ValueGenre_Config)
 			valueElement->SetAttribute("polled", Manager::Get()->isPolled(id) ? "true" : "false");
 		if (id.GetType() == ValueID::ValueType_List) {
 			vector<string> strs;
+
 			Manager::Get()->GetValueListItems(id, &strs);
 			valueElement->SetAttribute("count", strs.size());
 			string str;
@@ -258,6 +259,49 @@ void Webserver::web_get_values (int i, TiXmlElement *ep)
 				TiXmlText *textElement = new TiXmlText((*it).c_str());
 				itemElement->LinkEndChild(textElement);
 			}
+		} else if (id.GetType() == ValueID::ValueType_BitSet) {
+			int32 fval;
+			std::cout << "BitSet is Todo Task - This is what is sent to the JavaScript:" << std::endl;
+			std::cout << "Label: " << Manager::Get()->GetValueLabel(id) << std::endl;
+			std::cout << "\t Help: " << Manager::Get()->GetValueHelp(id) << std::endl;
+			Manager::Get()->GetValueAsInt(id, &fval);
+			std::cout << "\t Value: " << fval << std::endl;
+			int32 bitmask;
+			Manager::Get()->GetBitMask(id, &bitmask);
+			std::cout << "\t Mask: " << bitmask << std::endl;
+			std::cout << "\t Items: " << std::endl;
+			for (uint32 i = 1; i < sizeof(int32)*8; i++) {
+				if (bitmask & (1 << (i -1))) {
+					TiXmlElement* itemElement = new TiXmlElement("bitset");
+					valueElement->LinkEndChild(itemElement);
+					itemElement->SetAttribute("Label",  Manager::Get()->GetValueLabel(id, i).c_str());
+					itemElement->SetAttribute("help",  Manager::Get()->GetValueHelp(id, i).c_str());
+					itemElement->SetAttribute("id",  i);
+					bool val;
+					Manager::Get()->GetValueAsBitSet(id, i, &val);
+					itemElement->SetAttribute("value",  val ? "true" : "false");
+					string str;
+					std::cout << "\t\tPos: " << i << std::endl;
+					std::cout << "\t\tLabel: " << Manager::Get()->GetValueLabel(id, i) << std::endl;
+					std::cout << "\t\tHelp: " << Manager::Get()->GetValueHelp(id, i) << std::endl;
+					std::cout << "\t\tValue: " << string(val ? "true" : "false") << std::endl;
+				}
+			}
+#if 0
+			if (id.GetIndex() == 101) {
+				bool val;
+				Manager::Get()->GetValueAsBitSet(id, 1, &val);
+				if (val == false)
+					Manager::Get()->SetValue(id, 225);
+				else { 
+					Manager::Get()->SetValue(id, 1, true);
+					Manager::Get()->SetValue(id, 5, false);
+					Manager::Get()->SetValue(id, 6, true);
+					Manager::Get()->SetValue(id, 7, false);
+					Manager::Get()->SetValue(id, 8, true);
+				}
+			}
+#endif
 		} else {
 			string str;
 			TiXmlText *textElement;
@@ -525,6 +569,7 @@ const char *Webserver::SendTestHealResponse (struct MHD_Connection *conn, const 
 	return fn;
 }
 
+#if 0
 /*
  * SendSceneResponse
  * Process scene request and return appropiate scene data
@@ -638,7 +683,7 @@ const char *Webserver::SendSceneResponse (struct MHD_Connection *conn, const cha
 	doc.SaveFile(fn);
 	return fn;
 }
-
+#endif
 /*
  * SendPollResponse
  * Process poll request from client and return
@@ -801,7 +846,11 @@ int Webserver::SendPollResponse (struct MHD_Connection *conn)
 		return MHD_YES;
 	strncat(fntemp, ".xml", sizeof(fntemp));
 	if (debug)
-		doc.Print(stdout, 0);
+		// replaced TinyXML .print by SaveFile because the do not use the
+		// same formatting, and SaveFile is used to send data to the browser
+		// used to detect extra LF in value, fixed in cp.js CreateOnOff like this:
+		// value.value.substr(0,4) == 'True'
+		doc.SaveFile(stdout);
 	doc.SaveFile(fn);
 	ret = web_send_file(conn, fn, MHD_HTTP_OK, true);
 	return ret;
@@ -1036,6 +1085,7 @@ int web_config_post (void *cls, enum MHD_ValueKind kind, const char *key, const 
 	} else if (strcmp(cp->conn_url, "/savepost.html") == 0) {
 		if (strcmp(key, "fun") == 0)
 			cp->conn_arg1 = (void *)strdup(data);
+#if 0
 	} else if (strcmp(cp->conn_url, "/scenepost.html") == 0) {
 		if (strcmp(key, "fun") == 0)
 			cp->conn_arg1 = (void *)strdup(data);
@@ -1047,6 +1097,7 @@ int web_config_post (void *cls, enum MHD_ValueKind kind, const char *key, const 
 			cp->conn_arg3 = (void *)strdup(data);
 		else if (strcmp(key, "value") == 0)
 			cp->conn_arg4 = (void *)strdup(data);
+#endif
 	} else if (strcmp(cp->conn_url, "/topopost.html") == 0) {
 		if (strcmp(key, "fun") == 0)
 			cp->conn_arg1 = (void *)strdup(data);
@@ -1127,8 +1178,10 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 		if (strcmp(url, "/") == 0 ||
 				strcmp(url, "/index.html") == 0)
 			ret = web_send_file(conn, "cp.html", MHD_HTTP_OK, false);
+#if 0
 		else if (strcmp(url, "/scenes.html") == 0)
 			ret = web_send_file(conn, "scenes.html", MHD_HTTP_OK, false);
+#endif
 		else if (strcmp(url, "/cp.js") == 0)
 			ret = web_send_file(conn, "cp.js", MHD_HTTP_OK, false);
 		else if (strcmp(url, "/favicon.png") == 0)
@@ -1228,6 +1281,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 				return MHD_YES;
 			} else
 				ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
+#if 0
 		} else if (strcmp(url, "/scenepost.html") == 0) {
 			if (*up_data_size != 0) {
 				MHD_post_process(cp->conn_pp, up_data, *up_data_size);
@@ -1237,6 +1291,7 @@ int Webserver::Handler (struct MHD_Connection *conn, const char *url,
 				return MHD_YES;
 			} else
 				ret = web_send_file(conn, (char *)cp->conn_res, MHD_HTTP_OK, true);
+#endif
 		} else if (strcmp(url, "/topopost.html") == 0) {
 			if (*up_data_size != 0) {
 				MHD_post_process(cp->conn_pp, up_data, *up_data_size);

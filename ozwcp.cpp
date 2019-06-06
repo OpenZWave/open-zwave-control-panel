@@ -297,7 +297,7 @@ void MyNode::updateGroup (uint8 node, uint8 grp, char *glist)
 		if (j >= n) {
 			int nodeId = 0,  instance = 0;
 			sscanf(nit->c_str(),"%d.%d", &nodeId, &instance);
-			Manager::Get()->RemoveAssociation(homeId, node, grp, nodeId, instance);
+//			Manager::Get()->RemoveAssociation(homeId, node, grp, nodeId, instance);
 		}
 	}
 }
@@ -467,12 +467,19 @@ uint8 MyNode::getRemoved()
 void OnNotification (Notification const* _notification, void* _context)
 {
 	ValueID id = _notification->GetValueID();
+
+	// improve debugging by printing "ValueAsString".
+	string tmp; 
+
 	switch (_notification->GetType()) {
 		case Notification::Type_ValueAdded:
-			Log::Write(LogLevel_Info, "Notification: Value Added Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
+
+			Manager::Get()->GetValueAsString(id,&tmp);
+			
+			Log::Write(LogLevel_Info, "Notification: Value Added Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s ValueAsString %s",
 					_notification->GetHomeId(), _notification->GetNodeId(),
 					valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
-					id.GetIndex(), valueTypeStr(id.GetType()));
+					id.GetIndex(), valueTypeStr(id.GetType()), tmp.c_str());
 			pthread_mutex_lock(&nlock);
 			nodes[_notification->GetNodeId()]->addValue(id);
 			nodes[_notification->GetNodeId()]->setTime(time(NULL));
@@ -491,10 +498,19 @@ void OnNotification (Notification const* _notification, void* _context)
 			pthread_mutex_unlock(&nlock);
 			break;
 		case Notification::Type_ValueChanged:
-			Log::Write(LogLevel_Info, "Notification: Value Changed Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
+
+			Manager::Get()->GetValueAsString(id,&tmp);
+			Log::Write(LogLevel_Info, "Notification: Value Changed Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s ValueAsString %s",
 					_notification->GetHomeId(), _notification->GetNodeId(),
 					valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
-					id.GetIndex(), valueTypeStr(id.GetType()));
+					id.GetIndex(), valueTypeStr(id.GetType()), tmp.c_str());
+			if (id.GetType() == OpenZWave::ValueID::ValueType_List) {
+				string selection;
+				int32 item;
+				Manager::Get()->GetValueListSelection(id, &selection);
+				Manager::Get()->GetValueListSelection(id, &item);
+				std::cout << "List Item: " << item << " Selection: " << selection << std::endl;
+			}
 			pthread_mutex_lock(&nlock);
 			nodes[_notification->GetNodeId()]->saveValue(id);
 			pthread_mutex_unlock(&nlock);
