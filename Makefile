@@ -19,9 +19,9 @@ DEBUG_LDFLAGS	:= -g
 
 # Change for DEBUG or RELEASE
 CFLAGS	:= -c $(DEBUG_CFLAGS)
-LDFLAGS	:= $(DEBUG_LDFLAGS)
+LDFLAGS	:= $(DEBUG_LDFLAGS) -v
 
-OPENZWAVE := ../
+OPENZWAVE := ../open-zwave/
 LIBMICROHTTPD := -L/usr/local/lib/ -lmicrohttpd
 
 INCLUDES := -I $(OPENZWAVE)/cpp/src -I $(OPENZWAVE)/cpp/src/command_classes/ \
@@ -33,16 +33,16 @@ INCLUDES := -I $(OPENZWAVE)/cpp/src -I $(OPENZWAVE)/cpp/src/command_classes/ \
 #GNUTLS := -lgnutls
 
 # for Linux uncomment out next three lines
-LIBZWAVE := $(wildcard $(OPENZWAVE)/*.a)
-LIBUSB := -ludev
-LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB) -lresolv
+#LIBZWAVE := $(wildcard $(OPENZWAVE)/*.a)
+#LIBUSB := -ludev
+#LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB) -lresolv
 
 # for Mac OS X comment out above 2 lines and uncomment next 5 lines
-#ARCH := -arch i386 -arch x86_64
-#CFLAGS += $(ARCH)
-#LIBZWAVE := $(wildcard $(OPENZWAVE)/cpp/lib/mac/*.a)
-#LIBUSB := -framework IOKit -framework CoreFoundation
-#LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB) $(ARCH) -lresolv
+ARCH := -arch x86_64
+CFLAGS += $(ARCH) -v
+LIBZWAVE := $(wildcard $(OPENZWAVE)/*.dylib)
+LIBUSB := -framework IOKit -framework CoreFoundation
+LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB) $(ARCH) -lresolv
 
 %.o : %.cpp
 	$(CXX) $(CFLAGS) $(INCLUDES) -o $@ $<

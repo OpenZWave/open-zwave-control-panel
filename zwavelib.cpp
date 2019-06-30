@@ -37,9 +37,10 @@
 #include <string.h>
 #include "ozwcp.h"
 
-const char *valueGenreStr (ValueID::ValueGenre vg)
+const char *valueGenreStr(ValueID::ValueGenre vg)
 {
-  switch (vg) {
+  switch (vg)
+  {
   case ValueID::ValueGenre_Basic:
     return "basic";
   case ValueID::ValueGenre_User:
@@ -54,7 +55,7 @@ const char *valueGenreStr (ValueID::ValueGenre vg)
   return "unknown";
 }
 
-ValueID::ValueGenre valueGenreNum (char const *str)
+ValueID::ValueGenre valueGenreNum(char const *str)
 {
   if (strcmp(str, "basic") == 0)
     return ValueID::ValueGenre_Basic;
@@ -70,9 +71,10 @@ ValueID::ValueGenre valueGenreNum (char const *str)
     return (ValueID::ValueGenre)255;
 }
 
-const char *valueTypeStr (ValueID::ValueType vt)
+const char *valueTypeStr(ValueID::ValueType vt)
 {
-  switch (vt) {
+  switch (vt)
+  {
   case ValueID::ValueType_Bool:
     return "bool";
   case ValueID::ValueType_Byte:
@@ -94,12 +96,12 @@ const char *valueTypeStr (ValueID::ValueType vt)
   case ValueID::ValueType_Raw:
     return "raw";
   case ValueID::ValueType_BitSet:
-	return "bitset";
+    return "bitset";
   }
   return "unknown";
 }
 
-ValueID::ValueType valueTypeNum (char const *str)
+ValueID::ValueType valueTypeNum(char const *str)
 {
   if (strcmp(str, "bool") == 0)
     return ValueID::ValueType_Bool;
@@ -122,14 +124,15 @@ ValueID::ValueType valueTypeNum (char const *str)
   else if (strcmp(str, "raw") == 0)
     return ValueID::ValueType_Raw;
   else if (strcmp(str, "bitset") == 0)
-	return ValueID::ValueType_BitSet;
+    return ValueID::ValueType_BitSet;
   else
     return (ValueID::ValueType)255;
 }
 
-const char *nodeBasicStr (uint8 basic)
+const char *nodeBasicStr(uint8 basic)
 {
-  switch (basic) {
+  switch (basic)
+  {
   case 1:
     return "Controller";
   case 2:
@@ -142,9 +145,10 @@ const char *nodeBasicStr (uint8 basic)
   return "unknown";
 }
 
-const char *cclassStr (uint8 cc)
+const char *cclassStr(uint8 cc)
 {
-  switch (cc) {
+  switch (cc)
+  {
   case 0x00:
     return "NO OPERATION";
   case 0x20:
@@ -321,7 +325,7 @@ const char *cclassStr (uint8 cc)
   return "UNKNOWN";
 }
 
-uint8 cclassNum (char const *str)
+uint8 cclassNum(char const *str)
 {
   if (strcmp(str, "NO OPERATION") == 0)
     return 0x00;
@@ -493,9 +497,10 @@ uint8 cclassNum (char const *str)
     return 0xFF;
 }
 
-const char *controllerErrorStr (Driver::ControllerError err)
+const char *controllerErrorStr(Driver::ControllerError err)
 {
-  switch (err) {
+  switch (err)
+  {
   case Driver::ControllerError_None:
     return "None";
   case Driver::ControllerError_ButtonNotFound:
