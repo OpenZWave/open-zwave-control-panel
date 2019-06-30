@@ -321,18 +321,16 @@ void Webserver::web_get_values(int i, TiXmlElement *ep)
 		else
 		{
 			string str;
-			TiXmlText *textElement;
 			if (Manager::Get()->GetValueAsString(id, &str))
-				textElement = new TiXmlText(str.c_str());
+				valueElement->SetAttribute("val", str.c_str());
 			else
-				textElement = new TiXmlText("");
+				valueElement->SetAttribute("val", "ValueAsStringFailed");
 			if (id.GetType() == ValueID::ValueType_Decimal)
 			{
 				uint8 precision;
 				if (Manager::Get()->GetValueFloatPrecision(id, &precision))
 					fprintf(stderr, "node = %d id = %d value = %s precision = %d\n", i, j, str.c_str(), precision);
 			}
-			valueElement->LinkEndChild(textElement);
 		}
 
 		string str = Manager::Get()->GetValueHelp(id);
@@ -408,7 +406,7 @@ const char *Webserver::SendTopoResponse(struct MHD_Connection *conn, const char 
 		return EMPTY;
 	strncat(fntemp, ".xml", sizeof(fntemp));
 	if (debug)
-		doc.Print(stdout, 0);
+		doc.SaveFile(stdout);
 	doc.SaveFile(fn);
 	return fn;
 }
@@ -540,7 +538,7 @@ const char *Webserver::SendStatResponse(struct MHD_Connection *conn, const char 
 		return EMPTY;
 	strncat(fntemp, ".xml", sizeof(fntemp));
 	if (debug)
-		doc.Print(stdout, 0);
+		doc.SaveFile(stdout);
 	doc.SaveFile(fn);
 	return fn;
 }
@@ -596,7 +594,7 @@ const char *Webserver::SendTestHealResponse(struct MHD_Connection *conn, const c
 		return EMPTY;
 	strncat(fntemp, ".xml", sizeof(fntemp));
 	if (debug)
-		doc.Print(stdout, 0);
+		doc.SaveFile(stdout);
 	doc.SaveFile(fn);
 	return fn;
 }
@@ -725,7 +723,7 @@ int Webserver::SendPollResponse(struct MHD_Connection *conn)
 {
 	TiXmlDocument doc;
 	struct stat buf;
-	const int logbufsz = 1024; // max amount to send of log per poll
+	const int logbufsz = 10240; // max amount to send of log per poll
 	char logbuffer[logbufsz + 1];
 	off_t bcnt;
 	char str[16];
@@ -893,10 +891,6 @@ int Webserver::SendPollResponse(struct MHD_Connection *conn)
 		return MHD_YES;
 	strncat(fntemp, ".xml", sizeof(fntemp));
 	if (debug)
-		// replaced TinyXML .print by SaveFile because the do not use the
-		// same formatting, and SaveFile is used to send data to the browser
-		// used to detect extra LF in value, fixed in cp.js CreateOnOff like this:
-		// value.value.substr(0,4) == 'True'
 		doc.SaveFile(stdout);
 	doc.SaveFile(fn);
 	ret = web_send_file(conn, fn, MHD_HTTP_OK, true);
@@ -1013,7 +1007,7 @@ int Webserver::SendDeviceListResponse(struct MHD_Connection *conn)
 		return MHD_YES;
 	strncat(fntemp, ".xml", sizeof(fntemp));
 	if (debug)
-		doc.Print(stdout, 0);
+		doc.SaveFile(stdout);
 	doc.SaveFile(fn);
 	ret = web_send_file(conn, fn, MHD_HTTP_OK, true);
 	return ret;

@@ -77,7 +77,7 @@ list<uint8> MyNode::removed;
  * MyNode::MyNode constructor
  * Just save the nodes into an array and other initialization.
  */
-MyNode::MyNode(int32 const ind) : type(0)
+MyNode::MyNode(int32 const ind)
 {
 	if (ind < 1 || ind >= MAX_NODES)
 	{

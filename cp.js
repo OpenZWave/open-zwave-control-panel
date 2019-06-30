@@ -292,10 +292,13 @@ function PollReply() {
                         //                   	for (var l = 0; l < bits.length; l++) {
                         //                   		alert(bits[l].getAttribute('label');
                         //                   	}
-                    } else if (values.firstChild != null)
-                        node_values.value = values.firstChild.nodeValue;
-                    else
-                        node_values.value = '0';
+                    } else {
+                        var val = values.getAttribute('val');
+                        if (val != null)
+                            node_values.value = val;
+                        else
+                            node_values.value = '---';
+                    }
                     k++;
                 }
                 var groups = node_elem.getElementsByTagName('groups');
@@ -1277,10 +1280,12 @@ function CreateOnOff(i, j, vid) {
     if (value.help.length > 0)
         data += ' onmouseover="ShowToolTip(\'' + quotestring(value.help) + '\',0);" onmouseout="HideToolTip();"';
     data += '>';
-    if (value.value.substr(0, 4) == 'True')
+    if (value.value == 'True')
         data += '<option value="off">Off</option><option value="on" selected="true">On</option>';
-    else
+    else if (value.value == 'False')
         data += '<option value="off" selected="true">Off</option><option value="on">On</option>';
+    else
+        data += '<option value="---" selected="true">---</option><option value="off">Off</option><option value="on">On</option>';
     data += '</select></td><td><span class="legend">' + value.units + '</span></td></tr>';
     return data;
 }

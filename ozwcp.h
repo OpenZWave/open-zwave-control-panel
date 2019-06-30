@@ -119,7 +119,6 @@ private:
   ~MyNode();
   void newGroup(uint8 n);
   static int32 nodecount;
-  int32 type;
   uint32 mtime;
   bool changed;
   static bool nodechanged;
