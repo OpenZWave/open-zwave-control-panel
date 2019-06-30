@@ -70,8 +70,8 @@ function GetDefaultDevice() {
     } else {
         devhttp = new ActiveXObject("Microsoft.XMLHTTP");
     }
-    devhttp.onreadystatechange = function() {
-        if (devhttp.readyState==4 && devhttp.status==200){
+    devhttp.onreadystatechange = function () {
+        if (devhttp.readyState == 4 && devhttp.status == 200) {
             if (devhttp.responseText == 'NULL')
                 document.DevPost.devname.value = '';
             else
@@ -81,9 +81,9 @@ function GetDefaultDevice() {
     }
     devhttp.open("GET", "currdev", true);
     if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
-            devhttp.send(null);
+        devhttp.send(null);
     } else { // code for IE6, IE5
-            devhttp.send();
+        devhttp.send();
     }
 }
 
@@ -256,29 +256,29 @@ function PollReply() {
                 var id_node = nodes[id];
                 id_node.values = new Array();
                 for (var j = 0; j < values_node.length; j++) {
-                    var  values = values_node[j];
+                    var values = values_node[j];
                     id_node.values[k] = {
                         readonly: values.getAttribute('readonly') == 'true',
-                        genre:  values.getAttribute('genre'),
-                        cclass:  values.getAttribute('class'),
-                        type:  values.getAttribute('type'),
-                        instance:  values.getAttribute('instance'),
-                        index:  values.getAttribute('index'),
-                        label:  values.getAttribute('label'),
-                        units:  values.getAttribute('units'),
-                        polled:  values.getAttribute('polled') == true,
+                        genre: values.getAttribute('genre'),
+                        cclass: values.getAttribute('class'),
+                        type: values.getAttribute('type'),
+                        instance: values.getAttribute('instance'),
+                        index: values.getAttribute('index'),
+                        label: values.getAttribute('label'),
+                        units: values.getAttribute('units'),
+                        polled: values.getAttribute('polled') == true,
                         help: null,
                         value: null
                     };
-                    var help =  values.getElementsByTagName('help');
+                    var help = values.getElementsByTagName('help');
                     var node_values = id_node.values[k];
                     if (help.length > 0)
                         node_values.help = help[0].firstChild.nodeValue;
                     else
                         node_values.help = '';
                     if (node_values.type == 'list') {
-                        var items =  values.getElementsByTagName('item');
-                        var current =  values.getAttribute('current');
+                        var items = values.getElementsByTagName('item');
+                        var current = values.getAttribute('current');
                         node_values.value = new Array();
                         for (var l = 0; l < items.length; l++) {
                             node_values.value[l] = {
@@ -287,15 +287,18 @@ function PollReply() {
                             };
                         }
                     } else if (node_values.type == 'bitset') {
-                    	var bits = values.getElementsByTagName('bitset');
-                    	alert("BitSet ValueID Not Implemented in JavaScript. Please Help us out if you can!");
- //                   	for (var l = 0; l < bits.length; l++) {
- //                   		alert(bits[l].getAttribute('label');
- //                   	}
-                    } else if ( values.firstChild != null)
-                        node_values.value =  values.firstChild.nodeValue;
-                    else
-                        node_values.value = '0';
+                        var bits = values.getElementsByTagName('bitset');
+                        alert("BitSet ValueID Not Implemented in JavaScript. Please Help us out if you can!");
+                        //                   	for (var l = 0; l < bits.length; l++) {
+                        //                   		alert(bits[l].getAttribute('label');
+                        //                   	}
+                    } else {
+                        var val = values.getAttribute('val');
+                        if (val != null)
+                            node_values.value = val;
+                        else
+                            node_values.value = '---';
+                    }
                     k++;
                 }
                 var groups = node_elem.getElementsByTagName('groups');
@@ -503,7 +506,7 @@ function ShowToolTip(help, width) {
     }
     tt_h = parseInt(tt.offsetHeight) + tt_top;
     clearInterval(tt.timer);
-    tt.timer = setInterval(function() {
+    tt.timer = setInterval(function () {
         FadeToolTip(1);
     }, tt_timer)
 }
@@ -535,7 +538,7 @@ function FadeToolTip(d) {
 
 function HideToolTip() {
     clearInterval(tt.timer);
-    tt.timer = setInterval(function() {
+    tt.timer = setInterval(function () {
         FadeToolTip(-1);
     }, tt_timer);
 }
@@ -1277,10 +1280,12 @@ function CreateOnOff(i, j, vid) {
     if (value.help.length > 0)
         data += ' onmouseover="ShowToolTip(\'' + quotestring(value.help) + '\',0);" onmouseout="HideToolTip();"';
     data += '>';
-    if (value.value.substr(0,4) == 'True')
+    if (value.value == 'True')
         data += '<option value="off">Off</option><option value="on" selected="true">On</option>';
-    else
+    else if (value.value == 'False')
         data += '<option value="off" selected="true">Off</option><option value="on">On</option>';
+    else
+        data += '<option value="---" selected="true">---</option><option value="off">Off</option><option value="on">On</option>';
     data += '</select></td><td><span class="legend">' + value.units + '</span></td></tr>';
     return data;
 }
@@ -1429,7 +1434,7 @@ function CreateGroup(ind) {
             }
 
             // make unique
-            instances = instances.filter(function(item, i, ar) {
+            instances = instances.filter(function (item, i, ar) {
                 return ar.indexOf(item) === i;
             });
 

@@ -19,9 +19,9 @@ DEBUG_LDFLAGS	:= -g
 
 # Change for DEBUG or RELEASE
 CFLAGS	:= -c $(DEBUG_CFLAGS)
-LDFLAGS	:= $(DEBUG_LDFLAGS)
+LDFLAGS	:= $(DEBUG_LDFLAGS) -v
 
-OPENZWAVE := ../
+OPENZWAVE := ../open-zwave/
 LIBMICROHTTPD := -L/usr/local/lib/ -lmicrohttpd
 
 INCLUDES := -I $(OPENZWAVE)/cpp/src -I $(OPENZWAVE)/cpp/src/command_classes/ \
