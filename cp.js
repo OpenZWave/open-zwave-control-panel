@@ -924,7 +924,9 @@ function DoGrpPost() {
     var opts = document.NodePost.groups.options;
     var i;
 
-    for (i = 0; i < opts.length; i++)
+    // Start loop at 1 because index 0 contains the empty "remove" option, selecting this empty label
+    // on its own creates an empty list and thus removes all associations from a group
+    for (i = 1; i < opts.length; i++)
         if (opts[i].selected) {
             params += opts[i].text + ',';
         }
@@ -1419,7 +1421,8 @@ function CreateGroup(ind) {
     grp = 1;
     for (i = 0; i < nodes[ind].groups.length; i++) {
         nodegrp[ind] += '<option value="' + nodes[ind].groups[i].id + '">' + nodes[ind].groups[i].label + ' (' + nodes[ind].groups[i].id + ')</option>';
-        nodegrpgrp[ind][grp] = '<td><div id="nodegrp" name="nodegrp" style="float: right;"><select id="groups" multiple size="8" style="vertical-align: top; margin-left: 5px;">';
+        // Add <option></option> at the start - this empty option allows to define/select an empty group
+        nodegrpgrp[ind][grp] = '<td><div id="nodegrp" name="nodegrp" style="float: right;"><select id="groups" multiple size="8" style="vertical-align: top; margin-left: 5px;"><option></option>';
         k = 0;
         for (j = 1; j < nodes.length; j++) {
             var node = nodes[j];
@@ -1438,10 +1441,9 @@ function CreateGroup(ind) {
                 return ar.indexOf(item) === i;
             });
 
-            // only show when we have found multiple instances
-            if (instances.length <= 2) {
-                instances = [String(j)];
-            }
+            // There used to be code to "only show when we have found multiple instances"
+            // But I think it is clearer (and correct) to show all possible
+            // single and multi instances
 
             if (nodes[ind].groups[i].nodes != null)
                 while (k < nodes[ind].groups[i].nodes.length && nodes[ind].groups[i].nodes[k] < j)

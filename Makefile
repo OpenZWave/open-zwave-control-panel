@@ -21,28 +21,45 @@ DEBUG_LDFLAGS	:= -g
 CFLAGS	:= -c $(DEBUG_CFLAGS)
 LDFLAGS	:= $(DEBUG_LDFLAGS) -v
 
-OPENZWAVE := ../open-zwave/
 LIBMICROHTTPD := -L/usr/local/lib/ -lmicrohttpd
+
+# Remove comment below for gnutls support
+#GNUTLS := -lgnutls
+
+# Determine the system we are building on
+UNAME  := $(shell uname -s)
+
+# Select proper options for macOS vs others
+ifeq ($(UNAME),Darwin)
+$(info setting variables for macOS)
+ARCH := -arch x86_64
+CFLAGS += $(ARCH)
+LIBZWAVE_PAT := libopenzwave.dylib
+LIBUSB := -framework IOKit -framework CoreFoundation
+else
+$(info setting variables for $(UNAME))
+LIBZWAVE_PAT := *.a
+LIBUSB := -ludev
+endif
+
+# Check if library exists in either parrent directory or ../open-zwave
+OPENZWAVE := ..
+LIBZWAVE := $(wildcard $(OPENZWAVE)/$(LIBZWAVE_PAT))
+ifeq ($(LIBZWAVE),)
+  OPENZWAVE := ../open-zwave
+  LIBZWAVE := $(wildcard $(OPENZWAVE)/$(LIBZWAVE_PAT))
+  ifeq ($(LIBZWAVE),)
+    $(error OpenZWave library "$(LIBZWAVE_PAT)" not found in either .. or ../open-zwave folder)
+  endif
+endif
+$(info OpenZWave library found: $(LIBZWAVE))
+
+LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB) $(ARCH) -lresolv
 
 INCLUDES := -I $(OPENZWAVE)/cpp/src -I $(OPENZWAVE)/cpp/src/command_classes/ \
 	-I $(OPENZWAVE)/cpp/src/value_classes/ -I $(OPENZWAVE)/cpp/src/platform/ \
 	-I $(OPENZWAVE)/cpp/src/platform/unix -I $(OPENZWAVE)/cpp/tinyxml/ \
 	-I /usr/local/include/
-
-# Remove comment below for gnutls support
-#GNUTLS := -lgnutls
-
-# for Linux uncomment out next three lines
-LIBZWAVE := $(wildcard $(OPENZWAVE)/*.a)
-LIBUSB := -ludev
-LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB) -lresolv
-
-# for Mac OS X comment out above 2 lines and uncomment next 5 lines
-#ARCH := -arch i386 -arch x86_64
-#CFLAGS += $(ARCH)
-#LIBZWAVE := $(wildcard $(OPENZWAVE)/cpp/lib/mac/*.a)
-#LIBUSB := -framework IOKit -framework CoreFoundation
-#LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB) $(ARCH) -lresolv
 
 %.o : %.cpp
 	$(CXX) $(CFLAGS) $(INCLUDES) -o $@ $<
@@ -50,22 +67,7 @@ LIBS := $(LIBZWAVE) $(GNUTLS) $(LIBMICROHTTPD) -pthread $(LIBUSB) -lresolv
 %.o : %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $<
 
-all: defs ozwcp
-
-
-defs:
-ifeq ($(LIBZWAVE),)
-	@echo Please edit the Makefile to avoid this error message.
-	@exit 1
-endif
-
-ozwcp.o: ozwcp.h webserver.h $(OPENZWAVE)/cpp/src/Options.h $(OPENZWAVE)/cpp/src/Manager.h \
-	$(OPENZWAVE)/cpp/src/Node.h $(OPENZWAVE)/cpp/src/Group.h \
-	$(OPENZWAVE)/cpp/src/Notification.h $(OPENZWAVE)/cpp/src/platform/Log.h
-
-webserver.o: webserver.h ozwcp.h $(OPENZWAVE)/cpp/src/Options.h $(OPENZWAVE)/cpp/src/Manager.h \
-	$(OPENZWAVE)/cpp/src/Node.h $(OPENZWAVE)/cpp/src/Group.h \
-	$(OPENZWAVE)/cpp/src/Notification.h $(OPENZWAVE)/cpp/src/platform/Log.h
+all: ozwcp
 
 ozwcp:	ozwcp.o webserver.o zwavelib.o $(LIBZWAVE)
 	$(LD) -o $@ $(LDFLAGS) ozwcp.o webserver.o zwavelib.o $(LIBS)
@@ -76,3 +78,6 @@ dist:	ozwcp
 
 clean:
 	rm -f ozwcp *.o
+
+# dummy target, for debugging Makefile
+dummy:
