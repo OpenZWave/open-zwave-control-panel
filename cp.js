@@ -924,7 +924,9 @@ function DoGrpPost() {
     var opts = document.NodePost.groups.options;
     var i;
 
-    for (i = 0; i < opts.length; i++)
+    // Start loop at 1 because index 0 contains the empty "remove" option, selecting this empty label
+    // on its own creates an empty list and thus removes all associations from a group
+    for (i = 1; i < opts.length; i++)
         if (opts[i].selected) {
             params += opts[i].text + ',';
         }
@@ -1419,7 +1421,8 @@ function CreateGroup(ind) {
     grp = 1;
     for (i = 0; i < nodes[ind].groups.length; i++) {
         nodegrp[ind] += '<option value="' + nodes[ind].groups[i].id + '">' + nodes[ind].groups[i].label + ' (' + nodes[ind].groups[i].id + ')</option>';
-        nodegrpgrp[ind][grp] = '<td><div id="nodegrp" name="nodegrp" style="float: right;"><select id="groups" multiple size="8" style="vertical-align: top; margin-left: 5px;">';
+        // Add <option></option> at the start - this empty option allows to define/select an empty group
+        nodegrpgrp[ind][grp] = '<td><div id="nodegrp" name="nodegrp" style="float: right;"><select id="groups" multiple size="8" style="vertical-align: top; margin-left: 5px;"><option></option>';
         k = 0;
         for (j = 1; j < nodes.length; j++) {
             var node = nodes[j];
@@ -1429,19 +1432,23 @@ function CreateGroup(ind) {
             // build a list of instances 
             var instances = [String(j)];
             for (var l = 0; l < node.values.length; l++) {
-                instances[l + 1] = j + '.' + node.values[l].instance;
                 instances.push(j + '.' + node.values[l].instance);
             }
+            // On OpenZwave Version 1.6-845-gfe401290, july 2019  OZW adds node 1 endpoint 1 (assuming 1 is the controller)
+            // That is actually instance "2"... So I add it (to enable its display)
+			// See void MultiChannelAssociation::Set(uint8 _groupIdx, uint8 _targetNodeId, uint8 _instance)
+			// Because ozwcp is in "low maintenance mode" and 99.9% of all controllers have ID 1... Hack it...
+            if(j == 1)
+                instances.push('1.2')
 
             // make unique
             instances = instances.filter(function (item, i, ar) {
                 return ar.indexOf(item) === i;
             });
 
-            // only show when we have found multiple instances
-            if (instances.length <= 2) {
-                instances = [String(j)];
-            }
+            // There used to be code to "only show when we have found multiple instances"
+            // But I think it is clearer (and correct) to show all possible
+            // single and multi instances
 
             if (nodes[ind].groups[i].nodes != null)
                 while (k < nodes[ind].groups[i].nodes.length && nodes[ind].groups[i].nodes[k] < j)

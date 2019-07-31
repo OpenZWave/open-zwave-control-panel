@@ -224,7 +224,7 @@ void MyNode::newGroup(uint8 node)
  */
 void MyNode::addGroup(uint8 node, uint8 g, uint8 n, InstanceAssociation *v)
 {
-	fprintf(stderr, "addGroup: node %d group %d n %d\n", node, g, n);
+	fprintf(stderr, "addGroup: node %d group %d number of associations %d\n", node, g, n);
 	if (groups.size() == 0)
 		newGroup(node);
 	for (vector<MyGroup *>::iterator it = groups.begin(); it != groups.end(); ++it)
@@ -237,7 +237,12 @@ void MyNode::addGroup(uint8 node, uint8 g, uint8 n, InstanceAssociation *v)
 				if (v[i].m_instance == 0)
 					snprintf(str, 32, "%d", v[i].m_nodeId);
 				else
-					snprintf(str, 32, "%d.%d", v[i].m_nodeId, v[i].m_instance);
+				{
+					// The BUI reports "instance" and instance = endpoint + 1
+					// instance 1 = endpoint 0 = root, instance 2 = endpoint 0 = first non-root channel, ...
+					// MultiChannel uses endpoints
+					snprintf(str, 32, "%d.%d", v[i].m_nodeId, v[i].m_instance + 1);
+				}
 				(*it)->grouplist.push_back(str);
 			}
 			setTime(time(NULL));
@@ -272,7 +277,7 @@ void MyNode::updateGroup(uint8 node, uint8 grp, char *glist)
 	uint8 n;
 	uint8 j;
 
-	fprintf(stderr, "updateGroup: node %d group %d\n", node, grp);
+	fprintf(stderr, "updateGroup: node %d group %d glist %s\n", node, grp, glist);
 	for (it = groups.begin(); it != groups.end(); ++it)
 		if ((*it)->groupid == grp)
 			break;
@@ -288,22 +293,10 @@ void MyNode::updateGroup(uint8 node, uint8 grp, char *glist)
 		v.push_back(np);
 		n++;
 	}
-	/* Look for nodes in the passed-in argument list, if not present add them */
+	// Look for nodes in the vector (current list) and those not found in
+    // the passed-in list need to be removed
+	// Do this first, because lifeline often can only store one association
 	vector<string>::iterator nit;
-	for (j = 0; j < n; j++)
-	{
-		for (nit = (*it)->grouplist.begin(); nit != (*it)->grouplist.end(); ++nit)
-			if (v[j].compare(*nit) == 0)
-				break;
-		if (nit == (*it)->grouplist.end())
-		{ // not found
-			int nodeId = 0, instance = 0;
-			sscanf(v[j].c_str(), "%d.%d", &nodeId, &instance);
-			Manager::Get()->AddAssociation(homeId, node, grp, nodeId, instance);
-		}
-	}
-	/* Look for nodes in the vector (current list) and those not found in
-     the passed-in list need to be removed */
 	for (nit = (*it)->grouplist.begin(); nit != (*it)->grouplist.end(); ++nit)
 	{
 		for (j = 0; j < n; j++)
@@ -313,7 +306,33 @@ void MyNode::updateGroup(uint8 node, uint8 grp, char *glist)
 		{
 			int nodeId = 0, instance = 0;
 			sscanf(nit->c_str(), "%d.%d", &nodeId, &instance);
-			//			Manager::Get()->RemoveAssociation(homeId, node, grp, nodeId, instance);
+			// The BUI reports "instance" and instance = endpoint + 1
+			// instance 1 = endpoint 0 = root, instance 2 = endpoint 0 = first non-root channel, ...
+			// MultiChannel uses endpoints
+			if (instance >=1) {
+				instance--;
+			}
+			Manager::Get()->RemoveAssociation(homeId, node, grp, nodeId, instance);
+		}
+	}
+
+	/* Look for nodes in the passed-in argument list, if not present add them */
+	for (j = 0; j < n; j++)
+	{
+		for (nit = (*it)->grouplist.begin(); nit != (*it)->grouplist.end(); ++nit)
+			if (v[j].compare(*nit) == 0)
+				break;
+		if (nit == (*it)->grouplist.end())
+		{ // not found
+			int nodeId = 0, instance = 0;
+			sscanf(v[j].c_str(), "%d.%d", &nodeId, &instance);
+			// The BUI reports "instance" and instance = endpoint + 1
+			// instance 1 = endpoint 0 = root, instance 2 = endpoint 0 = first non-root channel, ...
+			// MultiChannel uses endpoints
+			if (instance >=1) {
+				instance--;
+			}
+			Manager::Get()->AddAssociation(homeId, node, grp, nodeId, instance);
 		}
 	}
 }
