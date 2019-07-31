@@ -1432,9 +1432,14 @@ function CreateGroup(ind) {
             // build a list of instances 
             var instances = [String(j)];
             for (var l = 0; l < node.values.length; l++) {
-                instances[l + 1] = j + '.' + node.values[l].instance;
                 instances.push(j + '.' + node.values[l].instance);
             }
+            // On OpenZwave Version 1.6-845-gfe401290, july 2019  OZW adds node 1 endpoint 1 (assuming 1 is the controller)
+            // That is actually instance "2"... So I add it (to enable its display)
+			// See void MultiChannelAssociation::Set(uint8 _groupIdx, uint8 _targetNodeId, uint8 _instance)
+			// Because ozwcp is in "low maintenance mode" and 99.9% of all controllers have ID 1... Hack it...
+            if(j == 1)
+                instances.push('1.2')
 
             // make unique
             instances = instances.filter(function (item, i, ar) {
