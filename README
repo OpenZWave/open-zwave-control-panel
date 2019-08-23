@@ -1,52 +1,65 @@
-OpenZWave Control Panel v0.2a 8/8/2011
+OZWCP is largely unmaintained, getting occasional bug fixes only. If anybody is
+interested in maintaining it please let us know. There is a new OZW GUI being
+developed in ozw-admin repository that should replace the functionality of
+OpenZWave Control Panel.
 
-Welcome to a very alpha release of the OpenZWave Control Panel.
+Update 29 July 2019
+
+Bugfix for groups, build detection macOS versus linux, can build inside or
+outside of open-zwave directory
 
 OVERVIEW
 
-This README for the OpenZWave Control Panel will attempt to provide the
-necessary information to compile, use and develop.
-
 The OpenZWave Control Panel (ozwcp for short) is an application built on
-the OpenZWave library http://code.google.com/p/open-zwave/ that permits
+the OpenZWave library https://github.com/OpenZWave/open-zwave that permits
 users to query, manage and monitor Z-Wave nodes and networks. It provides a
 web based user interface using AJAX principles.
 
-The code is very new, as is the library, so bugs will be present. This tool
-will allow the basic use of Z-Wave devices as well as help push forward the
-development of the OpenZWave library.
+OpenZWave Control Panel was updated in 2019 to support OpenZWave 1.6
+(being master branch at that time)
+
+A feature lacking from OZW 1.6 is "Bitfields".
 
 INSTALLATION
 
-To install ozwcp, visit http://code.google.com/p/openzwave-control-panel/
-and click on the "source" tab. You will need an svn client to check out a
-copy of the sources.
+The web server is based on GNU's libmicrohttpd library available at
 
-You will need a copy of the latest version of the OpenZWave library at
-http://code.google.com/p/open-zwave/. Use the "source" tab on that project
-to get a copy.
+https://www.gnu.org/software/libmicrohttpd/
 
-ozwcp uses GNU's libmicrohttpd library available at
-http://www.gnu.org/software/libmicrohttpd/. I have set up this library
-using the --enable-messages configure option for debugging but this is
-optional.
+Debian based system:
 
-All three of these installations should share live in the same directory
-(share a common parent). The ozwcp Makefile assumes this.
+apt-get install libmicrohttpd-dev
 
-See Makefile for comments about Mac OS X support. Note: Makefile is
-configured to build on Mac OS X; to build on Linux, you will need to
-comment out lines under
+Mac using Homebrew:
 
-  # for Mac OS X comment
+brew install libmicrohttpd
 
-and uncomment lines under
+If you build libmicrohttpd from source you can use the  --enable-messages
+configure option for debugging.
 
-  # for Linux uncomment
+Install Option 1 - outside of OZW folder.
 
-Currently Windows is not supported. It should be possible to port this
-to the Window's cygwin environment if anyone is interested in pursing that
-option.
+First (shallow) git clone OpenZWave and build it
+
+git clone --depth 1 https://github.com/OpenZWave/open-zwave
+cd open-zwave/
+make
+
+Then:
+
+cd ..
+git clone --depth 1 https://github.com/OpenZWave/open-zwave-control-panel
+cd open-zwave-control-panel/
+make
+
+Install Option 2 - in OZW folder
+
+This was the only option before the 29 july 2019 update... Like option 1,
+but clone the ozwcp repo in the OZW folder.
+
+There is no need to edit the Makefile, the OS and path is detected automatically.
+
+Currently Windows is not supported.
 
 OPERATION
 
@@ -55,11 +68,10 @@ ozwcp currently runs from the command line and takes two flags:
 -d for debugging
 -p <portnum> port number the web server will listen on
 
-Once started, connect to the hostname:postnum that ozwcp is running on
-using a web broswer and you will get to the user interface.
+Default port is 8090
 
-Firefox has been extensively tested. Safari works. Intnernet Explorer
-doesn't work yet. This is also on the to do list.
+Once started, connect to the hostname:postnum that ozwcp is running on
+using a web browser and you will get to the user interface.
 
 ozwcp currently must be run from within its distribution directory. It
 serves files that must be present for it to work properly. You may need to
@@ -67,11 +79,11 @@ run it as root depending on the port number you use.
 
 CAVEATS
 
-This is an alpha release at best. It has only ever worked in a single
-environment. Please report bugs to the OpenZWave google groups mailing list:
-http://groups.google.com/group/openzwave.
+This was build as a proof of concept and is "quite usable" for diagnosis and
+setting stuff...
 
-See the file TODO for a list of things on the to do list.
+Please report bugs to the OpenZWave google groups mailing list:
+http://groups.google.com/group/openzwave.
 
 NOTE
 

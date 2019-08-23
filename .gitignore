@@ -1,3 +1,5 @@
 *.o
 *.xml
 ozwcp
+.vscode
+OZW_Log.txt

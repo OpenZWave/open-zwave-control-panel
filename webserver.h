@@ -34,46 +34,59 @@
 // documentation will at all times remain with copyright holders.
 //-----------------------------------------------------------------------------
 
-typedef enum { COL_NODE, COL_TYPE, COL_NAME, COL_LOCATION } coltype_t;
-typedef enum { CON_UNK, CON_GET, CON_POST } conntype_t;
+typedef enum
+{
+	COL_NODE,
+	COL_TYPE,
+	COL_NAME,
+	COL_LOCATION
+} coltype_t;
+typedef enum
+{
+	CON_UNK,
+	CON_GET,
+	CON_POST
+} conntype_t;
 
-class Webserver {
-	public:
-		Webserver(int const);
-		~Webserver();
-		bool isReady() { return ready; }
-		bool getAdminState() { return adminstate; }
-		void setAdminState(bool st) { adminstate = st; }
-		string getAdminFunction() { return adminfun; }
-		void setAdminFunction (string msg) { adminfun = msg; }
-		string getAdminMessage() { return adminmsg; }
-		void setAdminMessage (string msg) { adminmsg = msg; }
-	private:
-		static int HandlerEP(void *cls, struct MHD_Connection *conn, const char *url, const char *method,
-				const char *version, const char *up_data, size_t *up_data_size, void **ptr);
-		int Handler(struct MHD_Connection *conn, const char *url, const char *method,
-				const char *version, const char *up_data, size_t *up_data_size, void **ptr);
-		static void FreeEP(void *cls, struct MHD_Connection *conn, void **ptr, enum MHD_RequestTerminationCode code);
-		void Free(struct MHD_Connection *conn, void **ptr, enum MHD_RequestTerminationCode code);
-		void web_get_groups(int i, TiXmlElement *ep);
-		void web_get_values(int i, TiXmlElement *ep);
-		int SendPollResponse(struct MHD_Connection *conn);
-		int SendDeviceListResponse(struct MHD_Connection *conn);
-		const char *SendSceneResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
-		const char *SendTopoResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
-		const char *SendStatResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
-		const char *SendTestHealResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
+class Webserver
+{
+public:
+	Webserver(int const);
+	~Webserver();
+	bool isReady() { return ready; }
+	bool getAdminState() { return adminstate; }
+	void setAdminState(bool st) { adminstate = st; }
+	string getAdminFunction() { return adminfun; }
+	void setAdminFunction(string msg) { adminfun = msg; }
+	string getAdminMessage() { return adminmsg; }
+	void setAdminMessage(string msg) { adminmsg = msg; }
 
-		static bool usb;
-		static char *devname;
-		static unsigned short port;
-		static bool ready;
-		coltype_t sortcol;
-		unsigned long logbytes;
-		bool adminstate;
-		string adminmsg;
-		string adminfun;
-		void *wdata;
+private:
+	static int HandlerEP(void *cls, struct MHD_Connection *conn, const char *url, const char *method,
+						 const char *version, const char *up_data, size_t *up_data_size, void **ptr);
+	int Handler(struct MHD_Connection *conn, const char *url, const char *method,
+				const char *version, const char *up_data, size_t *up_data_size, void **ptr);
+	static void FreeEP(void *cls, struct MHD_Connection *conn, void **ptr, enum MHD_RequestTerminationCode code);
+	void Free(struct MHD_Connection *conn, void **ptr, enum MHD_RequestTerminationCode code);
+	void web_get_groups(int i, TiXmlElement *ep);
+	void web_get_values(int i, TiXmlElement *ep);
+	int SendPollResponse(struct MHD_Connection *conn);
+	int SendDeviceListResponse(struct MHD_Connection *conn);
+	const char *SendSceneResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
+	const char *SendTopoResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
+	const char *SendStatResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
+	const char *SendTestHealResponse(struct MHD_Connection *conn, const char *fun, const char *arg1, const char *arg2, const char *arg3);
+
+	static bool usb;
+	static char *devname;
+	static unsigned short port;
+	static bool ready;
+	coltype_t sortcol;
+	unsigned long logbytes;
+	bool adminstate;
+	string adminmsg;
+	string adminfun;
+	void *wdata;
 };
 
-void web_controller_update (Driver::ControllerState cs, Driver::ControllerError err, void *ct);
+void web_controller_update(Driver::ControllerState cs, Driver::ControllerError err, void *ct);

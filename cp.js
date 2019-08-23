@@ -1,5 +1,4 @@
 var pollhttp;
-var scenehttp;
 var topohttp;
 var stathttp;
 var atsthttp;
@@ -35,8 +34,6 @@ var c = document.createElement('div');
 var b = document.createElement('div');
 var ie = document.all ? true : false;
 var curnode = null;
-var curscene = null;
-var scenes = new Array();
 var routes = new Array();
 var curclassstat = null;
 var classstats = new Array();
@@ -44,11 +41,6 @@ if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
     pollhttp = new XMLHttpRequest();
 } else {
     pollhttp = new ActiveXObject("Microsoft.XMLHTTP");
-}
-if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
-    scenehttp = new XMLHttpRequest();
-} else {
-    scenehttp = new ActiveXObject("Microsoft.XMLHTTP");
 }
 if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
     topohttp = new XMLHttpRequest();
@@ -78,8 +70,8 @@ function GetDefaultDevice() {
     } else {
         devhttp = new ActiveXObject("Microsoft.XMLHTTP");
     }
-    devhttp.onreadystatechange = function() {
-        if (devhttp.readyState==4 && devhttp.status==200){
+    devhttp.onreadystatechange = function () {
+        if (devhttp.readyState == 4 && devhttp.status == 200) {
             if (devhttp.responseText == 'NULL')
                 document.DevPost.devname.value = '';
             else
@@ -89,9 +81,9 @@ function GetDefaultDevice() {
     }
     devhttp.open("GET", "currdev", true);
     if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
-            devhttp.send(null);
+        devhttp.send(null);
     } else { // code for IE6, IE5
-            devhttp.send();
+        devhttp.send();
     }
 }
 
@@ -120,7 +112,6 @@ function SaveNode(newid) {
     }
     curnode = newid;
     DoNodeHelp();
-    UpdateSceneValues(i);
     $('#devices tr.success').removeClass('success');
     $('#' + curnode).addClass('success');
     return true;
@@ -135,7 +126,6 @@ function ClearNode() {
         document.getElementById('divconfiginfo').innerHTML = '';
         document.getElementById('nodeinfo').style.display = 'none';
         document.getElementById('nodecntl').style.display = 'none';
-        UpdateSceneValues(-1);
         curnode = null;
     }
     return true;
@@ -266,29 +256,29 @@ function PollReply() {
                 var id_node = nodes[id];
                 id_node.values = new Array();
                 for (var j = 0; j < values_node.length; j++) {
-                    var  values = values_node[j];
+                    var values = values_node[j];
                     id_node.values[k] = {
                         readonly: values.getAttribute('readonly') == 'true',
-                        genre:  values.getAttribute('genre'),
-                        cclass:  values.getAttribute('class'),
-                        type:  values.getAttribute('type'),
-                        instance:  values.getAttribute('instance'),
-                        index:  values.getAttribute('index'),
-                        label:  values.getAttribute('label'),
-                        units:  values.getAttribute('units'),
-                        polled:  values.getAttribute('polled') == true,
+                        genre: values.getAttribute('genre'),
+                        cclass: values.getAttribute('class'),
+                        type: values.getAttribute('type'),
+                        instance: values.getAttribute('instance'),
+                        index: values.getAttribute('index'),
+                        label: values.getAttribute('label'),
+                        units: values.getAttribute('units'),
+                        polled: values.getAttribute('polled') == true,
                         help: null,
                         value: null
                     };
-                    var help =  values.getElementsByTagName('help');
+                    var help = values.getElementsByTagName('help');
                     var node_values = id_node.values[k];
                     if (help.length > 0)
                         node_values.help = help[0].firstChild.nodeValue;
                     else
                         node_values.help = '';
                     if (node_values.type == 'list') {
-                        var items =  values.getElementsByTagName('item');
-                        var current =  values.getAttribute('current');
+                        var items = values.getElementsByTagName('item');
+                        var current = values.getAttribute('current');
                         node_values.value = new Array();
                         for (var l = 0; l < items.length; l++) {
                             node_values.value[l] = {
@@ -296,10 +286,19 @@ function PollReply() {
                                 selected: (current == items[l].firstChild.nodeValue)
                             };
                         }
-                    } else if ( values.firstChild != null)
-                        node_values.value =  values.firstChild.nodeValue;
-                    else
-                        node_values.value = '0';
+                    } else if (node_values.type == 'bitset') {
+                        var bits = values.getElementsByTagName('bitset');
+                        alert("BitSet ValueID Not Implemented in JavaScript. Please Help us out if you can!");
+                        //                   	for (var l = 0; l < bits.length; l++) {
+                        //                   		alert(bits[l].getAttribute('label');
+                        //                   	}
+                    } else {
+                        var val = values.getAttribute('val');
+                        if (val != null)
+                            node_values.value = val;
+                        else
+                            node_values.value = '---';
+                    }
                     k++;
                 }
                 var groups = node_elem.getElementsByTagName('groups');
@@ -507,7 +506,7 @@ function ShowToolTip(help, width) {
     }
     tt_h = parseInt(tt.offsetHeight) + tt_top;
     clearInterval(tt.timer);
-    tt.timer = setInterval(function() {
+    tt.timer = setInterval(function () {
         FadeToolTip(1);
     }, tt_timer)
 }
@@ -539,7 +538,7 @@ function FadeToolTip(d) {
 
 function HideToolTip() {
     clearInterval(tt.timer);
-    tt.timer = setInterval(function() {
+    tt.timer = setInterval(function () {
         FadeToolTip(-1);
     }, tt_timer);
 }
@@ -655,7 +654,6 @@ function DoDevPost(fun) {
 
 function DoNetHelp() {
     var ninfo = document.getElementById('netinfo');
-    var scencntl = document.getElementById('scencntl');
     var topocntl = document.getElementById('topocntl');
     var topo = document.getElementById('topo');
     var statcntl = document.getElementById('statcntl');
@@ -664,23 +662,9 @@ function DoNetHelp() {
     var statclass = document.getElementById('statclass');
     var thcntl = document.getElementById('thcntl');
     var testhealreport = document.getElementById('testhealreport');
-    if (document.NetPost.netops.value == 'scen') {
-        ninfo.innerHTML = 'Scene management and execution.';
-        ninfo.style.display = 'block';
-        scencntl.style.display = 'block';
-        topocntl.style.display = 'none';
-        topo.style.display = 'none';
-        statcntl.style.display = 'none';
-        statnet.style.display = 'none';
-        statnode.style.display = 'none';
-        statclass.style.display = 'none';
-        thcntl.style.display = 'none';
-        testhealreport.style.display = 'none';
-        SceneLoad('load');
-    } else if (document.NetPost.netops.value == 'topo') {
+    if (document.NetPost.netops.value == 'topo') {
         ninfo.innerHTML = 'Topology views';
         ninfo.style.display = 'block';
-        scencntl.style.display = 'none';
         topocntl.style.display = 'block';
         topo.style.display = 'block';
         statcntl.style.display = 'none';
@@ -689,12 +673,10 @@ function DoNetHelp() {
         statclass.style.display = 'none';
         thcntl.style.display = 'none';
         testhealreport.style.display = 'none';
-        curscene = null;
         TopoLoad('load');
     } else if (document.NetPost.netops.value == 'stat') {
         ninfo.innerHTML = 'Statistic views';
         ninfo.style.display = 'block';
-        scencntl.style.display = 'none';
         topocntl.style.display = 'none';
         topo.style.display = 'none';
         statcntl.style.display = 'block';
@@ -702,12 +684,10 @@ function DoNetHelp() {
         statnode.style.display = 'block';
         thcntl.style.display = 'none';
         testhealreport.style.display = 'none';
-        curscene = null;
         StatLoad('load');
     } else if (document.NetPost.netops.value == 'test') {
         ninfo.innerHTML = 'Test & Heal Network';
         ninfo.style.display = 'block';
-        scencntl.style.display = 'none';
         topocntl.style.display = 'none';
         topo.style.display = 'none';
         statcntl.style.display = 'none';
@@ -716,10 +696,8 @@ function DoNetHelp() {
         statclass.style.display = 'none';
         thcntl.style.display = 'block';
         testhealreport.style.display = 'block';
-        curscene = null;
     } else {
         ninfo.style.display = 'none';
-        scencntl.style.display = 'none';
         topocntl.style.display = 'none';
         topo.style.display = 'none';
         statcntl.style.display = 'none';
@@ -728,7 +706,6 @@ function DoNetHelp() {
         statclass.style.display = 'none';
         thcntl.style.display = 'none';
         testhealreport.style.display = 'none';
-        curscene = null;
     }
     return true;
 }
@@ -947,7 +924,9 @@ function DoGrpPost() {
     var opts = document.NodePost.groups.options;
     var i;
 
-    for (i = 0; i < opts.length; i++)
+    // Start loop at 1 because index 0 contains the empty "remove" option, selecting this empty label
+    // on its own creates an empty list and thus removes all associations from a group
+    for (i = 1; i < opts.length; i++)
         if (opts[i].selected) {
             params += opts[i].text + ',';
         }
@@ -1018,317 +997,7 @@ function DoSavePost() {
     return false;
 }
 
-function SceneLoad(fun) {
-    var params = 'fun=' + fun;
-    if (fun == 'load') {
-        DisplaySceneSceneValue(null);
-        var scenescenevalues = document.getElementById('scenescenevalues');
-        while (scenescenevalues.options.length > 0)
-            scenescenevalues.remove(0);
-    }
-    if (fun == 'delete') {
-        if (curscene == null) {
-            alert("Scene not selected");
-            return false;
-        }
-        DisplaySceneSceneValue(null);
-        params += '&id=' + curscene;
-        var slt = document.getElementById('scenelabeltext');
-        slt.value = '';
-    } else if (fun == 'execute') {
-        if (curscene == null) {
-            alert("Scene not selected");
-            return false;
-        }
-        params += '&id=' + curscene;
-    } else if (fun == 'values') {
-        if (curscene == null) {
-            alert("Scene not selected");
-            return false;
-        }
-        params += '&id=' + curscene;
-        var slt = document.getElementById('scenelabeltext');
-        slt.value = scenes[curscene].label;
-        DisplaySceneSceneValue(null);
-    } else if (fun == 'label') {
-        if (curscene == null) {
-            alert("Scene not selected");
-            return false;
-        }
-        var slt = document.getElementById('scenelabeltext');
-        if (slt.value.length == 0) {
-            alert('Missing label text');
-            return false;
-        }
-        params += '&id=' + curscene + '&label=' + slt.value;
-        slt.value = '';
-    } else if (fun == 'addvalue') {
-        if (curscene == null) {
-            alert("Scene not selected");
-            return false;
-        }
-        if (curnode == null) {
-            alert('Node not selected');
-            return false;
-        }
-        var values = document.getElementById('scenevalues');
-        if (values.options.selectedIndex == -1) {
-            alert('Value not selected');
-            return false;
-        }
-        var vals = values.options[values.options.selectedIndex].value.split('-');
-        if (vals[3] != 'list' && vals[3] != 'bool') {
-            var value = document.getElementById('valuetext');
-            if (value.value.length == 0) {
-                alert('Data not entered');
-                return false;
-            }
-            params += '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5] + '&value=' + value.value;
-        } else {
-            var value = document.getElementById('valueselect');
-            params += '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5] + '&value=' + value.options[value.selectedIndex].value;
-        }
-        DisplaySceneSceneValue(null);
-    } else if (fun == 'update') {
-        if (curscene == null) {
-            alert("Scene not selected");
-            return false;
-        }
-        if (curnode == null) {
-            alert('Node not selected');
-            return false;
-        }
-        var values = document.getElementById('scenescenevalues');
-        if (values.options.selectedIndex == -1) {
-            alert('Value not selected');
-            return false;
-        }
-        var vals = values.options[values.options.selectedIndex].value.split('-');
-        if (vals[3] != 'list' && vals[3] != 'bool') {
-            var value = document.getElementById('scenevaluetext');
-            if (value.value.length == 0) {
-                alert('Data not entered');
-                return false;
-            }
-            params += '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5] + '&value=' + value.value;
-        } else {
-            var value = document.getElementById('valueselect');
-            params += '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5] + '&value=' + value.options[value.selectedIndex].value;
-        }
-        DisplaySceneSceneValue(null);
-    } else if (fun == 'remove') {
-        if (curscene == null) {
-            alert("Scene not selected");
-            return false;
-        }
-        var values = document.getElementById('scenescenevalues');
-        if (values.options.selectedIndex == -1) {
-            alert('Scene value not selected');
-            return false;
-        }
-        var vals = values.options[values.options.selectedIndex].value.split('-');
-        params += '&id=' + curscene + '&vid=' + vals[0] + '-' + vals[1] + '-' + vals[2] + '-' + vals[3] + '-' + vals[4] + '-' + vals[5];
-        DisplaySceneSceneValue(null);
-    }
-    scenehttp.open('POST', 'scenepost.html', true);
-    scenehttp.onreadystatechange = SceneReply;
-    scenehttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    scenehttp.send(params);
 
-    return false;
-}
-
-function SceneReply() {
-    var xml;
-    var elem;
-
-    if (scenehttp.readyState == 4 && scenehttp.status == 200) {
-        xml = scenehttp.responseXML;
-        scenes_elem = xml.getElementsByTagName('scenes');
-        if (scenes_elem.length > 0) {
-            var i;
-            var id;
-            var sceneids = document.getElementById('sceneids');
-            var scenevalues = document.getElementById('scenevalues');
-            var scenescenevalues = document.getElementById('scenescenevalues');
-            var elem = scenes_elem[0];
-            i = elem.getAttribute('sceneid');
-            if (i != null) {
-                scenes = new Array();
-                while (sceneids.options.length > 0)
-                    sceneids.remove(0);
-            }
-            i = elem.getAttribute('scenevalue');
-            if (i != null) {
-                scenes[curscene].values = new Array();
-                while (scenescenevalues.options.length > 0)
-                    scenescenevalues.remove(0);
-            }
-            for (i = 0; i < elem.childNodes.length; i++) {
-                var children = elem.childNodes[i];
-                if (children.nodeType != 1)
-                    continue;
-                if (children.tagName == 'sceneid') {
-                    id = children.getAttribute('id');
-                    label = children.getAttribute('label');
-                    scenes[id] = {
-                        label: label,
-                        values: new Array()
-                    };
-                    sceneids.add(new Option('[' + id + '] ' + label, id));
-                } else if (children.tagName == 'scenevalue') {
-                    var value = {
-                        home: children.getAttribute('home'),
-                        node: children.getAttribute('node'),
-                        label: children.getAttribute('label'),
-                        units: children.getAttribute('units'),
-                        type: children.getAttribute('type'),
-                        cclass: children.getAttribute('class'),
-                        genre: children.getAttribute('genre'),
-                        instance: children.getAttribute('instance'),
-                        index: children.getAttribute('index'),
-                        value: children.firstChild.nodeValue
-                    };
-                    id = children.getAttribute('id');
-                    var node = nodes[value.node];
-                    var val = ['[' + value.node + ']'];
-                    if(node)
-                        val = val.concat([
-                            node.product + ': ' + value.value
-                        ]);
-                    var vid = [
-                        value.node,
-                        value.cclass,
-                        value.genre,
-                        value.type,
-                        value.instance,
-                        value.index
-                    ].join('-');
-                    scenescenevalues.add(new Option(val.join(' '), vid));
-                    scenes[id].values.push(value);
-                }
-            }
-        }
-    }
-}
-
-function UpdateSceneValues(c) {
-    var sv = document.getElementById('scenevalues');
-    var node = nodes[c];
-    var optgroups = sv.getElementsByTagName('optgroup');
-    while (sv.options.length > 0)
-        sv.remove(0);
-    for(var i=optgroups.length - 1; i>=0; i--)
-        sv.removeChild(optgroups[i]);
-
-    if (c == -1)
-        return;
-    var optgroup = OptionGroup('[' + node.id + '] ' + ' ' + node.product);
-    sv.add(optgroup);
-    for (var i = 0; i < node.values.length; i++) {
-        var value = node.values[i];
-        if (value.genre != 'user')
-            continue;
-        if (value.readonly)
-            continue;
-        if (value.type == 'button')
-            continue;
-        var vid = node.id + '-' + value.cclass + '-user-' + value.type + '-' + value.instance + '-' + value.index;
-        var label = '[' + value.instance + '] ' + value.label + ': ' + value.value;
-        optgroup.appendChild(new Option(label, vid));
-    }
-    DisplaySceneValue(null);
-}
-
-function DisplaySceneValue(opt) {
-    var vt = document.getElementById('valuetext');
-    var vs = document.getElementById('valueselect');
-    var vu = document.getElementById('valueunits');
-    if (opt == null) {
-        vt.style.display = 'inline';
-        vs.style.display = 'none';
-        vt.value = '';
-        while (vs.options.length > 0)
-            vs.remove(0);
-        vu.innerHTML = '';
-        return false;
-    }
-    var vals = opt.value.split('-');
-    for (var j = 0; j < nodes[vals[0]].values.length; j++) {
-        var value = nodes[vals[0]].values[j];
-        if (value.cclass == vals[1] &&
-            value.genre == 'user' &&
-            value.type == vals[3] &&
-            value.instance == vals[4] &&
-            value.index == vals[5])
-            break;
-    }
-    if (vals[3] == 'list') {
-        vt.style.display = 'none';
-        vs.style.display = 'inline';
-    } else if (vals[3] == 'bool') {
-        if (value.value == 'True') {
-            vs.add(new Option('On', 'true', true));
-            vs.add(new Option('Off', 'false'));
-        } else {
-            vs.add(new Option('Off', 'false', true));
-            vs.add(new Option('On', 'true'));
-        }
-        vt.style.display = 'none';
-        vs.style.display = 'inline';
-    } else {
-        vt.value = value.value;
-        vt.style.display = 'inline';
-        vs.style.display = 'none';
-    }
-    vu.innerHTML = value.units;
-    return false;
-}
-
-function DisplaySceneSceneValue(opt) {
-    var vt = document.getElementById('scenevaluetext');
-    var vs = document.getElementById('scenevalueselect');
-    var vu = document.getElementById('scenevalueunits');
-    if (opt == null) {
-        vt.style.display = 'inline';
-        vs.style.display = 'none';
-        vt.value = '';
-        while (vs.options.length > 0)
-            vs.remove(0);
-        vu.innerHTML = '';
-        return false;
-    }
-    var vals = opt.value.split('-');
-    for (var j = 0; j < scenes[curscene].values.length; j++) {
-        var value = scenes[curscene].values[j];
-        if (value.cclass == vals[1] &&
-            value.genre == 'user' &&
-            value.type == vals[3] &&
-            value.instance == vals[4] &&
-            value.index == vals[5])
-            break;
-    }
-    if (vals[3] == 'list') {
-        vt.style.display = 'none';
-        vs.style.display = 'inline';
-    } else if (vals[3] == 'bool') {
-        if (value.value == 'True') {
-            vs.add(new Option('On', 'on', true));
-            vs.add(new Option('Off', 'off'));
-        } else {
-            vs.add(new Option('Off', 'off', true));
-            vs.add(new Option('On', 'on'));
-        }
-        vt.style.display = 'none';
-        vs.style.display = 'inline';
-    } else {
-        vt.value = value.value;
-        vt.style.display = 'inline';
-        vs.style.display = 'none';
-    }
-    vu.innerHTML = value.units;
-    return false;
-}
 
 function TopoLoad(fun) {
     var params = 'fun=' + fun;
@@ -1615,8 +1284,10 @@ function CreateOnOff(i, j, vid) {
     data += '>';
     if (value.value == 'True')
         data += '<option value="off">Off</option><option value="on" selected="true">On</option>';
-    else
+    else if (value.value == 'False')
         data += '<option value="off" selected="true">Off</option><option value="on">On</option>';
+    else
+        data += '<option value="---" selected="true">---</option><option value="off">Off</option><option value="on">On</option>';
     data += '</select></td><td><span class="legend">' + value.units + '</span></td></tr>';
     return data;
 }
@@ -1750,7 +1421,8 @@ function CreateGroup(ind) {
     grp = 1;
     for (i = 0; i < nodes[ind].groups.length; i++) {
         nodegrp[ind] += '<option value="' + nodes[ind].groups[i].id + '">' + nodes[ind].groups[i].label + ' (' + nodes[ind].groups[i].id + ')</option>';
-        nodegrpgrp[ind][grp] = '<td><div id="nodegrp" name="nodegrp" style="float: right;"><select id="groups" multiple size="8" style="vertical-align: top; margin-left: 5px;">';
+        // Add <option></option> at the start - this empty option allows to define/select an empty group
+        nodegrpgrp[ind][grp] = '<td><div id="nodegrp" name="nodegrp" style="float: right;"><select id="groups" multiple size="8" style="vertical-align: top; margin-left: 5px;"><option></option>';
         k = 0;
         for (j = 1; j < nodes.length; j++) {
             var node = nodes[j];
@@ -1760,19 +1432,23 @@ function CreateGroup(ind) {
             // build a list of instances 
             var instances = [String(j)];
             for (var l = 0; l < node.values.length; l++) {
-                instances[l + 1] = j + '.' + node.values[l].instance;
                 instances.push(j + '.' + node.values[l].instance);
             }
+            // On OpenZwave Version 1.6-845-gfe401290, july 2019  OZW adds node 1 endpoint 1 (assuming 1 is the controller)
+            // That is actually instance "2"... So I add it (to enable its display)
+			// See void MultiChannelAssociation::Set(uint8 _groupIdx, uint8 _targetNodeId, uint8 _instance)
+			// Because ozwcp is in "low maintenance mode" and 99.9% of all controllers have ID 1... Hack it...
+            if(j == 1)
+                instances.push('1.2')
 
             // make unique
-            instances = instances.filter(function(item, i, ar) {
+            instances = instances.filter(function (item, i, ar) {
                 return ar.indexOf(item) === i;
             });
 
-            // only show when we have found multiple instances
-            if (instances.length <= 2) {
-                instances = [String(j)];
-            }
+            // There used to be code to "only show when we have found multiple instances"
+            // But I think it is clearer (and correct) to show all possible
+            // single and multi instances
 
             if (nodes[ind].groups[i].nodes != null)
                 while (k < nodes[ind].groups[i].nodes.length && nodes[ind].groups[i].nodes[k] < j)
