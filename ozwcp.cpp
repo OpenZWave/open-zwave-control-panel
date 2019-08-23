@@ -294,7 +294,7 @@ void MyNode::updateGroup(uint8 node, uint8 grp, char *glist)
 		n++;
 	}
 	// Look for nodes in the vector (current list) and those not found in
-    // the passed-in list need to be removed
+	// the passed-in list need to be removed
 	// Do this first, because lifeline often can only store one association
 	vector<string>::iterator nit;
 	for (nit = (*it)->grouplist.begin(); nit != (*it)->grouplist.end(); ++nit)
@@ -309,7 +309,8 @@ void MyNode::updateGroup(uint8 node, uint8 grp, char *glist)
 			// The BUI reports "instance" and instance = endpoint + 1
 			// instance 1 = endpoint 0 = root, instance 2 = endpoint 0 = first non-root channel, ...
 			// MultiChannel uses endpoints
-			if (instance >=1) {
+			if (instance >= 1)
+			{
 				instance--;
 			}
 			Manager::Get()->RemoveAssociation(homeId, node, grp, nodeId, instance);
@@ -329,7 +330,8 @@ void MyNode::updateGroup(uint8 node, uint8 grp, char *glist)
 			// The BUI reports "instance" and instance = endpoint + 1
 			// instance 1 = endpoint 0 = root, instance 2 = endpoint 0 = first non-root channel, ...
 			// MultiChannel uses endpoints
-			if (instance >=1) {
+			if (instance >= 1)
+			{
 				instance--;
 			}
 			Manager::Get()->AddAssociation(homeId, node, grp, nodeId, instance);
@@ -516,17 +518,20 @@ void OnNotification(Notification const *_notification, void *_context)
 
 	// improve debugging by printing "ValueAsString".
 	string tmp;
-
+	const char *IsSet;
 	switch (_notification->GetType())
 	{
 	case Notification::Type_ValueAdded:
+		if (!Manager::Get()->GetValueAsString(id, &tmp))
+		{
+			tmp = "GetValueAsString returned false";
+		}
+		IsSet = Manager::Get()->IsValueSet(id) ? "True" : "False";
 
-		Manager::Get()->GetValueAsString(id, &tmp);
-
-		Log::Write(LogLevel_Info, "Notification: Value Added Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s ValueAsString %s",
+		Log::Write(LogLevel_Info, "Notification: Value Added Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s IsSet %s ValueAsString %s",
 				   _notification->GetHomeId(), _notification->GetNodeId(),
 				   valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
-				   id.GetIndex(), valueTypeStr(id.GetType()), tmp.c_str());
+				   id.GetIndex(), valueTypeStr(id.GetType()), IsSet, tmp.c_str());
 		pthread_mutex_lock(&nlock);
 		nodes[_notification->GetNodeId()]->addValue(id);
 		nodes[_notification->GetNodeId()]->setTime(time(NULL));
@@ -545,12 +550,16 @@ void OnNotification(Notification const *_notification, void *_context)
 		pthread_mutex_unlock(&nlock);
 		break;
 	case Notification::Type_ValueChanged:
+		if (!Manager::Get()->GetValueAsString(id, &tmp))
+		{
+			tmp = "GetValueAsString returned false";
+		}
+		IsSet = Manager::Get()->IsValueSet(id) ? "True" : "False";
 
-		Manager::Get()->GetValueAsString(id, &tmp);
-		Log::Write(LogLevel_Info, "Notification: Value Changed Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s ValueAsString %s",
+		Log::Write(LogLevel_Info, "Notification: Value Changed Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s IsSet %s ValueAsString %s",
 				   _notification->GetHomeId(), _notification->GetNodeId(),
 				   valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
-				   id.GetIndex(), valueTypeStr(id.GetType()), tmp.c_str());
+				   id.GetIndex(), valueTypeStr(id.GetType()), IsSet, tmp.c_str());
 		if (id.GetType() == OpenZWave::ValueID::ValueType_List)
 		{
 			string selection;
@@ -564,10 +573,16 @@ void OnNotification(Notification const *_notification, void *_context)
 		pthread_mutex_unlock(&nlock);
 		break;
 	case Notification::Type_ValueRefreshed:
-		Log::Write(LogLevel_Info, "Notification: Value Refreshed Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s",
+		if (!Manager::Get()->GetValueAsString(id, &tmp))
+		{
+			tmp = "GetValueAsString returned false";
+		}
+		IsSet = Manager::Get()->IsValueSet(id) ? "True" : "False";
+		
+		Log::Write(LogLevel_Info, "Notification: Value Refreshed Home 0x%08x Node %d Genre %s Class %s Instance %d Index %d Type %s IsSet %s ValueAsString %s",
 				   _notification->GetHomeId(), _notification->GetNodeId(),
 				   valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
-				   id.GetIndex(), valueTypeStr(id.GetType()));
+				   id.GetIndex(), valueTypeStr(id.GetType()), IsSet, tmp.c_str());
 		pthread_mutex_lock(&nlock);
 		nodes[_notification->GetNodeId()]->setTime(time(NULL));
 		nodes[_notification->GetNodeId()]->setChanged(true);
