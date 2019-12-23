@@ -281,10 +281,12 @@ function PollReply() {
                         var current = values.getAttribute('current');
                         node_values.value = new Array();
                         for (var l = 0; l < items.length; l++) {
-                            node_values.value[l] = {
-                                item: items[l].firstChild.nodeValue,
-                                selected: (current == items[l].firstChild.nodeValue)
-                            };
+                            if (items[l].firstChild) {
+                                node_values.value[l] = {
+                                    item: items[l].firstChild.nodeValue,
+                                    selected: (current == items[l].firstChild.nodeValue)
+                                };    
+                            }
                         }
                     } else if (node_values.type == 'bitset') {
                         var bits = values.getElementsByTagName('bitset');
