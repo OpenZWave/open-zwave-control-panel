@@ -285,7 +285,12 @@ function PollReply() {
                                 node_values.value[l] = {
                                     item: items[l].firstChild.nodeValue,
                                     selected: (current == items[l].firstChild.nodeValue)
-                                };    
+                                };
+                            } else {
+                                node_values.value[l] = {
+                                    item: "---",
+                                    selected: false
+                                };
                             }
                         }
                     } else if (node_values.type == 'bitset') {
@@ -410,7 +415,7 @@ function PollReply() {
                     SaveNode(curnode);
             }
         }
-        polltmr = setTimeout(Poll, 750);
+        polltmr = setTimeout(Poll, 3000);
     }
 }
 
