@@ -257,6 +257,8 @@ const char *cclassStr(uint8 cc)
     return "REMOTE ASSOCIATION ACTIVATE";
   case 0x7D:
     return "REMOTE ASSOCIATION";
+  case 0x79:
+    return "SOUND SWITCH";
   case 0x80:
     return "BATTERY";
   case 0x81:
@@ -427,6 +429,8 @@ uint8 cclassNum(char const *str)
     return 0x7C;
   else if (strcmp(str, "REMOTE ASSOCIATION") == 0)
     return 0x7D;
+  else if (strcmp(str, "SOUND SWITCH") == 0)
+    return 0x79;
   else if (strcmp(str, "BATTERY") == 0)
     return 0x80;
   else if (strcmp(str, "CLOCK") == 0)
