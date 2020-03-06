@@ -507,6 +507,10 @@ const char *controllerErrorStr(Driver::ControllerError err)
   {
   case Driver::ControllerError_None:
     return "None";
+  case Driver::ControllerError_ButtonNotFound:
+    return "Button Not Found";
+  case Driver::ControllerError_NodeNotFound:
+    return "Node Not Found";
   case Driver::ControllerError_NotBridge:
     return "Not a Bridge";
   case Driver::ControllerError_NotPrimary:

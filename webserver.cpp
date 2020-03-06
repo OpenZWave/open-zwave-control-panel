@@ -404,7 +404,7 @@ const char *Webserver::SendTopoResponse(struct MHD_Connection *conn, const char 
 	fn = mktemp(fntemp);
 	if (fn == NULL)
 		return EMPTY;
-	strncat(fntemp, ".xml", sizeof(fntemp)-1);
+	strncat(fntemp, ".xml", sizeof(fntemp));
 	if (debug)
 		doc.SaveFile(stdout);
 	doc.SaveFile(fn);
@@ -536,7 +536,7 @@ const char *Webserver::SendStatResponse(struct MHD_Connection *conn, const char 
 	fn = mktemp(fntemp);
 	if (fn == NULL)
 		return EMPTY;
-	strncat(fntemp, ".xml", sizeof(fntemp)-1);
+	strncat(fntemp, ".xml", sizeof(fntemp));
 	if (debug)
 		doc.SaveFile(stdout);
 	doc.SaveFile(fn);
@@ -592,13 +592,128 @@ const char *Webserver::SendTestHealResponse(struct MHD_Connection *conn, const c
 	fn = mktemp(fntemp);
 	if (fn == NULL)
 		return EMPTY;
-	strncat(fntemp, ".xml", sizeof(fntemp)-1);
+	strncat(fntemp, ".xml", sizeof(fntemp));
 	if (debug)
 		doc.SaveFile(stdout);
 	doc.SaveFile(fn);
 	return fn;
 }
 
+#if 0
+/*
+ * SendSceneResponse
+ * Process scene request and return appropiate scene data
+ */
+
+const char *Webserver::SendSceneResponse (struct MHD_Connection *conn, const char *fun,
+		const char *arg1, const char *arg2, const char *arg3)
+{
+	TiXmlDocument doc;
+	char str[16];
+	string s;
+	static char fntemp[32];
+	char *fn;
+	int cnt;
+	int i;
+	uint8 sid;
+	TiXmlDeclaration* decl = new TiXmlDeclaration( "1.0", "utf-8", "" );
+	doc.LinkEndChild(decl);
+	TiXmlElement* scenesElement = new TiXmlElement("scenes");
+	doc.LinkEndChild(scenesElement);
+
+	if (strcmp(fun, "create") == 0) {
+		sid = Manager::Get()->CreateScene();
+		if (sid == 0) {
+			fprintf(stderr, "sid = 0, out of scene ids\n");
+			return EMPTY;
+		}
+	}
+	if (strcmp(fun, "values") == 0 ||
+			strcmp(fun, "label") == 0 ||
+			strcmp(fun, "delete") == 0 ||
+			strcmp(fun, "execute") == 0 ||
+			strcmp(fun, "addvalue") == 0 ||
+			strcmp(fun, "update") == 0 ||
+			strcmp(fun, "remove") == 0) {
+		sid = atoi((char *)arg1);
+		if (strcmp(fun, "delete") == 0)
+			Manager::Get()->RemoveScene(sid);
+		if (strcmp(fun, "execute") == 0)
+			Manager::Get()->ActivateScene(sid);
+		if (strcmp(fun, "label") == 0)
+			Manager::Get()->SetSceneLabel(sid, string(arg2));
+		if (strcmp(fun, "addvalue") == 0 ||
+				strcmp(fun, "update") == 0 ||
+				strcmp(fun, "remove") == 0) {
+			MyValue *val = MyNode::lookup(string(arg2));
+			if (val != NULL) {
+				if (strcmp(fun, "addvalue") == 0) {
+					if (!Manager::Get()->AddSceneValue(sid, val->getId(), string(arg3)))
+						fprintf(stderr, "AddSceneValue failure\n");
+				} else if (strcmp(fun, "update") == 0) {
+					if (!Manager::Get()->SetSceneValue(sid, val->getId(), string(arg3)))
+						fprintf(stderr, "SetSceneValue failure\n");
+				} else if (strcmp(fun, "remove") == 0) {
+					if (!Manager::Get()->RemoveSceneValue(sid, val->getId()))
+						fprintf(stderr, "RemoveSceneValue failure\n");
+				}
+			}
+		}
+	}
+	if (strcmp(fun, "load") == 0 ||
+			strcmp(fun, "create") == 0 ||
+			strcmp(fun, "label") == 0 ||
+			strcmp(fun, "delete") == 0) { // send all sceneids
+		uint8 *sptr;
+		cnt = Manager::Get()->GetAllScenes(&sptr);
+		scenesElement->SetAttribute("sceneid", cnt);
+		for (i = 0; i < cnt; i++) {
+			TiXmlElement* sceneElement = new TiXmlElement("sceneid");
+			snprintf(str, sizeof(str), "%d", sptr[i]);
+			sceneElement->SetAttribute("id", str);
+			s = Manager::Get()->GetSceneLabel(sptr[i]);
+			sceneElement->SetAttribute("label", s.c_str());
+			scenesElement->LinkEndChild(sceneElement);
+		}
+		delete [] sptr;
+	}
+	if (strcmp(fun, "values") == 0 ||
+			strcmp(fun, "addvalue") == 0 ||
+			strcmp(fun, "remove") == 0 ||
+			strcmp(fun, "update") == 0) {
+		vector<ValueID> vids;
+		cnt = Manager::Get()->SceneGetValues(sid, &vids);
+		scenesElement->SetAttribute("scenevalue", cnt);
+		for (vector<ValueID>::iterator it = vids.begin(); it != vids.end(); it++) {
+			TiXmlElement* valueElement = new TiXmlElement("scenevalue");
+			valueElement->SetAttribute("id", sid);
+			snprintf(str, sizeof(str), "0x%x", (*it).GetHomeId());
+			valueElement->SetAttribute("home", str);
+			valueElement->SetAttribute("node", (*it).GetNodeId());
+			valueElement->SetAttribute("class", cclassStr((*it).GetCommandClassId()));
+			valueElement->SetAttribute("instance", (*it).GetInstance());
+			valueElement->SetAttribute("index", (*it).GetIndex());
+			valueElement->SetAttribute("type", valueTypeStr((*it).GetType()));
+			valueElement->SetAttribute("genre", valueGenreStr((*it).GetGenre()));
+			valueElement->SetAttribute("label", Manager::Get()->GetValueLabel(*it).c_str());
+			valueElement->SetAttribute("units", Manager::Get()->GetValueUnits(*it).c_str());
+			Manager::Get()->SceneGetValueAsString(sid, *it, &s);
+			TiXmlText *textElement = new TiXmlText(s.c_str());
+			valueElement->LinkEndChild(textElement);
+			scenesElement->LinkEndChild(valueElement);
+		}
+	}
+	strncpy(fntemp, "/tmp/ozwcp.scenes.XXXXXX", sizeof(fntemp));
+	fn = mktemp(fntemp);
+	if (fn == NULL)
+		return EMPTY;
+	strncat(fntemp, ".xml", sizeof(fntemp));
+	if (debug)
+		doc.Print(stdout, 0);
+	doc.SaveFile(fn);
+	return fn;
+}
+#endif
 /*
  * SendPollResponse
  * Process poll request from client and return
@@ -721,8 +836,8 @@ int Webserver::SendPollResponse(struct MHD_Connection *conn)
 					nodeElement->SetAttribute("btype", nodeBasicStr(Manager::Get()->GetNodeBasic(homeId, i)));
 					nodeElement->SetAttribute("gtype", Manager::Get()->GetNodeType(homeId, i).c_str());
 				}
-				nodeElement->SetAttribute("name", nodes[i]->getName().c_str());
-				nodeElement->SetAttribute("location", nodes[i]->getLocation().c_str());
+				nodeElement->SetAttribute("name", Manager::Get()->GetNodeName(homeId, i).c_str());
+				nodeElement->SetAttribute("location", Manager::Get()->GetNodeLocation(homeId, i).c_str());
 				nodeElement->SetAttribute("manufacturer", Manager::Get()->GetNodeManufacturerName(homeId, i).c_str());
 				nodeElement->SetAttribute("product", Manager::Get()->GetNodeProductName(homeId, i).c_str());
 				listening = Manager::Get()->IsNodeListeningDevice(homeId, i);
@@ -732,7 +847,7 @@ int Webserver::SendPollResponse(struct MHD_Connection *conn)
 				nodeElement->SetAttribute("zwaveplus", zwaveplus ? "true" : "false");
 				nodeElement->SetAttribute("beam", Manager::Get()->IsNodeBeamingDevice(homeId, i) ? "true" : "false");
 				nodeElement->SetAttribute("routing", Manager::Get()->IsNodeRoutingDevice(homeId, i) ? "true" : "false");
-				//nodeElement->SetAttribute("security", Manager::Get()->IsNodeSecurityDevice(homeId, i) ? "true" : "false");
+				nodeElement->SetAttribute("security", Manager::Get()->IsNodeSecurityDevice(homeId, i) ? "true" : "false");
 				nodeElement->SetAttribute("time", nodes[i]->getTime());
 #if 0
 				fprintf(stderr, "i=%d failed=%d\n", i, Manager::Get()->IsNodeFailed(homeId, i));
@@ -774,7 +889,7 @@ int Webserver::SendPollResponse(struct MHD_Connection *conn)
 	fn = mktemp(fntemp);
 	if (fn == NULL)
 		return MHD_YES;
-	strncat(fntemp, ".xml", sizeof(fntemp)-1);
+	strncat(fntemp, ".xml", sizeof(fntemp));
 	if (debug)
 		doc.SaveFile(stdout);
 	doc.SaveFile(fn);
@@ -842,8 +957,8 @@ int Webserver::SendDeviceListResponse(struct MHD_Connection *conn)
 				nodeElement->SetAttribute("btype", nodeBasicStr(Manager::Get()->GetNodeBasic(homeId, i)));
 				nodeElement->SetAttribute("gtype", Manager::Get()->GetNodeType(homeId, i).c_str());
 			}
-			nodeElement->SetAttribute("name", nodes[i]->getName().c_str());
-			nodeElement->SetAttribute("location", nodes[i]->getLocation().c_str());
+			nodeElement->SetAttribute("name", Manager::Get()->GetNodeName(homeId, i).c_str());
+			nodeElement->SetAttribute("location", Manager::Get()->GetNodeLocation(homeId, i).c_str());
 			nodeElement->SetAttribute("manufacturer", Manager::Get()->GetNodeManufacturerName(homeId, i).c_str());
 			nodeElement->SetAttribute("product", Manager::Get()->GetNodeProductName(homeId, i).c_str());
 			listening = Manager::Get()->IsNodeListeningDevice(homeId, i);
@@ -853,7 +968,7 @@ int Webserver::SendDeviceListResponse(struct MHD_Connection *conn)
 			nodeElement->SetAttribute("zwaveplus", zwaveplus ? "true" : "false");
 			nodeElement->SetAttribute("beam", Manager::Get()->IsNodeBeamingDevice(homeId, i) ? "true" : "false");
 			nodeElement->SetAttribute("routing", Manager::Get()->IsNodeRoutingDevice(homeId, i) ? "true" : "false");
-			//nodeElement->SetAttribute("security", Manager::Get()->IsNodeSecurityDevice(homeId, i) ? "true" : "false");
+			nodeElement->SetAttribute("security", Manager::Get()->IsNodeSecurityDevice(homeId, i) ? "true" : "false");
 #if 0
 				fprintf(stderr, "i=%d failed=%d\n", i, Manager::Get()->IsNodeFailed(homeId, i));
 				fprintf(stderr, "i=%d awake=%d\n", i, Manager::Get()->IsNodeAwake(homeId, i));
@@ -890,7 +1005,7 @@ int Webserver::SendDeviceListResponse(struct MHD_Connection *conn)
 	fn = mktemp(fntemp);
 	if (fn == NULL)
 		return MHD_YES;
-	strncat(fntemp, ".xml", sizeof(fntemp)-1);
+	strncat(fntemp, ".xml", sizeof(fntemp));
 	if (debug)
 		doc.SaveFile(stdout);
 	doc.SaveFile(fn);
@@ -1494,6 +1609,28 @@ int Webserver::Handler(struct MHD_Connection *conn, const char *url,
 						setAdminState(Manager::Get()->ReplicationSend(homeId, node));
 					}
 				}
+				else if (strcmp((char *)cp->conn_arg1, "addbtn") == 0)
+				{
+					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4 &&
+						cp->conn_arg3 != NULL)
+					{
+						uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
+						uint8 button = strtol(((char *)cp->conn_arg3), NULL, 10);
+						setAdminFunction("Add Button");
+						setAdminState(Manager::Get()->CreateButton(homeId, node, button));
+					}
+				}
+				else if (strcmp((char *)cp->conn_arg1, "delbtn") == 0)
+				{
+					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4 &&
+						cp->conn_arg3 != NULL)
+					{
+						uint8 node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
+						uint8 button = strtol(((char *)cp->conn_arg3), NULL, 10);
+						setAdminFunction("Delete Button");
+						setAdminState(Manager::Get()->DeleteButton(homeId, node, button));
+					}
+				}
 				else if (strcmp((char *)cp->conn_arg1, "refreshnode") == 0)
 				{
 					if (cp->conn_arg2 != NULL && strlen((char *)cp->conn_arg2) > 4)
@@ -1522,13 +1659,11 @@ int Webserver::Handler(struct MHD_Connection *conn, const char *url,
 					node = strtol(((char *)cp->conn_arg2) + 4, NULL, 10);
 					if (strcmp((char *)cp->conn_arg1, "nam") == 0)
 					{ /* Node naming */
-						if (nodes[node])
-							nodes[node]->setName((char *)cp->conn_arg3);
+						Manager::Get()->SetNodeName(homeId, node, (char *)cp->conn_arg3);
 					}
 					else if (strcmp((char *)cp->conn_arg1, "loc") == 0)
 					{ /* Node location */
-						if (nodes[node])
-							nodes[node]->setLocation((char *)cp->conn_arg3);
+						Manager::Get()->SetNodeLocation(homeId, node, (char *)cp->conn_arg3);
 					}
 					else if (strcmp((char *)cp->conn_arg1, "pol") == 0)
 					{ /* Node polling */
@@ -1586,6 +1721,25 @@ int Webserver::Handler(struct MHD_Connection *conn, const char *url,
 						nodes[node]->updatePoll((char *)cp->conn_arg3, (char *)cp->conn_arg4);
 						pthread_mutex_unlock(&nlock);
 					}
+				}
+				return MHD_YES;
+			}
+			else
+				ret = web_send_data(conn, EMPTY, MHD_HTTP_OK, false, false, NULL); // no free, no copy
+		}
+		else if (strcmp(url, "/savepost.html") == 0)
+		{
+			if (*up_data_size != 0)
+			{
+				MHD_post_process(cp->conn_pp, up_data, *up_data_size);
+				*up_data_size = 0;
+
+				if (strcmp((char *)cp->conn_arg1, "save") == 0)
+				{ /* Save config */
+					Manager::Get()->WriteConfig(homeId);
+					pthread_mutex_lock(&glock);
+					needsave = false;
+					pthread_mutex_unlock(&glock);
 				}
 				return MHD_YES;
 			}

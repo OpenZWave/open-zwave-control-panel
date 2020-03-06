@@ -121,7 +121,19 @@
             </form>
         </div>
         <div class="col-xs-6 col-sm-4">
-        </div> 
+            <h2>Backup Controller</h2>
+            <form name="BackPost" method="post">
+                <input name="devhidden" class="hide" value="hidden">
+                <div class="stack" style="position: relative; height: 50px;">
+                    <button class="btn btn-default" id="save" name="save" onclick="return DoSavePost();"
+                        type="submit">Save...</button>
+                </div>
+                <div class="stack">
+                    <span id="saveinfo" name="saveinfo" class="legend" style="display: none;">Changes need
+                        saving...</span>
+                </div>
+            </form>
+        </div>
         <div class="clearfix visible-xs-block"></div>
     </div>
     <div id="network" class="container-fluid">
@@ -141,6 +153,7 @@
                 <div class="esb" style="margin-left: 14px; width: 180px;">
                     <select class="form-control" id="netops" onchange="return DoNetHelp();">
                         <option value="choice" selected="true">Select an operation:</option>
+                        <option value="scen">Scenes</option>
                         <option value="topo">Topology</option>
                         <option value="stat">Statistics</option>
                         <option value="test">Test &amp; Heal</option>
@@ -149,6 +162,67 @@
                 <div class="rsb" style="margin-left: 10px;">
                     <span id="netinfo" name="netinfo" class="admmsg" style="display: none;"></span>
                 </div>
+                <!--
+                    <div id="scencntl" name="scencntl" class="rsb" style="display: none;">
+                        <div class="rsb">
+                            <div class="col-md-4 col-xs-4">
+                                <label><span class="legend" style="font-size: 12px;">Scenes</span></label>
+                                <select class="form-control" id="sceneids" size="6" onchange="curscene = this.options[this.selectedIndex].value; return SceneLoad('values');">
+                                </select>
+                                <div class="input-group">
+                                    <input placeholder="label" id="scenelabeltext" type="text" size="8" class="legend form-control" onchange="SceneLoad('label');">
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-success" id="scenecreate" name="scenecreate" onclick="return SceneLoad('create');" type="submit" title="Create">
+                                            <span class="glyphicon glyphicon-plus"></span>
+                                        </button>
+                                        <button class="btn btn-warning" id="sceneexecute" name="sceneexecute" onclick="return SceneLoad('execute');" type="submit" title="Execute">
+                                            <span class="glyphicon glyphicon-flash"></span>
+                                        </button>
+                                        <button class="btn btn-danger" id="scenedelete" name="scenedelete" onclick="var ret = SceneLoad('delete'); curscene = null; return ret;" type="Delete" title="Delete">
+                                            <span class="glyphicon glyphicon-remove"></span>
+                                        </button>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-8 col-xs-8">
+                                <div class="col-md-6 col-xs-6">
+                                    <label><span class="legend" style="font-size: 12px;">Values</span></label>
+                                    <select class="form-control" id="scenevalues" size="6" onchange="return DisplaySceneValue(this.options[this.selectedIndex]);">
+                                    </select>
+
+                                    <div class="input-group">
+                                        <input id="valuetext" type="text" size="8" class="form-control">
+                                        <select class="form-control" id="valueselect" style="display: none;"></select>
+                                        <span class="input-group-btn">
+                                            <button class="btn btn-success" id="savescenevalue" onclick="return SceneLoad('addvalue');" type="submit" title="Add">
+                                                <span class="glyphicon glyphicon-plus"></span>
+                                            </button>
+                                        </span>
+                                    </div>
+                                    <label><span class="legend" style="font-size: 12px;" id="valueunits"></span></label>
+                                </div>
+                                <div class="col-md-6 col-xs-6">
+                                    <label><span class="legend" style="font-size: 12px; vertical-align: top;">Scene Values</span></label>
+                                    <select class="form-control" id="scenescenevalues" size="6" onchange="return DisplaySceneSceneValue(this.options[this.selectedIndex]);">
+                                    </select>
+                                    <div class="input-group">
+                                        <input id="scenevaluetext" type="text" size="8" class="form-control">
+                                        <select class="form-control" id="scenevalueselect" style="display: none;"></select>
+                                        <span class="input-group-btn">
+                                            <button class="btn btn-default" onclick="return SceneLoad('update');" type="submit" title="Save">
+                                                <span class="glyphicon glyphicon-floppy-disk"></span>
+                                            </button>
+                                            <button class="btn btn-danger" id="removescenevalue" onclick="return SceneLoad('remove');" type="submit" title="Remove">
+                                                <span class="glyphicon glyphicon-remove"></span>
+                                            </button>
+                                        </span>
+                                    </div>
+                                    <label><span class="legend" style="font-size: 12px;" id="scenevalueunits"></span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+-->
                 <div id="topocntl" name="topocntl" class="col-md-1" style="display: none;">
                     <button id="refreshtopo" class="btn btn-default" name="refreshtopo"
                         onclick="return TopoLoad('load');" type="submit">Refresh</button>
@@ -337,6 +411,8 @@
                         <option value="delarr">Delete All Return Routes</option>
                         <option value="snif">Send Node Information</option>
                         <option value="reps">Replication Send</option>
+                        <option value="addbtn">Add Button</option>
+                        <option value="delbtn">Delete Button</option>
                         <option value="refreshnode">Refresh Node Info</option>
                     </select>
                 </div>
