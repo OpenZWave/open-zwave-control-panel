@@ -77,7 +77,9 @@ list<uint8> MyNode::removed;
  * MyNode::MyNode constructor
  * Just save the nodes into an array and other initialization.
  */
-MyNode::MyNode(int32 const ind)
+MyNode::MyNode(int32 const ind) :
+	name(""),
+	location("")
 {
 	if (ind < 1 || ind >= MAX_NODES)
 	{
@@ -199,6 +201,12 @@ void MyNode::saveValue(ValueID id)
 {
 	setTime(time(NULL));
 	setChanged(true);
+	/* Save Node Name/Location */
+	if ((id.GetCommandClassId() == 0x77) && (id.GetIndex() == ValueID_Index_NodeNaming::NodeName)) {
+		Manager::Get()->GetValueAsString(id, &this->name);
+	} else if ((id.GetCommandClassId() == 0x77) && (id.GetIndex() == ValueID_Index_NodeNaming::NodeLocation)) {
+		Manager::Get()->GetValueAsString(id, &this->location);
+	}
 }
 
 /*
@@ -681,20 +689,6 @@ void OnNotification(Notification const *_notification, void *_context)
 		//pthread_mutex_lock(&nlock);
 		//nodes[_notification->GetNodeId()]->setPolled(true);
 		//pthread_mutex_unlock(&nlock);
-		break;
-	case Notification::Type_SceneEvent:
-		Log::Write(LogLevel_Info, "Notification: Scene Event Home %08x Node %d Genre %s Class %s Instance %d Index %d Type %s Scene Id %d",
-				   _notification->GetHomeId(), _notification->GetNodeId(),
-				   valueGenreStr(id.GetGenre()), cclassStr(id.GetCommandClassId()), id.GetInstance(),
-				   id.GetIndex(), valueTypeStr(id.GetType()), _notification->GetSceneId());
-		break;
-	case Notification::Type_CreateButton:
-		Log::Write(LogLevel_Info, "Notification: Create button Home %08x Node %d Button %d",
-				   _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetButtonId());
-		break;
-	case Notification::Type_DeleteButton:
-		Log::Write(LogLevel_Info, "Notification: Delete button Home %08x Node %d Button %d",
-				   _notification->GetHomeId(), _notification->GetNodeId(), _notification->GetButtonId());
 		break;
 	case Notification::Type_ButtonOn:
 		Log::Write(LogLevel_Info, "Notification: Button On Home %08x Node %d Button %d",

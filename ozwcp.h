@@ -47,6 +47,7 @@
 #include "ValueList.h"
 #include "ValueShort.h"
 #include "ValueString.h"
+#include "Manager.h"
 
 using namespace OpenZWave;
 
@@ -106,6 +107,28 @@ public:
     changed = ch;
     nodechanged = ch;
   }
+  string getName() { return name; }
+  string getLocation() { return location; }
+  bool setName(string name) {
+    vector<MyValue *>::iterator it;
+    for (it = values.begin(); it != values.end(); it++) {
+      if (((*it)->getId().GetCommandClassId() == 0x77) & ((*it)->getId().GetIndex() == ValueID_Index_NodeNaming::NodeName)) {
+        Manager::Get()->SetValue((*it)->getId(), name);
+        return true;
+      }
+    }
+    return false;
+  }
+  bool setLocation(string location) {
+    vector<MyValue *>::iterator it;
+    for (it = values.begin(); it != values.end(); it++) {
+      if (((*it)->getId().GetCommandClassId() == 0x77) & ((*it)->getId().GetIndex() == ValueID_Index_NodeNaming::NodeLocation)) {
+        Manager::Get()->SetValue((*it)->getId(), location);
+        return true;
+      }
+    }
+    return false;
+  }
   static void addRemoved(uint8 node) { removed.push_back(node); }
   static uint32 getRemovedCount() { return removed.size(); }
   static uint8 getRemoved();
@@ -125,4 +148,6 @@ private:
   static list<uint8> removed;
   vector<MyGroup *> groups;
   vector<MyValue *> values;
+  string name;
+  string location;
 };

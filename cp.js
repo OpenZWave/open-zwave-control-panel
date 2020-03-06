@@ -16,7 +16,6 @@ var nodegrpgrp = new Array();
 var nodepoll = new Array();
 var nodepollpoll = new Array();
 var astate = false;
-var needsave = 0;
 var nodecount;
 var nodeid;
 var sucnodeid;
@@ -180,14 +179,6 @@ function PollReply() {
             }
             if (poll_elem.getAttribute('cmode') != document.getElementById('cmode').value)
                 document.getElementById('cmode').value = poll_elem.getAttribute('cmode');
-            if (poll_elem.getAttribute('save') != needsave) {
-                needsave = poll_elem.getAttribute('save');
-                if (needsave == '1') {
-                    document.getElementById('saveinfo').style.display = 'block';
-                } else {
-                    document.getElementById('saveinfo').style.display = 'none';
-                }
-            }
             if (poll_elem.getAttribute('noop') == '1') {
                 var testhealreport = document.getElementById('testhealreport');
                 testhealreport.innerHTML = testhealreport.innerHTML + 'No Operation message completed.<br>';
@@ -480,7 +471,6 @@ function BED() {
         document.getElementById('cmode').value = '';
         document.getElementById('nodecount').value = '';
         document.getElementById('sucnodeid').value = '';
-        document.getElementById('saveinfo').style.display = 'none';
         document.getElementById('tbody').innerHTML = '';
         document.getElementById('divconfigcur').innerHTML = '';
         document.getElementById('divconfigcon').innerHTML = '';
@@ -987,24 +977,6 @@ function DoPollPost() {
 
     return false;
 }
-
-function DoSavePost() {
-    var posthttp;
-    var params = 'fun=save';
-
-    if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
-        posthttp = new XMLHttpRequest();
-    } else {
-        posthttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    posthttp.open('POST', 'savepost.html', true);
-    posthttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    posthttp.send(params);
-
-    return false;
-}
-
-
 
 function TopoLoad(fun) {
     var params = 'fun=' + fun;
