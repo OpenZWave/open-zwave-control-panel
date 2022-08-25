@@ -1076,6 +1076,20 @@ void web_controller_update(Driver::ControllerState cs, Driver::ControllerError e
 	cp->setAdminState(more);
 }
 
+void *strdupcat(void * dest, const char * data)
+{
+	if (dest != 0) {
+		size_t length = strlen(dest) + strlen(data) + 1;
+		char *concat = malloc(sizeof(char) * length);
+		snprintf(concat, length, "%s%s", dest, data);
+		free(dest);
+		return concat;
+	}
+
+	return strdup(data);
+}
+
+
 /*
  * web_config_post
  * Handle the post of the updated data
@@ -1143,7 +1157,7 @@ int web_config_post(void *cls, enum MHD_ValueKind kind, const char *key, const c
 		else if (strcmp(key, "node") == 0)
 			cp->conn_arg2 = (void *)strdup(data);
 		else if (strcmp(key, "ids") == 0)
-			cp->conn_arg3 = (void *)strdup(data);
+			cp->conn_arg3 = strdupcat(cp->conn_arg3, data);
 		else if (strcmp(key, "poll") == 0)
 			cp->conn_arg4 = (void *)strdup(data);
 	}
